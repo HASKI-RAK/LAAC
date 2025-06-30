@@ -16,7 +16,7 @@ COPY . .
 RUN yarn build
 
 # Production stage
-FROM alpine:3.21 AS prod
+FROM node:22-alpine AS prod
 
 ENV NODE_VERSION 22.17.0
 WORKDIR /app
