@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:lts-alpine3.21 AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY . .
 RUN yarn build
 
 # Production stage
-FROM node:22-alpine AS prod
+FROM node:lts-alpine3.21 AS prod
 
 ENV NODE_VERSION 22.17.0
 WORKDIR /app
