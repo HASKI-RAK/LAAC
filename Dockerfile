@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --network-timeout 1000000
 
 # Copy source code
 COPY . .
@@ -16,8 +16,9 @@ COPY . .
 RUN yarn build
 
 # Production stage
-FROM node:20-alpine AS prod
+FROM alpine:3.21 AS prod
 
+ENV NODE_VERSION 22.17.0
 WORKDIR /app
 
 # Copy package files
