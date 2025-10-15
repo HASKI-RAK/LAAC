@@ -30,6 +30,8 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-007 — Cache Invalidation and Refresh → `docs/srs/REQ-FN-007.md`
 - REQ-FN-008 — OpenAPI Specification Generation and Exposure → `docs/srs/REQ-FN-008.md`
 - REQ-FN-009 — Interactive API Documentation UI → `docs/srs/REQ-FN-009.md`
+- REQ-FN-010 — Metric Extension Architecture and Interfaces → `docs/srs/REQ-FN-010.md`
+- REQ-FN-011 — Metric Contribution Guide and Templates → `docs/srs/REQ-FN-011.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
@@ -42,3 +44,5 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-006 — Cache Performance and Hit Ratio Targets → `docs/srs/REQ-NF-006.md`
 - REQ-NF-007 — Cache Consistency and Correctness → `docs/srs/REQ-NF-007.md`
 - REQ-NF-008 — API Documentation Completeness and Accuracy → `docs/srs/REQ-NF-008.md`
+- REQ-NF-009 — Metric Development Velocity and Lead Time → `docs/srs/REQ-NF-009.md`
+- REQ-NF-010 — Metric Isolation and Testability → `docs/srs/REQ-NF-010.md`
