@@ -28,3 +28,9 @@ We identified the Developers to be the primary stakeholder group as the purpose 
 
 ## Stakeholder Needs
 > SSOT: Each need is maintained as its own file under `docs/strs-needs/`.
+
+- SG-4-001 — Developers: Intermediary between client backends and xAPI LRS → `docs/strs-needs/SG-4-001.md`
+- SG-4-002 — Developers: Deployable as standalone service → `docs/strs-needs/SG-4-002.md`
+- SG-4-003 — Developers: Generate learning analytics from LRS data per CSV → `docs/strs-needs/SG-4-003.md`
+- SG-4-004 — Developers: Cache analytics results to avoid recomputation → `docs/strs-needs/SG-4-004.md`
+- SG-4-005 — Developers: Well-documented API with Swagger/OpenAPI → `docs/strs-needs/SG-4-005.md`
