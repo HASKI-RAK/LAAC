@@ -1,6 +1,6 @@
 ---
 id: REQ-NF-003
-title: CSV Schema Validation and Traceability
+title: Metrics Traceability and Coverage Verification
 type: Non-Functional
 status: Draft
 priority: High
@@ -10,28 +10,29 @@ version: 0.1
 ---
 
 ## Description
-The system shall validate the `LAAC_Learning_Analytics_Requirements.csv` at startup and build time for required columns and well-formed values. Each metric shall be traceable from CSV to implementation and tests via a stable identifier.
+The system shall maintain traceability from the CSV reference specification (`LAAC_Learning_Analytics_Requirements.csv`) to implemented metrics, ensuring complete coverage. A verification mechanism (documentation, manifest, or automated check) shall confirm that all CSV-specified metrics are implemented and tested.
 
 ## Rationale
-Ensures the catalog reliably reflects the authoritative CSV and supports maintainable evolution.
+Ensures the implemented catalog and computations fully cover the authoritative CSV specification and supports maintainable evolution.
 
 ## Acceptance Criteria
-- CSV validation fails fast with clear errors when required columns are missing or contain empty/invalid values.
-- A traceability mapping exists (e.g., generated manifest file or code map) from CSV rows to metric identifiers and test cases.
-- CI fails if the CSV changes in a way that breaks validation or unimplemented metrics are introduced.
+- A traceability mapping exists (e.g., documentation section, manifest file, or code comments) linking CSV rows to metric identifiers and test cases.
+- CI or documentation review process verifies that all CSV-specified metrics have corresponding implementations and tests.
+- When new metrics are added to the CSV, the verification process identifies them as unimplemented until code is added.
 
 ## Verification
-- Unit tests for CSV validator with positive and negative samples.
-- CI job/script checks CSV validity and presence of corresponding implementations/tests.
+- CI job/script or manual review checklist confirms CSV and implementation are in sync.
+- Documentation includes a metrics coverage table or automated report.
 
 ## Dependencies
-- REQ-FN-003 (catalog generation).
+- REQ-FN-003 (catalog), REQ-FN-004 (computations).
 
 ## Assumptions / Constraints
-- Required columns: `Dashboard Level`, `Metric Description`, `Source`.
+- The CSV is a reference document; changes require corresponding code updates.
+- Required CSV columns: `Dashboard Level`, `Metric Description`, `Source`.
 
 ## Observability
-- Validation results are logged at startup, including counts of metrics and any warnings.
+- Build or CI logs show metrics coverage status.
 
 ## Risks / Open Questions
 - None.

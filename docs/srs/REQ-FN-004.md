@@ -10,7 +10,7 @@ version: 0.1
 ---
 
 ## Description
-The system shall compute analytics results for every metric defined in `docs/resources/LAAC_Learning_Analytics_Requirements.csv` using data retrieved from the configured xAPI LRS. For each metric, the system shall implement the required xAPI queries and aggregations to produce deterministic outputs.
+The system shall compute analytics results for every metric specified in `docs/resources/LAAC_Learning_Analytics_Requirements.csv` (used as the authoritative reference) using data retrieved from the configured xAPI LRS. For each metric, the system shall implement the required xAPI queries and aggregations to produce deterministic outputs.
 
 ## Rationale
 Delivers the core value of the service: turning LRS statements into actionable analytics aligned with the CSV catalog.
