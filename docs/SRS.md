@@ -28,6 +28,8 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-005 — Results Retrieval, Aggregation, and Export → `docs/srs/REQ-FN-005.md`
 - REQ-FN-006 — Analytics Results Caching → `docs/srs/REQ-FN-006.md`
 - REQ-FN-007 — Cache Invalidation and Refresh → `docs/srs/REQ-FN-007.md`
+- REQ-FN-008 — OpenAPI Specification Generation and Exposure → `docs/srs/REQ-FN-008.md`
+- REQ-FN-009 — Interactive API Documentation UI → `docs/srs/REQ-FN-009.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
@@ -39,3 +41,4 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-005 — Analytics Endpoint Performance (CSV Metrics) → `docs/srs/REQ-NF-005.md`
 - REQ-NF-006 — Cache Performance and Hit Ratio Targets → `docs/srs/REQ-NF-006.md`
 - REQ-NF-007 — Cache Consistency and Correctness → `docs/srs/REQ-NF-007.md`
+- REQ-NF-008 — API Documentation Completeness and Accuracy → `docs/srs/REQ-NF-008.md`
