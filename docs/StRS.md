@@ -27,10 +27,4 @@ We identified the Developers to be the primary stakeholder group as the purpose 
 - [SRS Document](./SRS.md)
 
 ## Stakeholder Needs
-> Note: Each requirement of the SRS maps to one or more stakeholder needs.
-
-- **SG-1-001**:
-  - **Stakeholder Group**: Developers
-  - **Need**: The system shall be deployable as a standalone service.
-  - **Rationale**: To allow easy deployment and maintenance.
-  - **Priority**: High
+> SSOT: Each need is maintained as its own file under `docs/strs-needs/`.
