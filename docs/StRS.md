@@ -41,4 +41,5 @@ We identified the Developers to be the primary stakeholder group as the purpose 
 - SG-1-002 — Students: Data deletion on request → `docs/strs-needs/SG-1-002.md`
 - SG-2-001 — Educators: Accurate analytics results → `docs/strs-needs/SG-2-001.md`
 - SG-5-001 — Regulatory Bodies: Security baseline (authn/z, encryption, secrets) → `docs/strs-needs/SG-5-001.md`
- - SG-4-009 — Developers: Observability (logs, metrics, tracing) → `docs/strs-needs/SG-4-009.md`
+- SG-4-009 — Developers: Observability (logs, metrics, tracing) → `docs/strs-needs/SG-4-009.md`
+- SG-4-010 — Developers: Performance SLO ≤ 1s response → `docs/strs-needs/SG-4-010.md`
