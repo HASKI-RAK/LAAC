@@ -26,12 +26,16 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-003 — Analytics Metrics Catalog and Discovery → `docs/srs/REQ-FN-003.md`
 - REQ-FN-004 — Compute Analytics from xAPI LRS per CSV Metric → `docs/srs/REQ-FN-004.md`
 - REQ-FN-005 — Results Retrieval, Aggregation, and Export → `docs/srs/REQ-FN-005.md`
+- REQ-FN-006 — Analytics Results Caching → `docs/srs/REQ-FN-006.md`
+- REQ-FN-007 — Cache Invalidation and Refresh → `docs/srs/REQ-FN-007.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
 
 - REQ-NF-001 — Core Data Source Scope (xAPI LRS) → `docs/srs/REQ-NF-001.md`
 - REQ-NF-002 — Standalone Deployability → `docs/srs/REQ-NF-002.md`
-- REQ-NF-003 — CSV Schema Validation and Traceability → `docs/srs/REQ-NF-003.md`
+- REQ-NF-003 — Metrics Traceability and Coverage Verification → `docs/srs/REQ-NF-003.md`
 - REQ-NF-004 — Determinism, Idempotency, and Result Consistency → `docs/srs/REQ-NF-004.md`
 - REQ-NF-005 — Analytics Endpoint Performance (CSV Metrics) → `docs/srs/REQ-NF-005.md`
+- REQ-NF-006 — Cache Performance and Hit Ratio Targets → `docs/srs/REQ-NF-006.md`
+- REQ-NF-007 — Cache Consistency and Correctness → `docs/srs/REQ-NF-007.md`
