@@ -1,9 +1,12 @@
 // Implements REQ-FN-014: Secrets and Configuration Management
-// CoreModule provides global configuration access via ConfigModule
+// Implements REQ-FN-020: Structured Logging with Correlation IDs
+// CoreModule provides global configuration access and logging infrastructure
 
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { configFactory, configValidationSchema } from './config';
+import { LoggerService } from './logger';
+import { CorrelationIdMiddleware } from './middleware';
 
 @Module({
   imports: [
@@ -21,7 +24,19 @@ import { configFactory, configValidationSchema } from './config';
     }),
   ],
   controllers: [],
-  providers: [],
-  exports: [ConfigModule],
+  providers: [
+    // REQ-FN-020: Global structured logger
+    LoggerService,
+  ],
+  exports: [ConfigModule, LoggerService],
 })
-export class CoreModule {}
+export class CoreModule implements NestModule {
+  /**
+   * Configure global middleware for correlation ID handling
+   * @param consumer - Middleware consumer
+   */
+  configure(consumer: MiddlewareConsumer): void {
+    // REQ-FN-020: Apply correlation ID middleware to all routes
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
