@@ -32,6 +32,10 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-009 — Interactive API Documentation UI → `docs/srs/REQ-FN-009.md`
 - REQ-FN-010 — Metric Extension Architecture and Interfaces → `docs/srs/REQ-FN-010.md`
 - REQ-FN-011 — Metric Contribution Guide and Templates → `docs/srs/REQ-FN-011.md`
+- REQ-FN-012 — Container Image Build and Registry → `docs/srs/REQ-FN-012.md`
+- REQ-FN-013 — Docker Compose Configurations (Dev and Prod) → `docs/srs/REQ-FN-013.md`
+- REQ-FN-014 — Secrets and Configuration Management → `docs/srs/REQ-FN-014.md`
+- REQ-FN-015 — CI/CD Pipeline with GitHub Actions → `docs/srs/REQ-FN-015.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
@@ -46,3 +50,5 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-008 — API Documentation Completeness and Accuracy → `docs/srs/REQ-NF-008.md`
 - REQ-NF-009 — Metric Development Velocity and Lead Time → `docs/srs/REQ-NF-009.md`
 - REQ-NF-010 — Metric Isolation and Testability → `docs/srs/REQ-NF-010.md`
+- REQ-NF-011 — Deployment Automation and Reliability → `docs/srs/REQ-NF-011.md`
+- REQ-NF-012 — Deployment Rollback and Recovery → `docs/srs/REQ-NF-012.md`
