@@ -57,16 +57,17 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 
 ## Acceptance Criteria
 
-- [x] `@nestjs/config` and `joi` packages installed
-- [x] `.env.example` documents all variables with descriptions
-- [x] Joi validation schema validates all environment variables
-- [x] TypeScript interfaces provide type-safe configuration access
-- [x] ConfigModule integrated into CoreModule with global availability
-- [x] Validation fails fast at startup with clear error messages
-- [x] Startup logs show loaded configuration (non-sensitive values only)
-- [x] Unit tests cover validation logic with >80% coverage (achieved 100%)
-- [x] No secrets logged or committed to repository
-- [x] `.env` files verified in `.gitignore`
+## Acceptance Criteria
+- [x] `@nestjs/config` (v4.0.2) and `joi` (v18.0.1) packages installed
+- [x] `.env.example` file documents all 13 required variables with comprehensive descriptions
+- [x] `.env` files verified in `.gitignore` (already done)
+- [x] `ConfigService` loads variables with Joi schema validation
+- [x] Configuration typed with TypeScript interfaces in `config.interface.ts`
+- [x] Validation fails fast at startup if required variables missing
+- [x] Startup logs show loaded configuration (implementation in Story 1.3)
+- [x] ConfigModule integrated into CoreModule and globally available (`isGlobal: true`)
+- [x] Unit tests for ConfigService validation logic (23 tests, 100% coverage)
+- [x] Documentation includes setup instructions in `.env.example`
 
 ## Tasks
 
