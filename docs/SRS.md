@@ -5,6 +5,10 @@ for the project according to ISO/IEC/IEEE 29148:2018.
 ### Purpose
 The purpose of this document is to define the functional and non-functional requirements for the system. They are derived and linked to the informal stakeholder needs in `docs/StRS.md`.
 
+### References
+- [Stakeholder Requirements (StRS)](./StRS.md)
+- [Metrics Specification](./Metrics-Specification.md) — Formal definitions for all analytics metrics
+
 ## Project Overview
 ### Product Perspective
 The project is located in between a Learning Record Store (LRS) and an Adaptive Learning System (ALS). It acts as an intermediary system that consolidates and processes learning data from the LRS and generates data for frequently accessed learning analytics in the ALS.
@@ -36,6 +40,8 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-013 — Docker Compose Configurations (Dev and Prod) → `docs/srs/REQ-FN-013.md`
 - REQ-FN-014 — Secrets and Configuration Management → `docs/srs/REQ-FN-014.md`
 - REQ-FN-015 — CI/CD Pipeline with GitHub Actions → `docs/srs/REQ-FN-015.md`
+- REQ-FN-016 — API Versioning and Deprecation Policy → `docs/srs/REQ-FN-016.md`
+- REQ-FN-017 — Multi-Instance Support and Cross-Instance Analytics → `docs/srs/REQ-FN-017.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
@@ -52,3 +58,4 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-010 — Metric Isolation and Testability → `docs/srs/REQ-NF-010.md`
 - REQ-NF-011 — Deployment Automation and Reliability → `docs/srs/REQ-NF-011.md`
 - REQ-NF-012 — Deployment Rollback and Recovery → `docs/srs/REQ-NF-012.md`
+- REQ-NF-013 — Multi-Instance Data Isolation and Consistency → `docs/srs/REQ-NF-013.md`

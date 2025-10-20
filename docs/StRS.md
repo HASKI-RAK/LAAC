@@ -25,6 +25,7 @@ We identified the Developers to be the primary stakeholder group as the purpose 
 ## References
 - ISO/IEC/IEEE 29148:2018 - Systems and software engineering — Life cycle processes — Requirements engineering
 - [SRS Document](./SRS.md)
+- [Metrics Specification](./Metrics-Specification.md)
 
 ## Stakeholder Needs
 > SSOT: Each need is maintained as its own file under `docs/strs-needs/`.
@@ -37,9 +38,11 @@ We identified the Developers to be the primary stakeholder group as the purpose 
 - SG-4-006 — Developers: Rapidly add new metrics → `docs/strs-needs/SG-4-006.md`
 - SG-4-007 — Developers: Portainer-based deployment & CI/CD → `docs/strs-needs/SG-4-007.md`
 - SG-4-008 — Developers: Extensible, documented architecture (SOLID/CUPID, PlantUML) → `docs/strs-needs/SG-4-008.md`
+- SG-4-009 — Developers: Observability (logs, metrics, tracing) → `docs/strs-needs/SG-4-009.md`
+- SG-4-010 — Developers: Performance SLO ≤ 1s response → `docs/strs-needs/SG-4-010.md`
+- SG-4-011 — Developers: API versioning and deprecation policy → `docs/strs-needs/SG-4-011.md`
+- SG-4-012 — Developers: Multi-university instance support → `docs/strs-needs/SG-4-012.md`
 - SG-1-001 — Students: Pseudonymized data storage and exposure → `docs/strs-needs/SG-1-001.md`
 - SG-1-002 — Students: Data deletion on request → `docs/strs-needs/SG-1-002.md`
 - SG-2-001 — Educators: Accurate analytics results → `docs/strs-needs/SG-2-001.md`
 - SG-5-001 — Regulatory Bodies: Security baseline (authn/z, encryption, secrets) → `docs/strs-needs/SG-5-001.md`
-- SG-4-009 — Developers: Observability (logs, metrics, tracing) → `docs/strs-needs/SG-4-009.md`
-- SG-4-010 — Developers: Performance SLO ≤ 1s response → `docs/strs-needs/SG-4-010.md`
