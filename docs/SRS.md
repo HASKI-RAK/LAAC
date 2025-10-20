@@ -40,13 +40,15 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-013 — Docker Compose Configurations (Dev and Prod) → `docs/srs/REQ-FN-013.md`
 - REQ-FN-014 — Secrets and Configuration Management → `docs/srs/REQ-FN-014.md`
 - REQ-FN-015 — CI/CD Pipeline with GitHub Actions → `docs/srs/REQ-FN-015.md`
+- REQ-FN-016 — API Versioning and Deprecation Policy → `docs/srs/REQ-FN-016.md`
+- REQ-FN-017 — Multi-Instance Support and Cross-Instance Analytics → `docs/srs/REQ-FN-017.md`
 - REQ-FN-018 — Architecture Documentation with PlantUML Diagrams → `docs/srs/REQ-FN-018.md`
 - REQ-FN-019 — SOLID and CUPID Principles Guidance → `docs/srs/REQ-FN-019.md`
 - REQ-FN-020 — Structured Logging with Correlation IDs → `docs/srs/REQ-FN-020.md`
 - REQ-FN-021 — Metrics Export and Monitoring Endpoints → `docs/srs/REQ-FN-021.md`
 - REQ-FN-022 — Performance Testing and SLO Validation → `docs/srs/REQ-FN-022.md`
-- REQ-FN-016 — API Versioning and Deprecation Policy → `docs/srs/REQ-FN-016.md`
-- REQ-FN-017 — Multi-Instance Support and Cross-Instance Analytics → `docs/srs/REQ-FN-017.md`
+- REQ-FN-023 — Authentication and Authorization Framework → `docs/srs/REQ-FN-023.md`
+- REQ-FN-024 — Input Validation and Rate Limiting → `docs/srs/REQ-FN-024.md`
 
 ## Non-Functional Requirements
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
@@ -68,4 +70,6 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-016 — Observability Baseline and Alert Guidance → `docs/srs/REQ-NF-016.md`
 - REQ-NF-017 — Analytics Endpoint Latency SLO (Detailed) → `docs/srs/REQ-NF-017.md`
 - REQ-NF-018 — Graceful Degradation and Timeout Handling → `docs/srs/REQ-NF-018.md`
+- REQ-NF-019 — Security Baseline and Secure Defaults → `docs/srs/REQ-NF-019.md`
+- REQ-NF-020 — Security Testing and Compliance Validation → `docs/srs/REQ-NF-020.md`
 - REQ-NF-013 — Multi-Instance Data Isolation and Consistency → `docs/srs/REQ-NF-013.md`
