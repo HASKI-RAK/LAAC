@@ -43,3 +43,99 @@ $ yarn run test:e2e
 # test coverage
 $ yarn run test:cov
 ```
+
+## Configuration and Secrets Management
+
+> **REQ-FN-014**: This project follows secure configuration management practices to prevent credential leaks and support deployment across environments.
+
+### Local Development
+
+1. **Copy the environment template**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Generate secure secrets**:
+   ```bash
+   # Generate a secure JWT secret (minimum 32 characters required)
+   openssl rand -base64 32
+   ```
+
+3. **Configure your local `.env` file** with actual values:
+   - Set `JWT_SECRET` to a secure random string (minimum 32 characters)
+   - Configure `LRS_URL` and `LRS_API_KEY` from your LRS provider
+   - Adjust `REDIS_*` settings if using a non-default Redis configuration
+   - Set `NODE_ENV=development` for local development
+
+4. **Never commit `.env` files** - they are automatically excluded by `.gitignore`
+
+### Production Deployment
+
+For production deployments, **never use `.env` files**. Instead:
+
+#### Option 1: Docker Secrets (Recommended for Docker Swarm/Compose)
+
+1. Create Docker secrets for sensitive values:
+   ```bash
+   echo "your-jwt-secret" | docker secret create laac_jwt_secret -
+   echo "your-lrs-api-key" | docker secret create laac_lrs_api_key -
+   ```
+
+2. Reference secrets in your `docker-compose.yml`:
+   ```yaml
+   services:
+     laac:
+       environment:
+         JWT_SECRET_FILE: /run/secrets/laac_jwt_secret
+         LRS_API_KEY_FILE: /run/secrets/laac_lrs_api_key
+       secrets:
+         - laac_jwt_secret
+         - laac_lrs_api_key
+   ```
+
+#### Option 2: Environment Variables (Portainer/Kubernetes)
+
+Use Portainer's environment variable editor or Kubernetes secrets to inject configuration at runtime:
+
+- **Portainer**: Navigate to Container → Env variables and add required variables
+- **Kubernetes**: Create ConfigMaps for non-sensitive config and Secrets for credentials
+
+#### Option 3: Secret Management Services
+
+For enterprise deployments, integrate with secret management services:
+- HashiCorp Vault
+- AWS Secrets Manager
+- Azure Key Vault
+- Google Secret Manager
+
+### Required Configuration Variables
+
+See `.env.example` for a complete list of required environment variables. Key variables include:
+
+| Variable | Required | Description | Security Level |
+|----------|----------|-------------|----------------|
+| `JWT_SECRET` | Yes | JWT signing secret | **CRITICAL** - Never commit |
+| `LRS_API_KEY` | Yes | LRS authentication key | **CRITICAL** - Never commit |
+| `LRS_URL` | Yes | LRS xAPI endpoint URL | Sensitive |
+| `REDIS_PASSWORD` | No | Redis authentication password | **CRITICAL** - Never commit if used |
+| `NODE_ENV` | No | Application environment | Public |
+| `PORT` | No | Application port | Public |
+
+### Security Checklist
+
+- ✅ All secrets use environment variables or Docker secrets
+- ✅ `.env` files are in `.gitignore`
+- ✅ `.env.example` contains only placeholder values
+- ✅ `JWT_SECRET` is at least 32 characters in production
+- ✅ CI/CD pipeline uses repository secrets (GitHub Actions)
+- ✅ Automated secret scanning runs on every PR
+
+### Validation
+
+The application validates all required configuration at startup using Joi schema validation. If required variables are missing or invalid, the application will fail to start with clear error messages.
+
+For more details, see:
+- `.env.example` - Complete environment variable documentation
+- `docs/srs/REQ-FN-014.md` - Requirements specification
+- `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
+- `src/core/config/` - Configuration validation implementation
