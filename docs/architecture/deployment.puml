@@ -1,0 +1,147 @@
+@startuml LAAC Deployment Architecture
+!theme plain
+skinparam linetype ortho
+
+' Actors
+actor "End Users\n(via ALS)" as Users
+actor "Operators\n(DevOps)" as Ops
+
+' External Systems
+cloud "Internet" as Internet
+node "External LRS" as ExternalLRS {
+  database "Yetanalytics\nLRS\n(xAPI)" as LRS
+}
+
+' Deployment Environment
+node "Docker Host\n(Production Server)" {
+  
+  ' Traefik Reverse Proxy
+  component "Traefik\nReverse Proxy" as Traefik {
+    [TLS Termination]
+    [Load Balancing]
+    [Rate Limiting]
+    [Routing Rules]
+  }
+  
+  ' LAAC Service Containers
+  node "LAAC Instance 1" as LAAC1 {
+    component "NestJS\nApplication" as App1
+    note right of App1
+      Port: 3000
+      Image: laac:latest
+      Env: .env.production
+    end note
+  }
+  
+  node "LAAC Instance 2" as LAAC2 {
+    component "NestJS\nApplication" as App2
+    note right of App2
+      Port: 3000
+      Scalable instances
+      for high availability
+    end note
+  }
+  
+  ' Shared Services
+  node "Redis Container" as RedisNode {
+    database "Redis\nCache" as Redis
+    note right of Redis
+      Port: 6379
+      Persistence: RDB + AOF
+      Shared by all instances
+    end note
+  }
+  
+  ' Management UI
+  node "Portainer" as PortainerNode {
+    component "Portainer CE\nManagement UI" as Portainer
+    note right of Portainer
+      Port: 9000
+      Container management
+      Deployment monitoring
+    end note
+  }
+  
+  ' Docker Network
+  package "Internal Docker Network" as DockerNet {
+    [Service Discovery]
+    [DNS Resolution]
+  }
+}
+
+' CI/CD
+cloud "GitHub" as GitHub {
+  [GitHub Actions\nCI/CD Pipeline]
+}
+
+' Connections - External
+Users -down-> Internet : HTTPS requests
+Internet -down-> Traefik : Port 443 (TLS)
+Ops -down-> Internet : Admin access
+Traefik -down-> Portainer : /portainer route
+
+' Connections - Internal
+Traefik -down-> App1 : HTTP (internal)
+Traefik -down-> App2 : HTTP (internal)
+App1 -down-> Redis : Cache operations
+App2 -down-> Redis : Cache operations
+App1 -right-> LRS : HTTPS xAPI queries
+App2 -right-> LRS : HTTPS xAPI queries
+Portainer -down-> DockerNet : Manage containers
+
+' CI/CD Flow
+GitHub -down-> Traefik : Deploy updates\n(webhook)
+
+' Network zones
+together {
+  Traefik
+  LAAC1
+  LAAC2
+  RedisNode
+  PortainerNode
+}
+
+' Notes
+note top of Traefik
+  **Entry Point**
+  - Handles TLS certificates (Let's Encrypt)
+  - Routes /api/* to LAAC instances
+  - Routes /portainer to Portainer UI
+  - Enforces rate limits
+end note
+
+note bottom of Redis
+  **Shared State**
+  - All LAAC instances share cache
+  - Cache keys include instance ID (optional)
+  - Supports multi-instance deployment
+end note
+
+note right of ExternalLRS
+  **External Dependency**
+  - Managed separately
+  - xAPI-compliant endpoint
+  - Authentication via API key or OAuth
+end note
+
+note left of GitHub
+  **CI/CD Automation**
+  - Build: npm test, build Docker image
+  - Push: GitHub Container Registry
+  - Deploy: Docker Compose or Portainer API
+end note
+
+' Deployment Strategy
+note as DeploymentStrategy
+  **Deployment Strategy (REQ-FN-013, REQ-NF-011)**
+  1. **Dev**: docker-compose.dev.yml (single instance, local LRS)
+  2. **Staging**: docker-compose.staging.yml (single instance, staging LRS)
+  3. **Production**: docker-compose.prod.yml (multi-instance, Traefik, Redis persistence)
+  
+  **Rollback** (REQ-NF-012):
+  - Tagged images in registry (e.g., laac:v1.2.3)
+  - Docker Compose down + up with previous tag
+  - Zero-downtime: rolling updates via Traefik health checks
+end note
+
+@enduml

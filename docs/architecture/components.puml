@@ -1,0 +1,126 @@
+@startuml LAAC Component Architecture
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+' External Systems
+cloud "Client Applications\n(ALS)" as ALS
+database "Yetanalytics LRS\n(xAPI)" as LRS
+database "Redis Cache" as Redis
+
+' API Gateway Layer
+package "API Gateway Layer" {
+  component [AuthenticationGuard] as AuthGuard
+  component [AuthorizationGuard] as ScopesGuard
+  component [RateLimitGuard] as RateLimit
+  component [ValidationPipe] as Validation
+}
+
+' Application Modules
+package "LAAC Service" {
+  
+  ' Core Module
+  package "CoreModule" {
+    component [LoggerService] as Logger
+    component [ConfigService] as Config
+    component [HealthController] as Health
+  }
+  
+  ' Auth Module
+  package "AuthModule" {
+    component [JwtStrategy] as JwtStrategy
+    component [ScopesGuard] as AuthzGuard
+  }
+  
+  ' Metrics Module
+  package "MetricsModule" {
+    component [MetricsController] as MetricsCtrl
+    component [MetricsService] as MetricsSvc
+    component [MetricsRegistry] as Registry
+  }
+  
+  ' Computation Module (Extensible)
+  package "ComputationModule" {
+    interface "IMetricComputation" as IMetric
+    component [ComputationFactory] as Factory
+    component [QuickMetricProvider] as QuickProvider
+    component [ThesisMetricProvider] as ThesisProvider
+  }
+  
+  ' Data Access Module
+  package "DataAccessModule" {
+    component [CacheService] as CacheSvc
+    component [LRSClient] as LRSClient
+  }
+  
+  ' Admin Module
+  package "AdminModule" {
+    component [CacheController] as CacheCtrl
+    component [MetricsExporter] as PrometheusExporter
+  }
+}
+
+' External connections
+ALS -down-> AuthGuard : HTTPS + JWT
+AuthGuard -down-> ScopesGuard
+ScopesGuard -down-> RateLimit
+RateLimit -down-> Validation
+Validation -down-> MetricsCtrl
+Validation -down-> CacheCtrl
+Validation -down-> Health
+
+' Metrics flow
+MetricsCtrl -down-> MetricsSvc : orchestrate
+MetricsSvc -down-> Registry : lookup metric
+MetricsSvc -down-> CacheSvc : check cache
+MetricsSvc -down-> Factory : compute if miss
+Factory ..> IMetric : implements
+Factory -down-> QuickProvider : route (Phase 1)
+Factory -down-> ThesisProvider : route (Phase 2+)
+QuickProvider -up-> IMetric
+ThesisProvider -up-> IMetric
+QuickProvider -down-> LRSClient : fetch xAPI data
+ThesisProvider -down-> LRSClient : fetch xAPI data
+
+' Data access
+CacheSvc -down-> Redis : read/write
+LRSClient -down-> LRS : xAPI queries
+
+' Admin flow
+CacheCtrl -down-> CacheSvc : invalidate
+PrometheusExporter -down-> MetricsSvc : collect metrics
+
+' Cross-cutting concerns
+Logger ..> MetricsCtrl : logs
+Logger ..> MetricsSvc : logs
+Logger ..> LRSClient : logs
+Logger ..> CacheSvc : logs
+Config ..> MetricsSvc : config
+Config ..> LRSClient : LRS URL
+Config ..> CacheSvc : Redis config
+AuthzGuard -up-> JwtStrategy : validate token
+
+' Security guards used across controllers
+AuthGuard ..> MetricsCtrl : protect
+ScopesGuard ..> MetricsCtrl : analytics:read
+ScopesGuard ..> CacheCtrl : admin:cache
+
+note right of ComputationModule
+  **Extension Point**
+  Bachelor thesis components
+  swap in via DI configuration
+end note
+
+note right of IMetric
+  interface IMetricComputation {
+    id: string;
+    compute(params, data): Result;
+  }
+end note
+
+note bottom of Redis
+  Shared cache for
+  multi-instance deployment
+end note
+
+@enduml
