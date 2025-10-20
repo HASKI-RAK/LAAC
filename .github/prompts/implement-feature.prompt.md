@@ -1,6 +1,6 @@
 ---
 mode: 'agent'
-model: 'Claude Sonnet 4.5'
+model: 'GPT-5 mini'
 tools:
   [
     'githubRepo',
@@ -227,6 +227,7 @@ ${input:advisory:Any special wishes how the implementation should be approached?
 **Note**: This phase occurs after the remote GitHub Copilot coding agent completes the implementation and creates a pull request. The user will prompt you to proceed with these steps.
 
 1. **Post-Implementation Tasks** (to be done after PR is created):
+   - Swap to main branch and pull latest changes
    - Update the GitHub issue status using `mcp_github_update_issue` to mark completed checkboxes in Definition of Done, Testing Requirements and Acceptance Criteria
    - Add implementation notes about any deviations from the plan using `mcp_github_add_issue_comment`
    - Document any new dependencies or side effects discovered

@@ -18,32 +18,34 @@ This document maps each requirement from `docs/SRS.md` to the architectural comp
 
 ## Functional Requirements Traceability
 
-| Requirement ID | Title                                               | Architecture Mapping                                | Components                                                        | ADR/Section               |
-| -------------- | --------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | ------------------------- |
-| **REQ-FN-001** | Client-Facing Intermediary API                      | MetricsModule, MetricsController, API Gateway Layer | `MetricsController`, `AuthGuard`, `ValidationPipe`                | ADR-004, Section 4.2      |
-| **REQ-FN-002** | xAPI LRS Integration                                | DataAccessModule, LRSClient                         | `LRSClient`, HTTP client with xAPI query support                  | Section 4.2, 8.2          |
-| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | MetricsModule, MetricsRegistry                      | `MetricsRegistry`, `GET /metrics` endpoint                        | Section 4.2, 4.3          |
-| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ComputationModule, MetricProviders                  | `IMetricComputation`, `QuickMetricProvider`, `ComputationFactory` | ADR-002, Section 4.2      |
-| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | MetricsModule, MetricsService                       | `MetricsService.getResults()`, `GET /metrics/:id/results`         | Section 4.3               |
-| **REQ-FN-006** | Analytics Results Caching                           | DataAccessModule, CacheService                      | `CacheService` (Redis), cache-aside pattern                       | ADR-003, Section 8.1      |
-| **REQ-FN-007** | Cache Invalidation and Refresh                      | AdminModule, CacheController                        | `CacheController`, `POST /admin/cache/invalidate`                 | Section 4.2               |
-| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | NestJS Swagger integration                          | `@nestjs/swagger` decorators, auto-generated spec                 | ADR-004, Section 10.1     |
-| **REQ-FN-009** | Interactive API Documentation UI                    | Swagger UI integration                              | Swagger UI served at `/api/docs`                                  | ADR-004                   |
-| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ComputationModule, IMetricComputation interface     | `IMetricComputation`, plugin-based registration                   | ADR-002, Section 11.1     |
-| **REQ-FN-011** | Metric Contribution Guide and Templates             | Documentation + code templates                      | Template files, contribution guide (future)                       | Section 11.2              |
-| **REQ-FN-012** | Container Image Build and Registry                  | Dockerfile, CI/CD pipeline                          | GitHub Actions workflow, Docker build                             | Section 5.2               |
-| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | Deployment manifests                                | `docker-compose.dev.yml`, `docker-compose.prod.yml`               | Section 5.1, 5.4          |
-| **REQ-FN-014** | Secrets and Configuration Management                | CoreModule, ConfigService                           | `ConfigService`, environment variables, Docker secrets            | Section 4.2, 5.3          |
-| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | GitHub Actions workflows                            | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`        | Section 7.2               |
-| **REQ-FN-016** | API Versioning and Deprecation Policy               | API design, versioning strategy                     | URL-based versioning (`/v1/metrics`), deprecation headers         | Section 11.3              |
-| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | Deployment architecture, shared Redis               | Multiple LAAC containers, shared Redis cache                      | Section 5.4, 6.2          |
-| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | This document and PlantUML diagrams                 | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`           | Section 1-17              |
-| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | Design patterns, module structure                   | Module boundaries, dependency injection, interfaces               | Section 12.1, 12.2        |
-| **REQ-FN-020** | Structured Logging with Correlation IDs             | CoreModule, LoggerService                           | `LoggerService` (Winston), correlation ID middleware              | ADR-006, Section 10.1     |
-| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | AdminModule, MetricsExporter                        | `MetricsExporter`, `GET /metrics` (Prometheus format)             | Section 10.2              |
-| **REQ-FN-022** | Performance Testing and SLO Validation              | Testing strategy, observability                     | Load tests (k6/Artillery), SLO dashboards                         | Section 7.2, 10.2         |
-| **REQ-FN-023** | Authentication and Authorization Framework          | AuthModule, JWT strategy                            | `JwtAuthGuard`, `ScopesGuard`, JWT validation                     | ADR-005, Section 9.1, 9.2 |
-| **REQ-FN-024** | Input Validation and Rate Limiting                  | API Gateway Layer                                   | `ValidationPipe` (class-validator), `RateLimitGuard`              | Section 4.2, 9.3, 9.4     |
+| Requirement ID | Title                                               | Architecture Mapping                                | Components                                                        | ADR/Section           |
+| -------------- | --------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | --------------------- |
+| **REQ-FN-001** | Client-Facing Intermediary API                      | MetricsModule, MetricsController, API Gateway Layer | `MetricsController`, `AuthGuard`, `ValidationPipe`                | ADR-004, Section 4.2  |
+| **REQ-FN-002** | xAPI LRS Integration                                | DataAccessModule, LRSClient                         | `LRSClient`, HTTP client with xAPI query support                  | Section 4.2, 8.2      |
+| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | MetricsModule, MetricsRegistry                      | `MetricsRegistry`, `GET /metrics` endpoint                        | Section 4.2, 4.3      |
+| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ComputationModule, MetricProviders                  | `IMetricComputation`, `QuickMetricProvider`, `ComputationFactory` | ADR-002, Section 4.2  |
+| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | MetricsModule, MetricsService                       | `MetricsService.getResults()`, `GET /metrics/:id/results`         | Section 4.3           |
+| **REQ-FN-006** | Analytics Results Caching                           | DataAccessModule, CacheService                      | `CacheService` (Redis), cache-aside pattern                       | ADR-003, Section 8.1  |
+| **REQ-FN-007** | Cache Invalidation and Refresh                      | AdminModule, CacheController                        | `CacheController`, `POST /admin/cache/invalidate`                 | Section 4.2           |
+| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | NestJS Swagger integration                          | `@nestjs/swagger` decorators, auto-generated spec                 | ADR-004, Section 10.1 |
+| **REQ-FN-009** | Interactive API Documentation UI                    | Swagger UI integration                              | Swagger UI served at `/api/docs`                                  | ADR-004               |
+| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ComputationModule, IMetricComputation interface     | `IMetricComputation`, plugin-based registration                   | ADR-002, Section 11.1 |
+| **REQ-FN-011** | Metric Contribution Guide and Templates             | Documentation + code templates                      | Template files, contribution guide (future)                       | Section 11.2          |
+| **REQ-FN-012** | Container Image Build and Registry                  | Dockerfile, CI/CD pipeline                          | GitHub Actions workflow, Docker build                             | Section 5.2           |
+| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | Deployment manifests                                | `docker-compose.dev.yml`, `docker-compose.prod.yml`               | Section 5.1, 5.4      |
+| **REQ-FN-014** | Secrets and Configuration Management                | CoreModule, ConfigService                           | `ConfigService`, environment variables, Docker secrets            | Section 4.2, 5.3      |
+| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | GitHub Actions workflows                            | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`        | Section 7.2           |
+| **REQ-FN-016** | API Versioning and Deprecation Policy               | API design, versioning strategy                     | URL-based versioning (`/v1/metrics`), deprecation headers         | Section 11.3          |
+| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | Deployment architecture, shared Redis               | Multiple LAAC containers, shared Redis cache                      | Section 5.4, 6.2      |
+| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | This document and PlantUML diagrams                 | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`           | Section 1-17          |
+| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | Design patterns, module structure                   | Module boundaries, dependency injection, interfaces               | Section 12.1, 12.2    |
+| **REQ-FN-020** | Structured Logging with Correlation IDs             | CoreModule, LoggerService                           | `LoggerService` (Winston), correlation ID middleware              | ADR-006, Section 10.1 |
+
+| **REQ-FN-020** | Structured Logging with Correlation IDs | CoreModule (IMPLEMENTED) | `LoggerService` (Winston) — implemented at `src/core/logger/logger.service.ts`; `CorrelationIdMiddleware` — implemented at `src/core/middleware/correlation-id.middleware.ts` | ADR-006, Section 10.1 |
+| **REQ-FN-021** | Metrics Export and Monitoring Endpoints | AdminModule, MetricsExporter | `MetricsExporter`, `GET /metrics` (Prometheus format) | Section 10.2 |
+| **REQ-FN-022** | Performance Testing and SLO Validation | Testing strategy, observability | Load tests (k6/Artillery), SLO dashboards | Section 7.2, 10.2 |
+| **REQ-FN-023** | Authentication and Authorization Framework | AuthModule, JWT strategy | `JwtAuthGuard`, `ScopesGuard`, JWT validation | ADR-005, Section 9.1, 9.2 |
+| **REQ-FN-024** | Input Validation and Rate Limiting | API Gateway Layer | `ValidationPipe` (class-validator), `RateLimitGuard` | Section 4.2, 9.3, 9.4 |
 
 ---
 
