@@ -235,7 +235,7 @@ After creating the issue documentation, **DELEGATE TO GITHUB COPILOT CODING AGEN
    - If "Implementation MISSING": Implement both the requirement logic AND comprehensive test coverage following NestJS patterns
    ```
 
-2. **Assign to Copilot**: After creating the issue, use the `assign_copilot_to_issue` tool to delegate the implementation to the GitHub Copilot coding agent.
+2. **Assign to Copilot**: After creating the issue, **committing and pushing the issue docs**, use the `assign_copilot_to_issue` tool to delegate the implementation to the GitHub Copilot coding agent.
 
 **Your role ends here - the remote coding agent will handle the actual implementation.**
 
