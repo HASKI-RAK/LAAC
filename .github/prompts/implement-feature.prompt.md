@@ -95,13 +95,17 @@ You are an expert software architect and developer tasked with implementing syst
 
    **Document findings clearly**: "Implementation EXISTS" or "Implementation MISSING" with specific file references if found.
 
-### Phase 2: Issue Creation
+### Phase 2: GitHub Issue Creation
 
-Create a comprehensive github issue with this structure:
+**Create a GitHub issue** using the `github/create_issue` tool with:
+
+- **Title**: `Implement ${input:requirementId}: [Requirement Name]`
+- **Body**: Use the comprehensive template below
+- **Labels**: Add appropriate labels (e.g., `feature`, `requirement`, priority level)
+
+**Issue Body Template**:
 
 ```markdown
-# ${input:requirementId}: [Requirement Title]
-
 ## Status
 
 - **Created**: [Current Date]
@@ -158,10 +162,47 @@ Create a comprehensive github issue with this structure:
 - [ ] Requirement verified against acceptance criteria
 - [ ] Traceability matrix updated via implementation
 
-## Implementation Advisory
+## Implementation Scope
 
-[Space for implementation details, challenges, architectural decisions]
+[Summary of what will be implemented based on Phase 1 analysis]
+**Action Required**: [FULL_IMPLEMENTATION_AND_TESTS / TESTS_ONLY / ARCHITECTURE_INTEGRATION / REVIEW_ONLY]
+
+## Related Requirements
+
+[List of related requirements discovered that should be implemented together]
+
+## Architectural Context
+
+- **Module**: [Target NestJS module from traceability: MetricsModule, ComputationModule, etc.]
+- **Components**: [Controllers, Services, Providers to be created/modified]
+- **Interfaces**: [IMetricComputation, ICacheService, ILRSClient if applicable]
+- **ADR References**: [Relevant architectural decisions from Section 3]
+
+## Technical Approach
+
 ${input:advisory:Any special wishes how the implementation should be approached?}
+
+## Implementation Guidelines
+
+- Check architecture in docs/architecture/ARCHITECTURE.md (especially Section 4.2 for module structure)
+- Follow NestJS conventions: Controllers, Services, Providers, Guards, Middleware
+- Implement interfaces per Section 11.1: IMetricComputation, ICacheService, ILRSClient
+- Apply SOLID/CUPID principles (Section 12)
+- Use dependency injection for all services
+- Create DTOs with class-validator decorators (REQ-FN-024)
+- Apply OpenAPI/Swagger decorators (REQ-FN-008, 009)
+- Implement authentication guards (JwtAuthGuard, ScopesGuard) if needed (REQ-FN-023)
+- Use structured logging with correlation IDs (REQ-FN-020)
+- Add Prometheus metrics if applicable (REQ-FN-021)
+- Document environment variables in .env.example (REQ-FN-014)
+- Write unit tests in src/\*_/_.spec.ts with ${input:requirementId} traceability
+- Write E2E tests in test/\*_/_.e2e-spec.ts if API changes
+- Target 80% test coverage (REQ-NF-020)
+
+**CRITICAL**: Based on code verification results:
+
+- If "Implementation EXISTS": Focus on comprehensive test coverage with ${input:requirementId} traceability and architecture integration
+- If "Implementation MISSING": Implement both the requirement logic AND comprehensive test coverage following NestJS patterns
 
 ## Related Files
 
@@ -173,69 +214,11 @@ ${input:advisory:Any special wishes how the implementation should be approached?
 - [Other relevant files discovered]
 ```
 
-### Phase 3: Implementation Execution
+### Phase 3: Implementation Delegation
 
-After creating the issue documentation, **DELEGATE TO GITHUB COPILOT CODING AGENT**:
+**IMPORTANT**: Do NOT implement the requirement yourself. After creating the GitHub issue, assign it to the Copilot coding agent for remote implementation.
 
-**IMPORTANT**: Do NOT implement the requirement yourself. Instead, create a GitHub issue and assign it to the Copilot coding agent for remote implementation.
-
-**Implementation Delegation Process**:
-
-1. **Create GitHub Issue**: Use the `github/create_issue` tool to create an issue with:
-   - **Title**: `Implement ${input:requirementId}: [Requirement Name]`
-   - **Body**:
-
-   ```
-   Implements system requirement ${input:requirementId} as specified in docs/srs/${input:requirementId}.md.
-
-   ## Implementation Scope
-   [Summary of what will be implemented based on Phase 1 & 2 analysis]
-   **Action Required**: [FULL_IMPLEMENTATION_AND_TESTS / TESTS_ONLY / ARCHITECTURE_INTEGRATION / REVIEW_ONLY]
-
-   ## Related Requirements
-   [List of related requirements discovered that should be implemented together]
-
-   ## Architectural Context
-   - **Module**: [Target NestJS module from traceability: MetricsModule, ComputationModule, etc.]
-   - **Components**: [Controllers, Services, Providers to be created/modified]
-   - **Interfaces**: [IMetricComputation, ICacheService, ILRSClient if applicable]
-   - **ADR References**: [Relevant architectural decisions from Section 3]
-
-   ## Technical Approach
-   [Advisory notes from Phase 2]
-
-   ## Traceability Requirements
-   - Issue Documentation: docs/issues/${input:requirementId}.md
-   - SRS Reference: docs/srs/${input:requirementId}.md
-   - Architecture Mapping: [Components from traceability.md]
-   - Test Requirements: All tests must reference ${input:requirementId} in describe blocks
-   - Follow project architecture: NestJS modular monolith + TypeScript + Redis + Docker
-
-   ## Acceptance Criteria
-   [Copy key acceptance criteria from the created issue documentation]
-
-   ## Implementation Guidelines
-   - Check architecture in docs/architecture/ARCHITECTURE.md (especially Section 4.2 for module structure)
-   - Follow NestJS conventions: Controllers, Services, Providers, Guards, Middleware
-   - Implement interfaces per Section 11.1: IMetricComputation, ICacheService, ILRSClient
-   - Apply SOLID/CUPID principles (Section 12)
-   - Use dependency injection for all services
-   - Create DTOs with class-validator decorators (REQ-FN-024)
-   - Apply OpenAPI/Swagger decorators (REQ-FN-008, 009)
-   - Implement authentication guards (JwtAuthGuard, ScopesGuard) if needed (REQ-FN-023)
-   - Use structured logging with correlation IDs (REQ-FN-020)
-   - Add Prometheus metrics if applicable (REQ-FN-021)
-   - Document environment variables in .env.example (REQ-FN-014)
-   - Write unit tests in src/**/*.spec.ts with ${input:requirementId} traceability
-   - Write E2E tests in test/**/*.e2e-spec.ts if API changes
-   - Target 80% test coverage (REQ-NF-020)
-
-   **CRITICAL**: Based on code verification results:
-   - If "Implementation EXISTS": Focus on comprehensive test coverage with ${input:requirementId} traceability and architecture integration
-   - If "Implementation MISSING": Implement both the requirement logic AND comprehensive test coverage following NestJS patterns
-   ```
-
-2. **Assign to Copilot**: After creating the issue, **committing and pushing the issue docs**, use the `assign_copilot_to_issue` tool to delegate the implementation to the GitHub Copilot coding agent.
+1. **Assign to Copilot**: Use the `mcp_github_assign_copilot_to_issue` tool to delegate the implementation to the GitHub Copilot coding agent with the issue number from the created issue.
 
 **Your role ends here - the remote coding agent will handle the actual implementation.**
 
@@ -244,11 +227,10 @@ After creating the issue documentation, **DELEGATE TO GITHUB COPILOT CODING AGEN
 **Note**: This phase occurs after the remote GitHub Copilot coding agent completes the implementation and creates a pull request. The user will prompt you to proceed with these steps.
 
 1. **Post-Implementation Tasks** (to be done after PR is created):
-   - Update the status in `docs/issues/${input:requirementId}.md` to reflect completion using the mcp tool `github/update_issue` as well as Definition of Done, Testing Requirements and Acceptance Criteria by checking the relevant boxes
-   - Take a screenshot of the implemented requirement for documentation by adding a comment to the issue using `add_issue_comment`
-   - Add implementation notes about any deviations from the plan
+   - Update the GitHub issue status using `mcp_github_update_issue` to mark completed checkboxes in Definition of Done, Testing Requirements and Acceptance Criteria
+   - Add implementation notes about any deviations from the plan using `mcp_github_add_issue_comment`
    - Document any new dependencies or side effects discovered
-   - Update the "Related Files" section with actual files modified
+   - Update the issue with actual files modified
 
 2. **Review PR** – Verify implementation against:
    - Does the code implement ${input:requirementId} as specified in docs/srs/${input:requirementId}.md?
@@ -313,23 +295,22 @@ The requirement delegation is successful when:
 
 1. ✅ All SRS requirements for ${input:requirementId} are analyzed and documented
 2. ✅ Related requirements are identified and coordinated
-3. ✅ Issue documentation is complete and accurate at `docs/issues/${input:requirementId}.md`
-4. ✅ GitHub issue is created with comprehensive implementation requirements
-5. ✅ GitHub Copilot coding agent is assigned to the issue for remote implementation
-6. ✅ Full traceability requirements are specified for the remote implementation
-7. ✅ Implementation guidelines and project standards are clearly communicated
-8. ✅ Acceptance criteria are properly transferred to the GitHub issue
+3. ✅ GitHub issue is created with comprehensive implementation requirements using `mcp_github_create_issue`
+4. ✅ GitHub Copilot coding agent is assigned to the issue using `mcp_github_assign_copilot_to_issue`
+5. ✅ Full traceability requirements are specified in the GitHub issue
+6. ✅ Implementation guidelines and project standards are clearly communicated in the issue
+7. ✅ Acceptance criteria are properly included in the GitHub issue body
 
-**Post-Implementation** (after remote agent completes work): 9. ✅ All tests pass with ${input:requirementId} traceability 10. ✅ Test coverage meets 80% target (REQ-NF-020) 11. ✅ Documentation is updated and consistent 12. ✅ Traceability matrix remains accurate (docs/architecture/traceability.md)
+**Post-Implementation** (after remote agent completes work): 8. ✅ All tests pass with ${input:requirementId} traceability 9. ✅ Test coverage meets 80% target (REQ-NF-020) 10. ✅ GitHub issue is updated with implementation results using `mcp_github_update_issue` and `mcp_github_add_issue_comment` 11. ✅ Traceability matrix remains accurate (docs/architecture/traceability.md)
 
 ---
 
 **EXECUTION PLAN**:
 
 1. Complete Phase 1: Requirements Analysis & Traceability Check
-2. Complete Phase 2: Issue Documentation Creation
-3. Complete Phase 3: Create GitHub issue and assign to Copilot coding agent
+2. Complete Phase 2: Create comprehensive GitHub issue using `mcp_github_create_issue`
+3. Complete Phase 3: Assign GitHub Copilot coding agent to the issue using `mcp_github_assign_copilot_to_issue`
 4. **STOP** - Remote agent will handle implementation
-5. Phase 4 activities will be completed after the remote implementation is done
+5. Phase 4 activities will be completed after the remote implementation is done (update issue with results)
 
 **Start the analysis and delegation process now with requirement ID: ${input:requirementId}**

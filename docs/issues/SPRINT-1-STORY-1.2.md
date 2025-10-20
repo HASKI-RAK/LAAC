@@ -1,6 +1,7 @@
 # Sprint 1 - Story 1.2: Environment Configuration Setup
 
 ## Status
+
 - **Created**: 2025-10-20
 - **Status**: ✅ Completed
 - **Completed**: 2025-10-20
@@ -21,7 +22,7 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 
 - **Architecture Document**: `docs/architecture/ARCHITECTURE.md` Section 4.2 (CoreModule), Section 5.3 (Configuration Management)
 - **Module**: CoreModule (`src/core/`)
-- **Components**: 
+- **Components**:
   - ConfigModule integration with Joi validation
   - Type-safe configuration interfaces
   - Configuration factory function
@@ -30,9 +31,11 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 ## Related Requirements
 
 **Primary**:
+
 - **REQ-FN-014** — Secrets and Configuration Management
 
 **Supports**:
+
 - **REQ-FN-020** — Structured Logging (LOG_LEVEL configuration)
 - **REQ-FN-023** — Authentication (JWT_SECRET, JWT_EXPIRATION)
 - **REQ-FN-002** — xAPI LRS Integration (LRS_URL, LRS_API_KEY, LRS_TIMEOUT)
@@ -43,11 +46,13 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 ## Current State Assessment
 
 **Existing Implementation** (from Story 1.1):
+
 - ✅ CoreModule directory structure created
 - ✅ TypeScript strict mode enabled
 - ✅ `.gitignore` configured with .env exclusions
 
 **Missing Components**:
+
 - ❌ @nestjs/config and joi dependencies
 - ❌ Configuration validation schema
 - ❌ Type-safe configuration interfaces
@@ -58,6 +63,7 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 ## Acceptance Criteria
 
 ## Acceptance Criteria
+
 - [x] `@nestjs/config` (v4.0.2) and `joi` (v18.0.1) packages installed
 - [x] `.env.example` file documents all 13 required variables with comprehensive descriptions
 - [x] `.env` files verified in `.gitignore` (already done)
@@ -75,24 +81,20 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
   - Install @nestjs/config: `yarn add @nestjs/config`
   - Install joi: `yarn add joi`
   - Verify package.json updated
-  
 - [x] **Task 1.2.2**: Create configuration interfaces
   - Create `src/core/config/config.interface.ts`
   - Define interfaces for: AppConfig, JwtConfig, RedisConfig, LrsConfig, LogConfig
   - Define aggregate Configuration interface
   - Add requirement traceability comments
-  
 - [x] **Task 1.2.3**: Create Joi validation schema
   - Create `src/core/config/config.schema.ts`
   - Define validation rules for all environment variables
   - Set sensible defaults for development
   - Require explicit values in production
   - Create configuration factory function
-  
 - [x] **Task 1.2.4**: Create barrel export
   - Create `src/core/config/index.ts`
   - Export all interfaces and schema
-  
 - [x] **Task 1.2.5**: Integrate ConfigModule into CoreModule
   - Update `src/core/core.module.ts`
   - Configure ConfigModule with:
@@ -102,18 +104,15 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
     - Configuration factory
     - `validationOptions: { abortEarly: false }` to show all errors
   - Export ConfigModule from CoreModule
-  
 - [x] **Task 1.2.6**: Update core barrel export
   - Update `src/core/index.ts`
   - Export config module interfaces
-  
 - [x] **Task 1.2.7**: Create .env.example
   - Document all environment variables
   - Include descriptions and examples
   - Add security warnings for sensitive values
   - Reference requirement IDs in comments
   - Provide generation commands for secrets
-  
 - [x] **Task 1.2.8**: Write comprehensive unit tests
   - Create `src/core/config/config.schema.spec.ts`
   - Test valid configurations
@@ -123,7 +122,6 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
   - Test multiple validation errors
   - Test configuration factory
   - Achieve >80% coverage (achieved 100%)
-  
 - [x] **Task 1.2.9**: Verify and validate
   - Run `yarn test` - verify all tests pass
   - Run `yarn test:cov` - verify >80% coverage
@@ -184,6 +182,7 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 ## Files Created/Modified
 
 **New Files**:
+
 - `src/core/config/config.interface.ts` — Type-safe configuration interfaces (REQ-FN-014)
 - `src/core/config/config.schema.ts` — Joi validation schema and configuration factory
 - `src/core/config/config.schema.spec.ts` — Comprehensive unit tests (22 tests, 100% coverage)
@@ -192,6 +191,7 @@ Implement secure configuration management using NestJS ConfigModule with Joi val
 - `docs/issues/SPRINT-1-STORY-1.2.md` — This documentation
 
 **Modified Files**:
+
 - `src/core/core.module.ts` — Integrated ConfigModule with Joi validation
 - `src/core/index.ts` — Export config interfaces
 - `package.json` — Added @nestjs/config and joi dependencies
@@ -223,26 +223,31 @@ Test Categories:
 ## Environment Variables Configured
 
 ### Application Configuration
+
 - `NODE_ENV` — Application environment (development, production, test)
 - `PORT` — Application port (default: 3000)
 - `API_PREFIX` — API route prefix (default: api/v1)
 
 ### JWT Authentication (REQ-FN-023)
+
 - `JWT_SECRET` — JWT signing secret (required, min 32 characters)
 - `JWT_EXPIRATION` — JWT expiration time (default: 1h)
 
 ### Redis Cache (REQ-FN-006)
+
 - `REDIS_HOST` — Redis server hostname (default: localhost)
 - `REDIS_PORT` — Redis server port (default: 6379)
 - `REDIS_PASSWORD` — Redis authentication password (optional)
 - `REDIS_TTL` — Default cache TTL in seconds (default: 3600)
 
 ### LRS Connection (REQ-FN-002)
+
 - `LRS_URL` — Learning Record Store xAPI endpoint URL (required)
 - `LRS_API_KEY` — LRS API authentication key (required)
 - `LRS_TIMEOUT` — LRS request timeout in milliseconds (default: 10000)
 
 ### Logging (REQ-FN-020)
+
 - `LOG_LEVEL` — Application log level (default: log)
 
 ## Security Considerations
@@ -283,7 +288,9 @@ export class MyService {
   getJwtConfig() {
     // Type-safe access to configuration
     const jwtSecret = this.configService.get('jwt.secret', { infer: true });
-    const jwtExpiration = this.configService.get('jwt.expirationTime', { infer: true });
+    const jwtExpiration = this.configService.get('jwt.expirationTime', {
+      infer: true,
+    });
     return { jwtSecret, jwtExpiration };
   }
 }
@@ -305,12 +312,12 @@ yarn start:dev
 
 ## Risks & Mitigation
 
-| Risk | Impact | Mitigation | Status |
-|------|--------|------------|--------|
-| Missing required environment variables | High | Joi validation fails fast at startup with clear errors | ✅ Implemented |
-| Secrets committed to repository | Critical | .gitignore configured, pre-commit hooks active | ✅ Mitigated |
-| Invalid configuration values | Medium | Comprehensive Joi validation rules | ✅ Implemented |
-| Configuration not accessible globally | Medium | ConfigModule set as global | ✅ Implemented |
+| Risk                                   | Impact   | Mitigation                                             | Status         |
+| -------------------------------------- | -------- | ------------------------------------------------------ | -------------- |
+| Missing required environment variables | High     | Joi validation fails fast at startup with clear errors | ✅ Implemented |
+| Secrets committed to repository        | Critical | .gitignore configured, pre-commit hooks active         | ✅ Mitigated   |
+| Invalid configuration values           | Medium   | Comprehensive Joi validation rules                     | ✅ Implemented |
+| Configuration not accessible globally  | Medium   | ConfigModule set as global                             | ✅ Implemented |
 
 ## Architecture Compliance
 
@@ -324,10 +331,11 @@ yarn start:dev
 ## Next Steps
 
 This foundational work unblocks:
+
 - **Story 1.3**: Structured Logging with Correlation IDs (uses LOG_LEVEL)
 - **Story 2.1**: JWT Authentication (uses JWT_SECRET, JWT_EXPIRATION)
-- **Story 3.1**: Redis Cache Service (uses REDIS_* configuration)
-- **Story 3.2**: LRS Client Implementation (uses LRS_* configuration)
+- **Story 3.1**: Redis Cache Service (uses REDIS\_\* configuration)
+- **Story 3.2**: LRS Client Implementation (uses LRS\_\* configuration)
 
 ## Notes
 
