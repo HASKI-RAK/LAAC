@@ -1,17 +1,21 @@
 # Software Architecture Document
+
 **Learning Analytics Aggregation & Caching (LAAC) System**
 
-*Based on IEEE 42010:2011 Architecture Description Standard*
+_Based on IEEE 42010:2011 Architecture Description Standard_
 
 ---
 
 ## 1. Introduction
 
 ### 1.1 Purpose
+
 This document describes the software architecture of the LAAC system, which acts as an intermediary between a Learning Record Store (LRS) and Adaptive Learning Systems (ALS). The architecture is designed to support the functional and non-functional requirements specified in `docs/SRS.md`.
 
 ### 1.2 Scope
+
 This architecture covers:
+
 - Logical view (components, modules, interfaces)
 - Physical view (deployment topology, infrastructure)
 - Process view (runtime behavior, concurrency)
@@ -19,12 +23,14 @@ This architecture covers:
 - Data view (data flows, caching strategy)
 
 ### 1.3 Stakeholders
+
 - **Developers**: Need clear module boundaries, extension points, and SOLID/CUPID principles
 - **Operators**: Need deployment patterns, observability, and operational runbooks
 - **Research Team**: Need extension architecture for bachelor thesis integration
 - **Security/Compliance**: Need security controls and data protection patterns
 
 ### 1.4 References
+
 - [SRS](../SRS.md) — Software Requirements Specification
 - [StRS](../StRS.md) — Stakeholder Requirements
 - [Metrics Specification](../Metrics-Specification.md) — Formal metric definitions
@@ -35,6 +41,7 @@ This architecture covers:
 ## 2. Architectural Drivers
 
 ### 2.1 Key Requirements (Architecturally Significant)
+
 - **REQ-FN-001, 002**: Client API + xAPI LRS integration
 - **REQ-FN-003, 004, 005**: Metrics catalog, computation, and retrieval
 - **REQ-FN-006, 007**: Caching with invalidation
@@ -45,16 +52,18 @@ This architecture covers:
 - **REQ-NF-019, 020**: Security baseline and testing
 
 ### 2.2 Quality Attributes
-| Attribute | Priority | Requirement Traces |
-|-----------|----------|-------------------|
-| **Extensibility** | High | REQ-FN-010, REQ-NF-009 |
-| **Performance** | High | REQ-NF-005, 017, 018 |
-| **Security** | High | REQ-FN-023, 024, REQ-NF-019, 020 |
-| **Observability** | Medium | REQ-FN-020, 021, REQ-NF-016 |
-| **Maintainability** | Medium | REQ-FN-018, 019, REQ-NF-014, 015 |
-| **Testability** | Medium | REQ-NF-010, 020 |
+
+| Attribute           | Priority | Requirement Traces               |
+| ------------------- | -------- | -------------------------------- |
+| **Extensibility**   | High     | REQ-FN-010, REQ-NF-009           |
+| **Performance**     | High     | REQ-NF-005, 017, 018             |
+| **Security**        | High     | REQ-FN-023, 024, REQ-NF-019, 020 |
+| **Observability**   | Medium   | REQ-FN-020, 021, REQ-NF-016      |
+| **Maintainability** | Medium   | REQ-FN-018, 019, REQ-NF-014, 015 |
+| **Testability**     | Medium   | REQ-NF-010, 020                  |
 
 ### 2.3 Constraints
+
 - **Technology Stack**: NestJS (TypeScript), Docker, Traefik reverse proxy
 - **Data Source**: Yetanalytics LRS (xAPI standard)
 - **Deployment**: Docker Compose with Portainer, GitHub Actions CI/CD
@@ -65,68 +74,93 @@ This architecture covers:
 ## 3. Architectural Decisions (ADRs)
 
 ### ADR-001: NestJS Modular Monolith
+
 **Status**: Accepted  
 **Context**: Need extensibility, testability, and rapid development  
 **Decision**: Use NestJS modular monolith with clear module boundaries  
 **Consequences**:
+
 - ✅ Strong module encapsulation via dependency injection
 - ✅ Easy to test with mocking/DI
 - ✅ Can extract modules to microservices later if needed
 - ⚠️ Requires discipline to maintain module boundaries
 
 ### ADR-002: Plugin-Based Metric Architecture
+
 **Status**: Accepted  
 **Context**: REQ-FN-010 requires bachelor thesis integration as swappable component  
 **Decision**: Metrics implement `IMetricComputation` interface, registered via NestJS providers  
 **Consequences**:
+
 - ✅ Metrics are isolated, testable units
 - ✅ Easy to swap implementations (quick vs. thesis algorithms)
 - ✅ Clear extension point for new metrics
 - ⚠️ Requires versioning strategy for metric definitions
 
 ### ADR-003: Cache-Aside Pattern with Redis
+
 **Status**: Accepted  
 **Context**: REQ-FN-006, REQ-NF-005 require caching for performance  
 **Decision**: Implement cache-aside pattern with Redis, TTL-based expiration, explicit invalidation  
 **Consequences**:
+
 - ✅ Reduces LRS load and improves latency
 - ✅ Cache misses fall back to computation
 - ⚠️ Requires cache key design for multi-instance support
 - ⚠️ Stale data risk mitigated by TTL + explicit invalidation API
 
 ### ADR-004: API-First with OpenAPI/Swagger
+
 **Status**: Accepted  
 **Context**: REQ-FN-008, 009 require OpenAPI docs and interactive UI  
 **Decision**: Use NestJS Swagger decorators for code-first API spec generation  
 **Consequences**:
+
 - ✅ API spec always in sync with implementation
 - ✅ Interactive testing via Swagger UI
 - ✅ Client SDK generation possible
 
 ### ADR-005: JWT-Based Authentication with Scope/Role Authorization
+
 **Status**: Accepted  
 **Context**: REQ-FN-023 requires industry-standard auth  
 **Decision**: JWT Bearer tokens with scope claims, NestJS Guards for authz  
 **Consequences**:
+
 - ✅ Stateless authentication
 - ✅ Fine-grained access control via scopes
 - ⚠️ Requires external identity provider or JWT issuer
 - ⚠️ Token refresh strategy needed for long-lived sessions
 
 ### ADR-006: Structured Logging with Correlation IDs
+
 **Status**: Accepted  
 **Context**: REQ-FN-020, REQ-NF-016 require observability  
 **Decision**: Winston logger with correlation IDs, JSON format  
 **Consequences**:
+
 - ✅ Traceable request flows across components
 - ✅ Queryable structured logs
 - ✅ Integrates with log aggregation tools (ELK, Loki)
+
+### ADR-007: Circuit Breaker for LRS Client
+
+**Status**: Proposed (Future Enhancement)  
+**Context**: REQ-NF-018 requires graceful degradation when LRS is slow/unavailable  
+**Decision**: Implement circuit breaker pattern using library (e.g., Cockatiel, opossum) to prevent cascading failures  
+**Consequences**:
+
+- ✅ System remains responsive when LRS degrades
+- ✅ Automatic failure detection and recovery
+- ⚠️ Requires monitoring and tuning of thresholds (error rate, timeout)
+- ⚠️ Adds complexity to LRS client logic
 
 ---
 
 ## 4. Logical View (Component Architecture)
 
 ### 4.1 High-Level Components
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Client Applications (ALS)                 │
@@ -168,30 +202,38 @@ This architecture covers:
 ### 4.2 Module Breakdown (NestJS Modules)
 
 #### **CoreModule** (Shared Infrastructure)
+
 - `LoggerService`: Winston-based structured logging with correlation IDs
 - `ConfigService`: Environment-based configuration (dotenv)
 - `HealthController`: Liveness/readiness probes
+- `CorrelationIdMiddleware`: Injects/propagates `X-Correlation-ID` header for request tracing
 
 #### **AuthModule** (Security)
+
 - `JwtAuthGuard`: Validates JWT tokens (REQ-FN-023)
 - `ScopesGuard`: Enforces role/scope-based authorization
 - `RateLimitGuard`: Throttles requests per client (REQ-FN-024)
 - `ValidationPipe`: DTO validation with class-validator
 
 #### **MetricsModule** (Core Business Logic)
+
 - `MetricsController`: API endpoints for catalog and results
-  - `GET /metrics` — List all metrics
-  - `GET /metrics/:id` — Get metric details
-  - `GET /metrics/:id/results` — Compute/retrieve results
+  - `GET /api/v1/metrics` — List all metrics (catalog)
+  - `GET /api/v1/metrics/:id` — Get metric details
+  - `GET /api/v1/metrics/:id/results` — Compute/retrieve results
 - `MetricsService`: Orchestrates computation and caching
 - `MetricsRegistry`: Catalog of available metrics (REQ-FN-003)
 
 #### **ComputationModule** (Extensible Computation Layer)
+
 - `IMetricComputation` (Interface): Defines metric computation contract
   ```typescript
   interface IMetricComputation {
     id: string;
-    compute(params: MetricParams, lrsData: xAPIStatement[]): Promise<MetricResult>;
+    compute(
+      params: MetricParams,
+      lrsData: xAPIStatement[],
+    ): Promise<MetricResult>;
   }
   ```
 - `QuickMetricProvider`: Phase 1 implementations (all CSV metrics)
@@ -199,39 +241,46 @@ This architecture covers:
 - `ComputationFactory`: Routes metric ID to appropriate provider
 
 #### **DataAccessModule** (External Systems)
-- `CacheService`: Redis client with cache-aside pattern
-  - `get(key)`, `set(key, value, ttl)`, `invalidate(key)`
-- `LRSClient`: HTTP client for xAPI LRS (Yetanalytics)
-  - `getStatements(query)` — Fetches xAPI statements with filters
+
+- `CacheService`: Implements `ICacheService` interface, Redis client with cache-aside pattern
+  - Methods: `get(key)`, `set(key, value, ttl)`, `invalidate(key)`, `invalidatePattern(pattern)`
+- `LRSClient`: Implements `ILRSClient` interface, HTTP client for xAPI LRS (Yetanalytics)
+  - Method: `getStatements(query)` — Fetches xAPI statements with filters
+  - Includes timeout configuration, retry logic with exponential backoff, circuit breaker (future)
 
 #### **AdminModule** (Operational APIs)
+
 - `CacheController`: Cache management endpoints (admin scope required)
-  - `POST /admin/cache/invalidate` — Invalidate cache keys
-- `MetricsExporter`: Prometheus metrics endpoint (`GET /metrics/prometheus`)
+  - `POST /admin/cache/invalidate` — Invalidate specific cache keys or patterns
+- `MetricsExporter`: Prometheus metrics endpoint
+  - `GET /metrics` (at root level, separate from API metrics catalog)
 
 ### 4.3 Data Flow (Typical Request)
-1. **Client** sends `GET /metrics/course-completion/results?courseId=123&start=2025-01-01`
-2. **AuthGuard** validates JWT token, extracts scopes
-3. **ScopesGuard** checks for `analytics:read` scope
-4. **RateLimitGuard** checks request rate
-5. **ValidationPipe** validates query parameters
-6. **MetricsController** delegates to `MetricsService.getResults()`
-7. **MetricsService** checks **CacheService** for cached result
+
+1. **Client** sends `GET /api/v1/metrics/course-completion/results?courseId=123&start=2025-01-01`
+2. **CorrelationIdMiddleware** injects `X-Correlation-ID` if not present
+3. **AuthGuard** validates JWT token, extracts scopes
+4. **ScopesGuard** checks for `analytics:read` scope
+5. **RateLimitGuard** checks request rate
+6. **ValidationPipe** validates query parameters
+7. **MetricsController** delegates to `MetricsService.getResults()`
+8. **MetricsService** checks **CacheService** for cached result
    - **Cache hit**: Return cached result (sub-100ms)
    - **Cache miss**: Proceed to computation
-8. **ComputationFactory** resolves metric provider (Quick or Thesis)
-9. **MetricProvider** calls **LRSClient** to fetch xAPI statements
-10. **LRSClient** queries Yetanalytics LRS via HTTP
-11. **MetricProvider** computes result from xAPI data
-12. **CacheService** stores result with TTL
-13. **MetricsService** returns result to controller
-14. **Response** sent to client with correlation ID in headers
+9. **ComputationFactory** resolves metric provider (Quick or Thesis)
+10. **MetricProvider** calls **LRSClient** to fetch xAPI statements
+11. **LRSClient** queries Yetanalytics LRS via HTTP (with timeout and retry)
+12. **MetricProvider** computes result from xAPI data
+13. **CacheService** stores result with TTL
+14. **MetricsService** returns result to controller
+15. **Response** sent to client with correlation ID in headers
 
 ---
 
 ## 5. Physical View (Deployment Architecture)
 
 ### 5.1 Deployment Topology (Production)
+
 ```
                     ┌──────────────────┐
                     │   Internet       │
@@ -263,17 +312,20 @@ This architecture covers:
 ```
 
 ### 5.2 Container Strategy
+
 - **laac-service**: NestJS application (Node 22 LTS, Alpine)
 - **redis**: Redis 7 (official image, persistence enabled)
 - **traefik**: Traefik 3 (reverse proxy, TLS, routing)
 - **portainer**: Portainer CE (container management UI)
 
 ### 5.3 Network Configuration
+
 - **Public Network**: Traefik exposed (ports 80, 443)
 - **Internal Network**: Services communicate via Docker network (bridge)
 - **Secrets**: Environment variables via Docker secrets or `.env` (not committed)
 
 ### 5.4 Scalability Strategy
+
 - **Horizontal scaling**: Multiple LAAC instances behind Traefik (REQ-FN-017)
 - **Cache sharing**: All instances share Redis (multi-instance support)
 - **Session affinity**: Not required (stateless JWT auth)
@@ -283,17 +335,21 @@ This architecture covers:
 ## 6. Process View (Runtime Behavior)
 
 ### 6.1 Concurrency Model
+
 - **Request Handling**: NestJS async/await (Node.js event loop)
-- **LRS Queries**: Concurrent HTTP requests with connection pooling
-- **Cache Operations**: Non-blocking Redis I/O
-- **Metric Computation**: CPU-bound work may use worker threads (future optimization)
+- **LRS Queries**: Concurrent HTTP requests with connection pooling (HTTP keep-alive, configurable max concurrent requests: default 50)
+- **Cache Operations**: Non-blocking Redis I/O via `ioredis` library with connection pooling
+- **Metric Computation**: CPU-bound work runs on main thread initially; Node.js `worker_threads` module for heavy computations (future optimization if needed)
+- **Timeout Handling**: All LRS queries have configurable timeouts (default: 5s for simple queries, 10s for large result sets)
 
 ### 6.2 State Management
+
 - **Application State**: Stateless (no in-memory user sessions)
 - **Cache State**: Shared in Redis (distributed across instances)
 - **Configuration State**: Immutable after startup (env vars)
 
 ### 6.3 Error Handling
+
 - **HTTP Errors**: Mapped to standard HTTP status codes (400, 401, 403, 500)
 - **LRS Unavailable**: Return 503 with retry-after header
 - **Cache Unavailable**: Fall through to computation (degraded mode)
@@ -304,6 +360,7 @@ This architecture covers:
 ## 7. Development View (Code Organization)
 
 ### 7.1 Directory Structure
+
 ```
 src/
 ├── main.ts                      # Application bootstrap
@@ -335,6 +392,7 @@ src/
 ```
 
 ### 7.2 Build & Test Strategy
+
 - **Build**: `nest build` (TypeScript → JavaScript)
 - **Unit Tests**: Jest with DI mocking (per module)
 - **E2E Tests**: Supertest against running app (test DB/cache)
@@ -346,16 +404,19 @@ src/
 ## 8. Data View
 
 ### 8.1 Cache Key Design
+
 ```
 cache:{metricId}:{scope}:{filters}:{version}
 Example: cache:course-completion:course:123:v1
 ```
+
 - **metricId**: Unique metric identifier
 - **scope**: course | topic | element
 - **filters**: Hashed query params (courseId, start, end)
 - **version**: API/metric version for cache invalidation
 
 ### 8.2 xAPI Data Flow
+
 - **Source**: Yetanalytics LRS (REQ-FN-002)
 - **Query**: HTTP GET with filters (actor, verb, object, timestamp)
 - **Format**: xAPI statements (JSON)
@@ -363,6 +424,7 @@ Example: cache:course-completion:course:123:v1
 - **Output**: MetricResult (value, unit, metadata)
 
 ### 8.3 Data Retention
+
 - **Cache TTL**: Configurable per metric (default: 1 hour)
 - **Logs**: 90 days retention (REQ-NF-019)
 - **Audit Logs**: Security events retained per compliance policy
@@ -372,24 +434,28 @@ Example: cache:course-completion:course:123:v1
 ## 9. Security Architecture
 
 ### 9.1 Authentication Flow
+
 1. Client obtains JWT from identity provider (e.g., Keycloak, Auth0)
 2. Client includes JWT in `Authorization: Bearer <token>` header
 3. JwtAuthGuard validates signature, expiration, issuer
 4. User/scope claims extracted for authorization
 
 ### 9.2 Authorization Model
-| Scope | Permissions |
-|-------|-------------|
+
+| Scope            | Permissions                        |
+| ---------------- | ---------------------------------- |
 | `analytics:read` | Access metrics catalog and results |
-| `admin:cache` | Invalidate cache keys |
-| `admin:config` | Modify instance configuration |
+| `admin:cache`    | Invalidate cache keys              |
+| `admin:config`   | Modify instance configuration      |
 
 ### 9.3 Input Validation
+
 - **DTO Validation**: class-validator decorators (REQ-FN-024)
 - **Query Params**: Whitelist allowed params, reject unknown
 - **Body Payloads**: JSON schema validation
 
 ### 9.4 Rate Limiting
+
 - **Strategy**: Token bucket per client IP or API key
 - **Limits**: Configurable (default: 100 req/min)
 - **Response**: 429 Too Many Requests with retry-after
@@ -399,13 +465,17 @@ Example: cache:course-completion:course:123:v1
 ## 10. Observability Architecture
 
 ### 10.1 Logging (REQ-FN-020)
+
 - **Format**: JSON structured logs
 - **Correlation ID**: Per-request UUID in `X-Correlation-ID` header
 - **Levels**: error, warn, info, debug
 - **Content**: No PII, no secrets, sanitized errors
 
 ### 10.2 Metrics (REQ-FN-021)
-- **Exporter**: Prometheus-format endpoint (`/metrics`)
+
+- **Exporter**: Prometheus-format endpoint at `GET /metrics` (root level, separate from `/api/v1/metrics` catalog)
+- **Library**: `@willsoto/nestjs-prometheus` or `prom-client`
+- **Public Access**: `/metrics` endpoint is public (no authentication) to allow Prometheus scraping
 - **Key Metrics**:
   - `http_request_duration_seconds` (histogram, p50/p95/p99)
   - `cache_hit_ratio` (gauge)
@@ -415,6 +485,7 @@ Example: cache:course-completion:course:123:v1
   - `rate_limit_rejections_total` (counter)
 
 ### 10.3 Health Checks
+
 - `GET /health/liveness` → 200 if app is running
 - `GET /health/readiness` → 200 if app + Redis + LRS are reachable
 
@@ -423,16 +494,36 @@ Example: cache:course-completion:course:123:v1
 ## 11. Extension Points (Bachelor Thesis Integration)
 
 ### 11.1 Metric Provider Interface
+
 ```typescript
+/**
+ * Core interface for metric computation providers.
+ * Implement this interface to add new metrics (Quick or Thesis implementations).
+ */
 export interface IMetricComputation {
+  /** Unique metric identifier (e.g., 'course-completion', 'time-spent') */
   id: string;
+  /** Dashboard level scope */
   dashboardLevel: 'course' | 'topic' | 'element';
+  /** Human-readable metric description */
   description: string;
-  
+  /** Optional version for metric definition evolution */
+  version?: string;
+
+  /**
+   * Compute the metric value from xAPI statements.
+   * Must be deterministic: same inputs produce same outputs (REQ-NF-004).
+   */
   compute(
     params: MetricParams,
     lrsData: xAPIStatement[],
   ): Promise<MetricResult>;
+
+  /**
+   * Optional: Validate parameters before computation.
+   * Throws ValidationError if params are invalid.
+   */
+  validateParams?(params: MetricParams): void;
 }
 
 export interface MetricParams {
@@ -451,15 +542,34 @@ export interface MetricResult {
   timestamp: Date;
   metadata?: Record<string, any>;
 }
+
+/**
+ * Cache service interface for dependency inversion.
+ */
+export interface ICacheService {
+  get(key: string): Promise<any>;
+  set(key: string, value: any, ttl?: number): Promise<void>;
+  invalidate(key: string): Promise<void>;
+  invalidatePattern(pattern: string): Promise<void>;
+}
+
+/**
+ * LRS client interface for dependency inversion.
+ */
+export interface ILRSClient {
+  getStatements(query: xAPIQuery): Promise<xAPIStatement[]>;
+}
 ```
 
 ### 11.2 Swapping Implementations
+
 1. Implement new class extending `IMetricComputation`
 2. Register in `ThesisMetricProvider` module
 3. Configure factory to route metric ID to new provider
 4. No changes needed to API or client code
 
 ### 11.3 Versioning Strategy (REQ-FN-016)
+
 - Metric definitions versioned with API version (v1, v2)
 - Breaking changes require new version
 - Old versions deprecated with sunset timeline
@@ -469,13 +579,20 @@ export interface MetricResult {
 ## 12. Design Principles (REQ-FN-019)
 
 ### 12.1 SOLID Principles
+
 - **S (Single Responsibility)**: Each module/service has one reason to change
+  - Example: `MetricsService` orchestrates workflows, `ComputationFactory` routes to providers, providers compute results
 - **O (Open/Closed)**: Metrics extensible via interface, no core changes needed
+  - Example: Add new metric by implementing `IMetricComputation` interface; no changes to `MetricsService` or API layer
 - **L (Liskov Substitution)**: ThesisProvider substitutes QuickProvider seamlessly
-- **I (Interface Segregation)**: Focused interfaces (IMetricComputation, ICacheService)
+  - Example: Both implement `IMetricComputation`; factory routes transparently based on configuration
+- **I (Interface Segregation)**: Focused interfaces (IMetricComputation, ICacheService, ILRSClient)
+  - Example: Providers only depend on methods they use; no forced dependencies on unused operations
 - **D (Dependency Inversion)**: Depend on abstractions (interfaces), not concrete classes
+  - Example: `MetricsService` depends on `ICacheService` interface, not `RedisCacheService` implementation
 
 ### 12.2 CUPID Principles
+
 - **Composable**: Modules compose via dependency injection
 - **Unix Philosophy**: Each service does one thing well (metrics, cache, auth)
 - **Predictable**: Deterministic computations (REQ-NF-004), idempotent APIs
@@ -486,30 +603,34 @@ export interface MetricResult {
 
 ## 13. Risk Mitigation
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| **LRS Unavailable** | High | Timeouts, circuit breaker, graceful degradation (REQ-NF-018) |
-| **Cache Unavailable** | Medium | Fall through to computation, monitor cache hit ratio |
+| Risk                        | Impact | Mitigation                                                   |
+| --------------------------- | ------ | ------------------------------------------------------------ |
+| **LRS Unavailable**         | High   | Timeouts, circuit breaker, graceful degradation (REQ-NF-018) |
+| **Cache Unavailable**       | Medium | Fall through to computation, monitor cache hit ratio         |
 | **Metric Computation Slow** | Medium | Cache results, async processing, SLO monitoring (REQ-NF-017) |
-| **Authentication Bypass** | High | Security tests in CI (REQ-NF-020), regular audits |
-| **Metric Definition Drift** | Medium | Traceability checks (REQ-NF-003), versioned specs |
+| **Authentication Bypass**   | High   | Security tests in CI (REQ-NF-020), regular audits            |
+| **Metric Definition Drift** | Medium | Traceability checks (REQ-NF-003), versioned specs            |
 
 ---
 
 ## 14. Future Considerations
 
 ### 14.1 Microservices Migration
+
 If monolith becomes unwieldy:
+
 - Extract `ComputationModule` as separate service
 - Extract `CacheService` as distributed cache layer
 - Use message queue (RabbitMQ, Kafka) for async computation
 
 ### 14.2 Advanced Caching
+
 - Multi-tier caching (in-memory L1 + Redis L2)
 - Predictive cache warming based on access patterns
 - Cache result streaming for large datasets
 
 ### 14.3 Real-Time Analytics
+
 - WebSocket support for live metric updates
 - Server-sent events (SSE) for push notifications
 - Event-driven architecture with xAPI webhook subscriptions
@@ -519,11 +640,13 @@ If monolith becomes unwieldy:
 ## 15. Compliance & Auditing
 
 ### 15.1 Regulatory Alignment
+
 - **GDPR**: Data minimization, pseudonymization, audit logs (REQ-NF-019)
 - **WCAG**: API documentation accessibility (REQ-NF-008)
 - **ISO 27001**: Security controls, risk management
 
 ### 15.2 Audit Trail
+
 - Authentication/authorization events logged
 - Cache invalidation operations logged
 - Admin actions (config changes) logged
@@ -533,24 +656,25 @@ If monolith becomes unwieldy:
 
 ## 16. Glossary
 
-| Term | Definition |
-|------|------------|
-| **ALS** | Adaptive Learning System (client) |
-| **LRS** | Learning Record Store (xAPI data source) |
-| **xAPI** | Experience API (learning data standard) |
-| **Metric** | Computed analytics value (e.g., completion rate) |
-| **Dashboard Level** | Scope of metric: course, topic, or element |
-| **Cache-Aside** | Pattern where app checks cache, then computes on miss |
-| **JWT** | JSON Web Token (stateless auth mechanism) |
-| **SLO** | Service Level Objective (performance target) |
+| Term                | Definition                                            |
+| ------------------- | ----------------------------------------------------- |
+| **ALS**             | Adaptive Learning System (client)                     |
+| **LRS**             | Learning Record Store (xAPI data source)              |
+| **xAPI**            | Experience API (learning data standard)               |
+| **Metric**          | Computed analytics value (e.g., completion rate)      |
+| **Dashboard Level** | Scope of metric: course, topic, or element            |
+| **Cache-Aside**     | Pattern where app checks cache, then computes on miss |
+| **JWT**             | JSON Web Token (stateless auth mechanism)             |
+| **SLO**             | Service Level Objective (performance target)          |
 
 ---
 
 ## 17. Approval & Maintenance
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 0.1 | 2025-10-20 | Architecture Team | Initial draft |
+| Version | Date       | Author            | Changes                         |
+| ------- | ---------- | ----------------- | ------------------------------- |
+| 0.1     | 2025-10-20 | Architecture Team | Initial draft                   |
+| 0.2     | 2025-11-05 | Architecture Team | Added ADR-007 and minor changes |
 
 **Review Cycle**: Architecture reviewed quarterly or on major requirement changes  
 **Diagram Updates**: PlantUML diagrams regenerated on component changes  
@@ -559,6 +683,7 @@ If monolith becomes unwieldy:
 ---
 
 **Next Steps**:
+
 1. Review and approve this architecture
 2. Generate PlantUML diagrams (`components.puml`, `deployment.puml`)
 3. Create requirements traceability matrix
