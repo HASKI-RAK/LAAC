@@ -42,6 +42,9 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-015 — CI/CD Pipeline with GitHub Actions → `docs/srs/REQ-FN-015.md`
 - REQ-FN-018 — Architecture Documentation with PlantUML Diagrams → `docs/srs/REQ-FN-018.md`
 - REQ-FN-019 — SOLID and CUPID Principles Guidance → `docs/srs/REQ-FN-019.md`
+- REQ-FN-020 — Structured Logging with Correlation IDs → `docs/srs/REQ-FN-020.md`
+- REQ-FN-021 — Metrics Export and Monitoring Endpoints → `docs/srs/REQ-FN-021.md`
+- REQ-FN-022 — Performance Testing and SLO Validation → `docs/srs/REQ-FN-022.md`
 - REQ-FN-016 — API Versioning and Deprecation Policy → `docs/srs/REQ-FN-016.md`
 - REQ-FN-017 — Multi-Instance Support and Cross-Instance Analytics → `docs/srs/REQ-FN-017.md`
 
@@ -62,4 +65,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-012 — Deployment Rollback and Recovery → `docs/srs/REQ-NF-012.md`
 - REQ-NF-014 — Architecture Documentation Currency and Maintenance → `docs/srs/REQ-NF-014.md`
 - REQ-NF-015 — Developer Onboarding and Architecture Comprehension → `docs/srs/REQ-NF-015.md`
+- REQ-NF-016 — Observability Baseline and Alert Guidance → `docs/srs/REQ-NF-016.md`
+- REQ-NF-017 — Analytics Endpoint Latency SLO (Detailed) → `docs/srs/REQ-NF-017.md`
+- REQ-NF-018 — Graceful Degradation and Timeout Handling → `docs/srs/REQ-NF-018.md`
 - REQ-NF-013 — Multi-Instance Data Isolation and Consistency → `docs/srs/REQ-NF-013.md`
