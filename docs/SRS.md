@@ -1,28 +1,41 @@
 # Software Requirements Specification (SRS)
+
 for the project according to ISO/IEC/IEEE 29148:2018.
 
 ## Introduction
+
 ### Purpose
+
 The purpose of this document is to define the functional and non-functional requirements for the system. They are derived and linked to the informal stakeholder needs in `docs/StRS.md`.
 
 ### References
+
 - [Stakeholder Requirements (StRS)](./StRS.md)
 - [Metrics Specification](./Metrics-Specification.md) — Formal definitions for all analytics metrics
 
 ## Project Overview
+
 ### Product Perspective
+
 The project is located in between a Learning Record Store (LRS) and an Adaptive Learning System (ALS). It acts as an intermediary system that consolidates and processes learning data from the LRS and generates data for frequently accessed learning analytics in the ALS.
+
 ### Product Functions
+
 - Data Integration: Pulls data from Yetanalytics LRS.
 - Data Processing: Aggregates and processes pulled data to generate derived analytics.
 - Data Provision: Supplies processed data to clients via an API.
+
 ### User Characteristics
+
 The primary users of the system are developers who will integrate the system with the ALS. They should have a good understanding of APIs and data processing.
+
 ### Constraints
+
 - A bachelor thesis will integrate in the system. Therefore the architecture needs to support both the `quick implementation` and the `bachelor thesis` as inplace exchangable components.
 - The LRS is Yetanalytics, which is based on the xAPI standard. The API of Yetanalytics is documented [here](https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md).
 
 ## Functional Requirements
+
 > Located in `docs/srs/REQ-FN-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
 
 - REQ-FN-001 — Client-Facing Intermediary API → `docs/srs/REQ-FN-001.md`
@@ -51,6 +64,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-024 — Input Validation and Rate Limiting → `docs/srs/REQ-FN-024.md`
 
 ## Non-Functional Requirements
+
 > Located in `docs/srs/REQ-NF-<ID>.md`. Authoring template: `docs/srs/REQ-TEMPLATE.md`.
 
 - REQ-NF-001 — Core Data Source Scope (xAPI LRS) → `docs/srs/REQ-NF-001.md`
@@ -65,6 +79,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-010 — Metric Isolation and Testability → `docs/srs/REQ-NF-010.md`
 - REQ-NF-011 — Deployment Automation and Reliability → `docs/srs/REQ-NF-011.md`
 - REQ-NF-012 — Deployment Rollback and Recovery → `docs/srs/REQ-NF-012.md`
+- REQ-NF-013 — Multi-Instance Data Isolation and Consistency → `docs/srs/REQ-NF-013.md`
 - REQ-NF-014 — Architecture Documentation Currency and Maintenance → `docs/srs/REQ-NF-014.md`
 - REQ-NF-015 — Developer Onboarding and Architecture Comprehension → `docs/srs/REQ-NF-015.md`
 - REQ-NF-016 — Observability Baseline and Alert Guidance → `docs/srs/REQ-NF-016.md`
@@ -72,4 +87,3 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-018 — Graceful Degradation and Timeout Handling → `docs/srs/REQ-NF-018.md`
 - REQ-NF-019 — Security Baseline and Secure Defaults → `docs/srs/REQ-NF-019.md`
 - REQ-NF-020 — Security Testing and Compliance Validation → `docs/srs/REQ-NF-020.md`
-- REQ-NF-013 — Multi-Instance Data Isolation and Consistency → `docs/srs/REQ-NF-013.md`
