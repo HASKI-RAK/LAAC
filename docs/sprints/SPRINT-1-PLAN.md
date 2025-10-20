@@ -54,11 +54,13 @@ src/
 
 ## Sprint Backlog
 
+**Note**: All stories are tracked as GitHub issues for traceability. Links are provided where issues have been created.
+
 ### Epic 1: Project Foundation & Setup
 
 **Priority**: Critical | **Story Points**: 8
 
-#### Story 1.1: NestJS Project Scaffolding
+#### Story 1.1: NestJS Project Scaffolding ([#3](https://github.com/HASKI-RAK/LAAC/issues/3))
 
 **Description**: Set up NestJS project with TypeScript, ESLint, Prettier  
 **Acceptance Criteria**:
@@ -88,7 +90,7 @@ src/
 
 ---
 
-#### Story 1.2: Environment Configuration Setup
+#### Story 1.2: Environment Configuration Setup ([#6](https://github.com/HASKI-RAK/LAAC/issues/6))
 
 **Description**: Implement `ConfigService` with environment variable loading (REQ-FN-014)  
 **Acceptance Criteria**:
