@@ -17,6 +17,9 @@ jobs:
   secret-scan:
     name: Secret Scanning with Gitleaks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # Required for Gitleaks to create issues for findings
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,6 +35,8 @@ jobs:
   verify-env-example:
     name: Verify .env.example Completeness
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -95,6 +100,8 @@ jobs:
   verify-no-committed-secrets:
     name: Verify .env Files Not Committed
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -124,6 +131,8 @@ jobs:
   verify-workflow-secrets:
     name: Verify Workflow Secret Usage
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
