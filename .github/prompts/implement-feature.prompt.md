@@ -93,11 +93,11 @@ You are an expert software architect and developer tasked with implementing syst
    - Configuration in environment files
    - Docker Compose configurations if deployment-related
 
-   **Document findings clearly**: "Implementation EXISTS" or "Implementation MISSING" with specific file references.
+   **Document findings clearly**: "Implementation EXISTS" or "Implementation MISSING" with specific file references if found.
 
-### Phase 2: Issue Documentation Creation
+### Phase 2: Issue Creation
 
-Create a comprehensive issue document at `docs/issues/${input:requirementId}.md` with this structure:
+Create a comprehensive github issue with this structure:
 
 ```markdown
 # ${input:requirementId}: [Requirement Title]
@@ -181,7 +181,7 @@ After creating the issue documentation, **DELEGATE TO GITHUB COPILOT CODING AGEN
 
 **Implementation Delegation Process**:
 
-1. **Create GitHub Issue**: Use the `create_issue` tool to create an issue with:
+1. **Create GitHub Issue**: Use the `github/create_issue` tool to create an issue with:
    - **Title**: `Implement ${input:requirementId}: [Requirement Name]`
    - **Body**:
 
@@ -244,7 +244,7 @@ After creating the issue documentation, **DELEGATE TO GITHUB COPILOT CODING AGEN
 **Note**: This phase occurs after the remote GitHub Copilot coding agent completes the implementation and creates a pull request. The user will prompt you to proceed with these steps.
 
 1. **Post-Implementation Tasks** (to be done after PR is created):
-   - Update the status in `docs/issues/${input:requirementId}.md` to reflect completion using the tool `update_issue` as well as Definition of Done and Acceptance Criteria
+   - Update the status in `docs/issues/${input:requirementId}.md` to reflect completion using the mcp tool `github/update_issue` as well as Definition of Done, Testing Requirements and Acceptance Criteria by checking the relevant boxes
    - Take a screenshot of the implemented requirement for documentation by adding a comment to the issue using `add_issue_comment`
    - Add implementation notes about any deviations from the plan
    - Document any new dependencies or side effects discovered
