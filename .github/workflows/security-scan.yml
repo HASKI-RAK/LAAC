@@ -1,0 +1,153 @@
+# REQ-FN-014: Secrets and Configuration Management - Security Scanning
+# REQ-NF-020: Security Testing and Compliance Validation
+# This workflow scans for accidentally committed secrets and validates security controls
+
+name: Security Scan
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['main']
+  schedule:
+    # Run weekly on Sundays at 00:00 UTC to catch any issues
+    - cron: '0 0 * * 0'
+
+jobs:
+  secret-scan:
+    name: Secret Scanning with Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for comprehensive scanning
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Optional: for Gitleaks+ features
+
+  verify-env-example:
+    name: Verify .env.example Completeness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check .env.example exists
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "Error: .env.example file not found"
+            exit 1
+          fi
+          echo ".env.example exists ✓"
+
+      - name: Verify required environment variables documented
+        run: |
+          # REQ-FN-014: Verify all required env vars are documented
+          required_vars=(
+            "NODE_ENV"
+            "PORT"
+            "API_PREFIX"
+            "JWT_SECRET"
+            "JWT_EXPIRATION"
+            "REDIS_HOST"
+            "REDIS_PORT"
+            "REDIS_TTL"
+            "LRS_URL"
+            "LRS_API_KEY"
+            "LRS_TIMEOUT"
+            "LOG_LEVEL"
+          )
+          
+          missing_vars=()
+          for var in "${required_vars[@]}"; do
+            if ! grep -q "^$var=" .env.example && ! grep -q "^# $var" .env.example; then
+              missing_vars+=("$var")
+            fi
+          done
+          
+          if [ ${#missing_vars[@]} -ne 0 ]; then
+            echo "Error: The following required variables are not documented in .env.example:"
+            printf '%s\n' "${missing_vars[@]}"
+            exit 1
+          fi
+          
+          echo "All required environment variables are documented ✓"
+
+      - name: Verify security warnings present
+        run: |
+          # REQ-FN-014: Ensure .env.example contains security warnings
+          if ! grep -q "NEVER commit" .env.example; then
+            echo "Warning: .env.example should include warning about not committing secrets"
+            exit 1
+          fi
+          
+          if ! grep -q "SECURITY" .env.example; then
+            echo "Warning: .env.example should include SECURITY markers for sensitive fields"
+            exit 1
+          fi
+          
+          echo "Security warnings present in .env.example ✓"
+
+  verify-no-committed-secrets:
+    name: Verify .env Files Not Committed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check .gitignore includes .env patterns
+        run: |
+          # REQ-FN-014: Verify .env files are in .gitignore
+          if ! grep -q "^\.env$" .gitignore; then
+            echo "Error: .env not found in .gitignore"
+            exit 1
+          fi
+          echo ".env patterns properly ignored ✓"
+
+      - name: Verify no .env files committed
+        run: |
+          # Check for any .env files (except .env.example)
+          env_files=$(git ls-files | grep -E '\.env(\.[^.]+)?$' | grep -v '.env.example' || true)
+          
+          if [ -n "$env_files" ]; then
+            echo "Error: The following .env files should not be committed:"
+            echo "$env_files"
+            exit 1
+          fi
+          
+          echo "No .env files committed (except .env.example) ✓"
+
+  verify-workflow-secrets:
+    name: Verify Workflow Secret Usage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check workflows use repository secrets
+        run: |
+          # REQ-FN-014: Verify CI/CD workflows use secrets from repository settings
+          workflow_dir=".github/workflows"
+          
+          # Check that workflows reference secrets properly
+          echo "Checking workflow files for proper secret usage..."
+          
+          # Verify GITHUB_TOKEN usage (should use secrets.GITHUB_TOKEN)
+          if grep -r "GITHUB_TOKEN" "$workflow_dir" | grep -v "secrets.GITHUB_TOKEN" | grep -q "GITHUB_TOKEN"; then
+            echo "Warning: Some workflows may not be using secrets.GITHUB_TOKEN properly"
+          fi
+          
+          # Check for any hardcoded credentials (basic patterns)
+          if grep -riE '(password|token|key|secret)\s*:\s*["\047][^$]' "$workflow_dir" | grep -v 'secrets\.' | grep -v '# ' | grep -q .; then
+            echo "Error: Potential hardcoded credentials found in workflows"
+            exit 1
+          fi
+          
+          echo "Workflow secret usage appears correct ✓"
+          echo ""
+          echo "Repository secrets used in workflows:"
+          grep -rh 'secrets\.' "$workflow_dir" | sed 's/.*secrets\./  - /' | sort -u
