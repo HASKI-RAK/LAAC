@@ -51,11 +51,21 @@ $ yarn run test:cov
 ### Local Development
 
 1. **Copy the environment template**:
+
    ```bash
    cp .env.example .env
    ```
 
-2. **Generate secure secrets**:
+2. **Generate secure secrets** (recommended):
+
+   ```bash
+   yarn setup:secrets
+   ```
+
+   This will generate a secure `JWT_SECRET` in `.env`.
+
+   Or, generate manually:
+
    ```bash
    # Generate a secure JWT secret (minimum 32 characters required)
    openssl rand -base64 32
@@ -76,6 +86,7 @@ For production deployments, **never use `.env` files**. Instead:
 #### Option 1: Docker Secrets (Recommended for Docker Swarm/Compose)
 
 1. Create Docker secrets for sensitive values:
+
    ```bash
    echo "your-jwt-secret" | docker secret create laac_jwt_secret -
    echo "your-lrs-api-key" | docker secret create laac_lrs_api_key -
@@ -103,6 +114,7 @@ Use Portainer's environment variable editor or Kubernetes secrets to inject conf
 #### Option 3: Secret Management Services
 
 For enterprise deployments, integrate with secret management services:
+
 - HashiCorp Vault
 - AWS Secrets Manager
 - Azure Key Vault
@@ -112,14 +124,14 @@ For enterprise deployments, integrate with secret management services:
 
 See `.env.example` for a complete list of required environment variables. Key variables include:
 
-| Variable | Required | Description | Security Level |
-|----------|----------|-------------|----------------|
-| `JWT_SECRET` | Yes | JWT signing secret | **CRITICAL** - Never commit |
-| `LRS_API_KEY` | Yes | LRS authentication key | **CRITICAL** - Never commit |
-| `LRS_URL` | Yes | LRS xAPI endpoint URL | Sensitive |
-| `REDIS_PASSWORD` | No | Redis authentication password | **CRITICAL** - Never commit if used |
-| `NODE_ENV` | No | Application environment | Public |
-| `PORT` | No | Application port | Public |
+| Variable         | Required | Description                   | Security Level                      |
+| ---------------- | -------- | ----------------------------- | ----------------------------------- |
+| `JWT_SECRET`     | Yes      | JWT signing secret            | **CRITICAL** - Never commit         |
+| `LRS_API_KEY`    | Yes      | LRS authentication key        | **CRITICAL** - Never commit         |
+| `LRS_URL`        | Yes      | LRS xAPI endpoint URL         | Sensitive                           |
+| `REDIS_PASSWORD` | No       | Redis authentication password | **CRITICAL** - Never commit if used |
+| `NODE_ENV`       | No       | Application environment       | Public                              |
+| `PORT`           | No       | Application port              | Public                              |
 
 ### Security Checklist
 
@@ -135,6 +147,7 @@ See `.env.example` for a complete list of required environment variables. Key va
 The application validates all required configuration at startup using Joi schema validation. If required variables are missing or invalid, the application will fail to start with clear error messages.
 
 For more details, see:
+
 - `.env.example` - Complete environment variable documentation
 - `docs/srs/REQ-FN-014.md` - Requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
@@ -151,6 +164,7 @@ For more details, see:
 Returns 200 OK if the application is running. This endpoint checks only the application's internal state and does not verify external dependencies.
 
 **Response**:
+
 ```json
 {
   "status": "ok",
@@ -169,6 +183,7 @@ Returns 200 OK if the application is running. This endpoint checks only the appl
 Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to accept traffic. Returns 503 Service Unavailable if any dependency is not reachable.
 
 **Response (Healthy)**:
+
 ```json
 {
   "status": "ok",
@@ -187,6 +202,7 @@ Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to
 ```
 
 **Response (Unhealthy - 503)**:
+
 ```json
 {
   "status": "error",
@@ -204,11 +220,19 @@ Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to
 ### Usage in Container Orchestration
 
 **Docker Compose**:
+
 ```yaml
 services:
   laac:
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health/readiness"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:3000/health/readiness',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -216,6 +240,7 @@ services:
 ```
 
 **Kubernetes**:
+
 ```yaml
 livenessProbe:
   httpGet:
@@ -237,12 +262,13 @@ readinessProbe:
 - **Framework**: Built with `@nestjs/terminus` for standardized health checks
 - **Dependencies Checked**: Redis cache, LRS (Learning Record Store)
 - **Authentication**: Both endpoints are public (no authentication required)
-- **Timeout Handling**: 
+- **Timeout Handling**:
   - Redis: 3 seconds timeout
   - LRS: 5 seconds timeout (capped from configuration)
 - **Error Handling**: Graceful degradation with detailed error messages
 
 For more details, see:
+
 - `docs/srs/REQ-NF-002.md` - Requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 10.3 - Health checks architecture
 - `src/core/health/` - Health check implementation
