@@ -34,7 +34,7 @@ describe('REQ-FN-020: LoggerService', () => {
     service = module.get<LoggerService>(LoggerService);
 
     // Replace the Winston logger with our mock
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     (service as any).logger = mockWinstonLogger;
 
     // Clear all mocks between tests

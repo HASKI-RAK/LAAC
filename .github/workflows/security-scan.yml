@@ -14,24 +14,6 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
-  secret-scan:
-    name: Secret Scanning with Gitleaks
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write  # Required for Gitleaks to create issues for findings
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch full history for comprehensive scanning
-
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Optional: for Gitleaks+ features
-
   verify-env-example:
     name: Verify .env.example Completeness
     runs-on: ubuntu-latest

@@ -3,7 +3,6 @@
 
 import { configValidationSchema, configFactory } from './config.schema';
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // Note: Joi's validate() returns `any` for the value property.
 // We disable unsafe-member-access for this test file since we're explicitly
 // testing the validation schema's behavior and structure.

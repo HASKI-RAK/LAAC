@@ -178,7 +178,7 @@ describe('REQ-FN-020: CorrelationIdMiddleware', () => {
       );
 
       // Get the generated correlation ID from the response header call
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
       const generatedId = setHeaderSpy.mock.calls[0][1];
 
       // Verify the same ID is used in CLS and response header
@@ -200,7 +200,6 @@ describe('REQ-FN-020: CorrelationIdMiddleware', () => {
         mockNext,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const generatedId = setHeaderSpy.mock.calls[0][1];
 
       // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx

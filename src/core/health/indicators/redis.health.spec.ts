@@ -22,7 +22,7 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
       expect(() => {
         // Import fresh to bypass module cache
         jest.resetModules();
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { RedisHealthIndicator } = require('./redis.health');
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         new RedisHealthIndicator(configService);
@@ -37,9 +37,9 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
       // Should not throw during construction with valid config
       expect(() => {
         jest.resetModules();
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { RedisHealthIndicator } = require('./redis.health');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         const indicator = new RedisHealthIndicator(configService);
         expect(indicator).toBeDefined();
       }).not.toThrow();
@@ -53,19 +53,19 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
       } as unknown as ConfigService<Configuration>;
 
       jest.resetModules();
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { RedisHealthIndicator } = require('./redis.health');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       const indicator = new RedisHealthIndicator(configService);
 
       // Check that the indicator has the expected methods from HealthIndicator
 
       expect(indicator).toHaveProperty('isHealthy');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       expect(typeof indicator.isHealthy).toBe('function');
 
       expect(indicator).toHaveProperty('onApplicationShutdown');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       expect(typeof indicator.onApplicationShutdown).toBe('function');
     });
   });

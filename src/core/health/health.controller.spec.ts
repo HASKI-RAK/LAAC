@@ -87,7 +87,6 @@ describe('REQ-NF-002: HealthController', () => {
 
       const result = await controller.checkLiveness();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect((result as any).timestamp).toMatch(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       );

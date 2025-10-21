@@ -30,7 +30,7 @@ describe('REQ-FN-020: Logging (e2e)', () => {
     await app.init();
 
     // Spy on the logger's internal Winston logger
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     logSpy = jest.spyOn((loggerService as any).logger, 'info');
   });
 
@@ -108,7 +108,6 @@ describe('REQ-FN-020: Logging (e2e)', () => {
 
       // Check if any log call included the correlation ID
       const logCallsWithCorrelationId = logSpy.mock.calls.filter(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (call) => call[1] && call[1].correlationId === clientCorrelationId,
       );
 
@@ -172,9 +171,9 @@ describe('REQ-FN-020: Logging (e2e)', () => {
       const logCalls = logSpy.mock.calls;
       logCalls.forEach((call) => {
         // Each call should have: message, metadata
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         expect(call[0]).toBeDefined(); // message
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         expect(typeof call[1]).toBe('object'); // metadata
       });
     });
