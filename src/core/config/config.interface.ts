@@ -18,6 +18,7 @@ export interface AppConfig {
 export interface JwtConfig {
   secret: string;
   expirationTime: string;
+  authEnabled: boolean;
 }
 
 /**

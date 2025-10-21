@@ -32,6 +32,12 @@ export const configValidationSchema = Joi.object({
     .pattern(/^\d+[smhd]$/)
     .description('JWT expiration time (e.g., 1h, 30m, 7d)'),
 
+  AUTH_ENABLED: Joi.boolean()
+    .default(true)
+    .description(
+      'Enable/disable authentication (default: true, set false for dev/test)',
+    ),
+
   // Redis Cache Configuration (REQ-FN-006)
   REDIS_HOST: Joi.string()
     .hostname()
@@ -95,6 +101,7 @@ export const configFactory = () => ({
   jwt: {
     secret: process.env.JWT_SECRET as string,
     expirationTime: process.env.JWT_EXPIRATION || '1h',
+    authEnabled: process.env.AUTH_ENABLED === 'false' ? false : true,
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
