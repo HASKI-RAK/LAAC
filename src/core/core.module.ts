@@ -1,5 +1,6 @@
 // Implements REQ-FN-014: Secrets and Configuration Management
 // Implements REQ-FN-020: Structured Logging with Correlation IDs
+// Implements REQ-NF-002: Health/Readiness Endpoints
 // CoreModule provides global configuration access and logging infrastructure
 
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { configFactory, configValidationSchema } from './config';
 import { LoggerService } from './logger';
 import { CorrelationIdMiddleware } from './middleware';
+import { HealthModule } from './health';
 
 @Module({
   imports: [
@@ -22,13 +24,15 @@ import { CorrelationIdMiddleware } from './middleware';
       },
       expandVariables: true, // Support variable expansion in .env files
     }),
+    // REQ-NF-002: Health check endpoints
+    HealthModule,
   ],
   controllers: [],
   providers: [
     // REQ-FN-020: Global structured logger
     LoggerService,
   ],
-  exports: [ConfigModule, LoggerService],
+  exports: [ConfigModule, LoggerService, HealthModule],
 })
 export class CoreModule implements NestModule {
   /**
