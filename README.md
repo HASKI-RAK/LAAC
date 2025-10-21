@@ -139,3 +139,110 @@ For more details, see:
 - `docs/srs/REQ-FN-014.md` - Requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
 - `src/core/config/` - Configuration validation implementation
+
+## Health and Readiness Endpoints
+
+> **REQ-NF-002**: The application provides health check endpoints for container orchestration and monitoring.
+
+### Liveness Probe
+
+**Endpoint**: `GET /health/liveness`
+
+Returns 200 OK if the application is running. This endpoint checks only the application's internal state and does not verify external dependencies.
+
+**Response**:
+```json
+{
+  "status": "ok",
+  "info": {},
+  "error": {},
+  "details": {},
+  "timestamp": "2025-10-21T12:14:07.537Z",
+  "version": "0.0.1"
+}
+```
+
+### Readiness Probe
+
+**Endpoint**: `GET /health/readiness`
+
+Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to accept traffic. Returns 503 Service Unavailable if any dependency is not reachable.
+
+**Response (Healthy)**:
+```json
+{
+  "status": "ok",
+  "info": {
+    "redis": { "status": "up" },
+    "lrs": { "status": "up" }
+  },
+  "error": {},
+  "details": {
+    "redis": { "status": "up" },
+    "lrs": { "status": "up" }
+  },
+  "timestamp": "2025-10-21T12:14:07.537Z",
+  "version": "0.0.1"
+}
+```
+
+**Response (Unhealthy - 503)**:
+```json
+{
+  "status": "error",
+  "info": {},
+  "error": {
+    "redis": { "status": "down", "message": "Connection refused" }
+  },
+  "details": {
+    "redis": { "status": "down", "message": "Connection refused" },
+    "lrs": { "status": "up" }
+  }
+}
+```
+
+### Usage in Container Orchestration
+
+**Docker Compose**:
+```yaml
+services:
+  laac:
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+**Kubernetes**:
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health/liveness
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/readiness
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+```
+
+### Implementation Details
+
+- **Framework**: Built with `@nestjs/terminus` for standardized health checks
+- **Dependencies Checked**: Redis cache, LRS (Learning Record Store)
+- **Authentication**: Both endpoints are public (no authentication required)
+- **Timeout Handling**: 
+  - Redis: 3 seconds timeout
+  - LRS: 5 seconds timeout (capped from configuration)
+- **Error Handling**: Graceful degradation with detailed error messages
+
+For more details, see:
+- `docs/srs/REQ-NF-002.md` - Requirements specification
+- `docs/architecture/ARCHITECTURE.md` Section 10.3 - Health checks architecture
+- `src/core/health/` - Health check implementation
