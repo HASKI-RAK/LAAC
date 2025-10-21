@@ -77,15 +77,29 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * @returns User object if authentication succeeded
    * @throws UnauthorizedException with WWW-Authenticate header
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext): any {
+
+  handleRequest(
+    err: any,
+    user: any,
+    info: any,
+    context: ExecutionContext,
+  ): any {
     // Log authentication failure without sensitive data
     if (err || !user) {
       const request = context.switchToHttp().getRequest<{
         url: string;
         method: string;
       }>();
-      const reason = info?.message ?? err?.message ?? 'Unknown';
+
+      // Safely extract reason from error or info objects
+      let reason = 'Unknown';
+      if (info && typeof info === 'object' && 'message' in info) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        reason = String(info.message);
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        reason = String(err.message);
+      }
 
       this.logger.warn('Authentication failed', {
         path: request.url,
