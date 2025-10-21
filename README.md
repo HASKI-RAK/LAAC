@@ -44,6 +44,42 @@ $ yarn run test:e2e
 $ yarn run test:cov
 ```
 
+## Local Redis (Dev)
+
+This project already reads Redis settings from `.env` (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`). To run a local Redis for development:
+
+1. Ensure `.env` exists and uses the defaults:
+
+   - `REDIS_HOST=localhost`
+   - `REDIS_PORT=6379`
+   - `REDIS_PASSWORD=` (empty for dev)
+
+2. Start Redis with Docker Compose:
+
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d redis
+   ```
+
+3. Verify Redis is healthy:
+
+   ```bash
+   docker compose -f docker-compose.dev.yml ps
+   # or
+   curl -s http://localhost:3000/health/readiness | jq .
+   # (with the app running via `yarn start:dev`; Redis should show status "up")
+   ```
+
+4. Stop Redis when done:
+
+   ```bash
+   docker compose -f docker-compose.dev.yml down
+   ```
+
+Notes:
+
+- The dev Redis runs without a password. If you need a password, set `REDIS_PASSWORD` in `.env` and adjust the `command` in `docker-compose.dev.yml` to use `--requirepass`.
+- No code changes are required; the app connects via `ioredis` using the values from `.env`.
+
 ## Configuration and Secrets Management
 
 > **REQ-FN-014**: This project follows secure configuration management practices to prevent credential leaks and support deployment across environments.
