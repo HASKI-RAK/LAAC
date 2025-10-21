@@ -21,12 +21,15 @@
 
 ### Success Criteria
 
-- [ ] All NestJS modules scaffolded per architecture (Section 4.2)
+- [x] All NestJS modules scaffolded per architecture (Section 4.2) — story #3
 - [ ] JWT authentication working with scope-based authorization
-- [ ] Structured logging with correlation IDs operational
+- [x] Structured logging with correlation IDs operational — story #8
 - [ ] Swagger UI accessible with documented endpoints
 - [ ] CI pipeline running tests and building Docker image
-- [ ] Development environment fully documented and reproducible
+- [x] Development environment configuration and secrets management implemented — story #10
+- [x] Health endpoints implemented (liveness/readiness) — story #12 (readiness reports dependency status)
+
+Note: Issue #6 (Environment Configuration Setup) was consolidated into #10. #6 has been closed as duplicate to avoid fragmentation.
 
 ---
 
@@ -56,11 +59,19 @@ src/
 
 **Note**: All stories are tracked as GitHub issues for traceability. Links are provided where issues have been created.
 
-### Epic 1: Project Foundation & Setup
+### Epic 1: Project Foundation & Setup ([#14](https://github.com/HASKI-RAK/LAAC/issues/14))
 
 **Priority**: Critical | **Story Points**: 8
 
-#### Story 1.1: NestJS Project Scaffolding ([#3](https://github.com/HASKI-RAK/LAAC/issues/3))
+Related GitHub issues (grouped under Epic #14):
+
+- [#3] Sprint 1 - Story 1.1: NestJS Project Scaffolding
+- [#6] Sprint 1 - Story 1.2: Environment Configuration Setup (duplicate of #10)
+- [#8] Implement REQ-FN-020: Structured Logging with Correlation IDs
+- [#10] Implement REQ-FN-014: Secrets and Configuration Management
+- [#12] Implement REQ-NF-002: Health/Readiness Endpoints
+
+#### Story 1.1: NestJS Project Scaffolding ([#3](https://github.com/HASKI-RAK/LAAC/issues/3)) ✅
 
 **Description**: Set up NestJS project with TypeScript, ESLint, Prettier  
 **Acceptance Criteria**:
@@ -90,7 +101,7 @@ src/
 
 ---
 
-#### Story 1.2: Environment Configuration Setup ([#6](https://github.com/HASKI-RAK/LAAC/issues/6))
+#### Story 1.2: Environment Configuration Setup ([#10](https://github.com/HASKI-RAK/LAAC/issues/10)) ✅
 
 **Description**: Implement `ConfigService` with environment variable loading (REQ-FN-014)  
 **Acceptance Criteria**:
@@ -138,7 +149,7 @@ LOG_LEVEL=debug
 
 ---
 
-#### Story 1.3: Structured Logging with Correlation IDs
+#### Story 1.3: Structured Logging with Correlation IDs ([#8](https://github.com/HASKI-RAK/LAAC/issues/8)) ✅
 
 **Description**: Implement `LoggerService` with Winston and correlation ID middleware (REQ-FN-020, ADR-006)  
 **Acceptance Criteria**:
@@ -163,7 +174,7 @@ LOG_LEVEL=debug
 
 ---
 
-#### Story 1.4: Health Check Endpoints
+#### Story 1.4: Health Check Endpoints ([#12](https://github.com/HASKI-RAK/LAAC/issues/12)) ✅
 
 **Description**: Implement liveness and readiness probes (Section 10.3)  
 **Acceptance Criteria**:
@@ -186,7 +197,7 @@ LOG_LEVEL=debug
 
 ---
 
-### Epic 2: Authentication & Authorization
+### Epic 2: Authentication & Authorization ([#15](https://github.com/HASKI-RAK/LAAC/issues/15))
 
 **Priority**: Critical | **Story Points**: 13
 
@@ -325,7 +336,7 @@ export class MetricQueryDto {
 
 ---
 
-### Epic 3: Core API Endpoints & Documentation
+### Epic 3: Core API Endpoints & Documentation ([#16](https://github.com/HASKI-RAK/LAAC/issues/16))
 
 **Priority**: High | **Story Points**: 8
 
@@ -435,7 +446,7 @@ interface MetricCatalogResponse {
 
 ---
 
-### Epic 4: CI/CD & Development Infrastructure
+### Epic 4: CI/CD & Development Infrastructure ([#17](https://github.com/HASKI-RAK/LAAC/issues/17))
 
 **Priority**: High | **Story Points**: 5
 
@@ -499,7 +510,7 @@ interface MetricCatalogResponse {
 
 ---
 
-### Epic 5: Testing Foundation
+### Epic 5: Testing Foundation ([#18](https://github.com/HASKI-RAK/LAAC/issues/18))
 
 **Priority**: Medium | **Story Points**: 3
 
