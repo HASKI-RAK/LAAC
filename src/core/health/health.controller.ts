@@ -12,6 +12,7 @@ import { RedisHealthIndicator } from './indicators/redis.health';
 import { LrsHealthIndicator } from './indicators/lrs.health';
 import { HealthResponseDto } from './dto/health-response.dto';
 import { ConfigService } from '@nestjs/config';
+import { Public } from '../../auth/decorators';
 
 /**
  * Health check controller
@@ -25,6 +26,7 @@ import { ConfigService } from '@nestjs/config';
  */
 @ApiTags('Health')
 @Controller('health')
+@Public() // REQ-FN-023: Health endpoints are public
 export class HealthController {
   private readonly version: string;
 
