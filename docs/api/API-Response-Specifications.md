@@ -1049,7 +1049,7 @@ When adding new learning analytics metrics from the CSV file or custom requireme
 
 ```typescript
 {
-  id: "xx-NNN",  // Dashboard level prefix (co/to/le) + sequential number
+  id: "co-001",  // Dashboard level prefix (co/to/le/cx) + sequential number
   title: "Human-readable metric name",
   dashboardLevel: "course" | "topic" | "element",
   description: "Brief description from CSV",
