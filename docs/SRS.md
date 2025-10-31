@@ -12,6 +12,7 @@ The purpose of this document is to define the functional and non-functional requ
 
 - [Stakeholder Requirements (StRS)](./StRS.md)
 - [Metrics Specification](./Metrics-Specification.md) — Formal definitions for all analytics metrics
+- [API Response Specifications](./api/API-Response-Specifications.md) — Complete API response format documentation
 
 ## Project Overview
 

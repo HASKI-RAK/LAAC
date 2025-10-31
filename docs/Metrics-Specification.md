@@ -5,6 +5,7 @@ This document provides formal definitions for all learning analytics metrics spe
 
 ## References
 - [LAAC_Learning_Analytics_Requirements.csv](./resources/LAAC_Learning_Analytics_Requirements.csv)
+- [API Response Specifications](./api/API-Response-Specifications.md) — Complete API response format documentation
 - xAPI Specification: https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Data.md
 - Yetanalytics LRS API: https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md
 
@@ -311,4 +312,19 @@ This specification is versioned alongside the API. Changes to metric definitions
 
 ### Change Log
 - v1.0 (2025-10-20): Initial formal specification covering all 16 CSV metrics
+
+---
+
+## API Response Formats
+
+For complete API response format specifications, including concrete examples for each metric, pagination, error handling, and extensibility guidelines, see:
+
+**[API Response Specifications](./api/API-Response-Specifications.md)**
+
+This companion document provides:
+- Generic response structure for all metrics
+- Specific response examples for each of the 16 metrics
+- Error response formats and HTTP status codes
+- Pagination and filtering patterns
+- Guidelines for adding new metrics to the API
 
