@@ -30,12 +30,33 @@ This document specifies the structure and format of API responses for all learni
 
 All metric responses follow a consistent envelope structure to ensure predictability and ease of integration.
 
+### Understanding Dashboard Level vs Perspective
+
+The API response structure distinguishes between two orthogonal dimensions:
+
+- **`dashboardLevel`**: The **aggregation scope** of the metric (course/topic/element)
+  - Defines at what granularity the data is aggregated
+  - Examples: course-level totals, topic-level summaries, element-specific details
+
+- **`perspective`**: The **viewpoint** from which the metric is calculated (student/instructor/course/system)
+  - Defines whose data or what context the metric represents
+  - Examples: student's individual progress, instructor's class overview, course metadata
+
+**Key insight:** Most current metrics use `perspective: "student"` because they track individual student analytics, but are aggregated at different levels (course/topic/element). This design allows for future expansion to instructor dashboards, cohort analytics, or system-wide metrics without changing the response structure.
+
+**Examples:**
+- `dashboardLevel: "course"` + `perspective: "student"` → Student's total score in a course (CO-001)
+- `dashboardLevel: "course"` + `perspective: "course"` → Maximum possible score for a course (CO-002, not student-specific)
+- `dashboardLevel: "topic"` + `perspective: "student"` → Student's progress in a topic (TO-001)
+- `dashboardLevel: "element"` + `perspective: "student"` → Student's best attempt on an element (LE-003)
+
 ### Single Metric Response
 
 ```json
 {
   "metricId": "string",
   "dashboardLevel": "course" | "topic" | "element",
+  "perspective": "student" | "instructor" | "course" | "system",
   "description": "string",
   "filters": {
     "actorId": "string (optional)",
@@ -63,6 +84,19 @@ All metric responses follow a consistent envelope structure to ensure predictabi
 }
 ```
 
+**Field Descriptions:**
+- `metricId`: Unique identifier for the metric (e.g., "co-001", "to-001")
+- `dashboardLevel`: The aggregation/scope level of the metric ("course", "topic", or "element")
+- `perspective`: The viewpoint from which the metric is calculated:
+  - `student`: Metrics calculated from an individual student's perspective (requires actorId filter)
+  - `instructor`: Metrics from an instructor's perspective (aggregated across students)
+  - `course`: Course-level metrics independent of individual actors
+  - `system`: System-wide analytics or metadata
+- `description`: Human-readable description of what the metric measures
+- `filters`: Parameters used to scope the metric calculation
+- `result`: The computed metric value with metadata
+- `links`: HATEOAS navigation links
+
 ### Batch Metrics Response
 
 ```json
@@ -71,6 +105,7 @@ All metric responses follow a consistent envelope structure to ensure predictabi
     {
       "metricId": "string",
       "dashboardLevel": "string",
+      "perspective": "string",
       "result": { /* same as single metric */ },
       "error": { /* present only if this metric failed */ }
     }
@@ -183,6 +218,7 @@ Returns the complete catalog of available metrics.
       "id": "co-001",
       "title": "Total Score Earned by Student in Course",
       "dashboardLevel": "course",
+      "perspective": "student",
       "description": "Total score earned by a student on learning elements in each course",
       "version": "1.0.0",
       "parameters": {
@@ -196,6 +232,7 @@ Returns the complete catalog of available metrics.
       "id": "co-002",
       "title": "Possible Total Score for Course",
       "dashboardLevel": "course",
+      "perspective": "course",
       "description": "Possible total score for all learning elements in each course",
       "version": "1.0.0",
       "parameters": {
@@ -225,6 +262,7 @@ Returns details for a specific metric.
   "id": "co-001",
   "title": "Total Score Earned by Student in Course",
   "dashboardLevel": "course",
+  "perspective": "student",
   "description": "Total score earned by a student on learning elements in each course",
   "version": "1.0.0",
   "parameters": {
@@ -256,6 +294,7 @@ Returns details for a specific metric.
 {
   "metricId": "co-001",
   "dashboardLevel": "course",
+  "perspective": "student",
   "description": "Total score earned by a student on learning elements in each course",
   "filters": {
     "actorId": "student-12345",
@@ -288,6 +327,7 @@ Returns details for a specific metric.
 {
   "metricId": "co-002",
   "dashboardLevel": "course",
+  "perspective": "course",
   "description": "Possible total score for all learning elements in each course",
   "filters": {
     "courseId": "course-cs101"
@@ -318,6 +358,7 @@ Returns details for a specific metric.
 {
   "metricId": "co-003",
   "dashboardLevel": "course",
+  "perspective": "student",
   "description": "Total time spent by a student in each course in a given time period",
   "filters": {
     "actorId": "student-12345",
@@ -352,6 +393,7 @@ Returns details for a specific metric.
 {
   "metricId": "co-004",
   "dashboardLevel": "course",
+  "perspective": "student",
   "description": "Last three learning elements of any course completed by a student",
   "filters": {
     "actorId": "student-12345",
@@ -402,6 +444,7 @@ Returns details for a specific metric.
 {
   "metricId": "co-005",
   "dashboardLevel": "course",
+  "perspective": "student",
   "description": "Completion date of the last three learning elements of any course completed by a student",
   "filters": {
     "actorId": "student-12345",
@@ -441,6 +484,7 @@ Returns details for a specific metric.
 {
   "metricId": "to-001",
   "dashboardLevel": "topic",
+  "perspective": "student",
   "description": "Total score earned by a student on learning elements in each topic",
   "filters": {
     "actorId": "student-12345",
@@ -473,6 +517,7 @@ Returns details for a specific metric.
 {
   "metricId": "to-002",
   "dashboardLevel": "topic",
+  "perspective": "course",
   "description": "Possible total score for all learning elements in each topic",
   "filters": {
     "topicId": "topic-data-structures"
@@ -503,6 +548,7 @@ Returns details for a specific metric.
 {
   "metricId": "to-003",
   "dashboardLevel": "topic",
+  "perspective": "student",
   "description": "Total time spent by a student in each topic in a given time period",
   "filters": {
     "actorId": "student-12345",
@@ -537,6 +583,7 @@ Returns details for a specific metric.
 {
   "metricId": "to-004",
   "dashboardLevel": "topic",
+  "perspective": "student",
   "description": "Last three learning elements of any topic in a course completed by a student",
   "filters": {
     "actorId": "student-12345",
@@ -587,7 +634,8 @@ Returns details for a specific metric.
 {
   "metricId": "to-005",
   "dashboardLevel": "topic",
-  "description": "Completion date of the last three learning elements of any course completed by a student",
+  "perspective": "student",
+  "description": "Completion date of the last three learning elements of any topic completed by a student",
   "filters": {
     "actorId": "student-12345",
     "topicId": "topic-data-structures"
@@ -626,6 +674,7 @@ Returns details for a specific metric.
 {
   "metricId": "le-001",
   "dashboardLevel": "element",
+  "perspective": "student",
   "description": "Current completion status of the best attempt by a student for each learning element",
   "filters": {
     "actorId": "student-12345",
@@ -652,6 +701,7 @@ Returns details for a specific metric.
 {
   "metricId": "le-001",
   "dashboardLevel": "element",
+  "perspective": "student",
   "description": "Current completion status of the best attempt by a student for each learning element",
   "filters": {
     "actorId": "student-12345",
@@ -682,6 +732,7 @@ Returns details for a specific metric.
 {
   "metricId": "le-002",
   "dashboardLevel": "element",
+  "perspective": "student",
   "description": "Date of the best attempt of a student for each learning element",
   "filters": {
     "actorId": "student-12345",
@@ -713,6 +764,7 @@ Returns details for a specific metric.
 {
   "metricId": "le-003",
   "dashboardLevel": "element",
+  "perspective": "student",
   "description": "Score for the best attempt of a student at each learning element",
   "filters": {
     "actorId": "student-12345",
@@ -746,6 +798,7 @@ Returns details for a specific metric.
 {
   "metricId": "le-004",
   "dashboardLevel": "element",
+  "perspective": "student",
   "description": "Total time spent by a student on each learning element in a given time period",
   "filters": {
     "actorId": "student-12345",
@@ -916,6 +969,7 @@ GET /api/v1/metrics/co-004/results?actorId=student-12345&courseId=course-cs101&p
 {
   "metricId": "co-004",
   "dashboardLevel": "course",
+  "perspective": "student",
   "filters": {
     "actorId": "student-12345",
     "courseId": "course-cs101"
@@ -1001,6 +1055,8 @@ Request multiple metrics in a single call.
   "metrics": [
     {
       "metricId": "co-001",
+      "dashboardLevel": "course",
+      "perspective": "student",
       "result": {
         "value": 87.5,
         "unit": "points",
@@ -1009,6 +1065,8 @@ Request multiple metrics in a single call.
     },
     {
       "metricId": "co-002",
+      "dashboardLevel": "course",
+      "perspective": "course",
       "result": {
         "value": 100.0,
         "unit": "points",
@@ -1017,6 +1075,8 @@ Request multiple metrics in a single call.
     },
     {
       "metricId": "co-003",
+      "dashboardLevel": "course",
+      "perspective": "student",
       "result": {
         "value": 18720,
         "unit": "seconds",
@@ -1052,6 +1112,7 @@ When adding new learning analytics metrics from the CSV file or custom requireme
   id: "co-001",  // Dashboard level prefix (co/to/le/cx) + sequential number
   title: "Human-readable metric name",
   dashboardLevel: "course" | "topic" | "element",
+  perspective: "student" | "instructor" | "course" | "system",
   description: "Brief description from CSV",
   version: "1.0.0",
   parameters: {
@@ -1062,6 +1123,12 @@ When adding new learning analytics metrics from the CSV file or custom requireme
   unit: "points" | "seconds" | "count" | "items" | "timestamp" | null
 }
 ```
+
+**Perspective Values:**
+- `student`: Metric calculated from individual student's perspective (requires actorId)
+- `instructor`: Metric from instructor's perspective (aggregated across students)
+- `course`: Course-level metric independent of individual actors
+- `system`: System-wide analytics or metadata
 
 #### 2. Determine Response Pattern
 
