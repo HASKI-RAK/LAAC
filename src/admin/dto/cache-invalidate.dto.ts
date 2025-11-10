@@ -78,7 +78,7 @@ export class CacheInvalidateDto {
   })
   @ValidateIf((o: CacheInvalidateDto) => o.pattern !== undefined)
   @IsString()
-  @Matches(/^[a-zA-Z0-9:*?[\]-]+$/, {
+  @Matches(/^[a-zA-Z0-9:*?[\]\-]+$/, {
     message:
       'Pattern may contain only alphanumeric characters, colons, hyphens, and Redis glob characters (*, ?, []).',
   })
