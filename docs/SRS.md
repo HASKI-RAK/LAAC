@@ -62,6 +62,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-022 — Performance Testing and SLO Validation → `docs/srs/REQ-FN-022.md`
 - REQ-FN-023 — Authentication and Authorization Framework → `docs/srs/REQ-FN-023.md`
 - REQ-FN-024 — Input Validation and Rate Limiting → `docs/srs/REQ-FN-024.md`
+- REQ-FN-025 — LRS Instance Health Monitoring → `docs/srs/REQ-FN-025.md`
 
 ## Non-Functional Requirements
 

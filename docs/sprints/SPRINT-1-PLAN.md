@@ -22,12 +22,14 @@
 ### Success Criteria
 
 - [x] All NestJS modules scaffolded per architecture (Section 4.2) — story #3
-- [ ] JWT authentication working with scope-based authorization
+- [x] JWT authentication working with scope-based authorization — story #19 (2.1, 2.2)
 - [x] Structured logging with correlation IDs operational — story #8
 - [ ] Swagger UI accessible with documented endpoints
 - [ ] CI pipeline running tests and building Docker image
 - [x] Development environment configuration and secrets management implemented — story #10
 - [x] Health endpoints implemented (liveness/readiness) — story #12 (readiness reports dependency status)
+- [ ] Rate limiting implemented — story #23 (2.3) — NOT STARTED
+- [ ] Input validation pipeline configured — story #22 (2.4) — NOT STARTED
 
 Note: Issue #6 (Environment Configuration Setup) was consolidated into #10. #6 has been closed as duplicate to avoid fragmentation.
 
@@ -201,9 +203,12 @@ LOG_LEVEL=debug
 
 **Priority**: Critical | **Story Points**: 13
 
-#### Story 2.1: JWT Authentication Strategy
+**Progress**: 8/13 points complete (Stories 2.1, 2.2 ✅ | Stories 2.3, 2.4 pending)
+
+#### Story 2.1: JWT Authentication Strategy ✅ ([#19](https://github.com/HASKI-RAK/LAAC/issues/19))
 
 **Description**: Implement JWT validation and guard (REQ-FN-023, ADR-005)  
+**Status**: COMPLETED (2025-10-21) — Implemented together with Story 2.2  
 **Acceptance Criteria**:
 
 - [ ] `JwtAuthGuard` validates JWT tokens
@@ -234,13 +239,14 @@ interface JwtPayload {
 }
 ```
 
-**Story Points**: 5 | **Assigned To**: TBD
+**Story Points**: 5 | **Assigned To**: theUpsider, Copilot | **Completed**: 2025-10-21
 
 ---
 
-#### Story 2.2: Scope-Based Authorization Guard
+#### Story 2.2: Scope-Based Authorization Guard ✅ ([#19](https://github.com/HASKI-RAK/LAAC/issues/19))
 
 **Description**: Implement `ScopesGuard` for fine-grained access control (REQ-FN-023)  
+**Status**: COMPLETED (2025-10-21) — Implemented together with Story 2.1  
 **Acceptance Criteria**:
 
 - [ ] `@RequireScopes()` decorator defines required scopes
@@ -266,13 +272,14 @@ interface JwtPayload {
 | `admin:cache` | Invalidate cache keys |
 | `admin:config` | Modify instance configuration |
 
-**Story Points**: 3 | **Assigned To**: TBD
+**Story Points**: 3 | **Assigned To**: theUpsider, Copilot | **Completed**: 2025-10-21
 
 ---
 
-#### Story 2.3: Rate Limiting Guard
+#### Story 2.3: Rate Limiting Guard ([#23](https://github.com/HASKI-RAK/LAAC/issues/23))
 
 **Description**: Implement request rate limiting per client (REQ-FN-024)  
+**Status**: NOT STARTED — Issue created 2025-11-10  
 **Acceptance Criteria**:
 
 - [ ] `RateLimitGuard` enforces configurable limits
@@ -294,9 +301,10 @@ interface JwtPayload {
 
 ---
 
-#### Story 2.4: Input Validation Pipeline
+#### Story 2.4: Input Validation Pipeline ([#22](https://github.com/HASKI-RAK/LAAC/issues/22))
 
 **Description**: Set up DTO validation with class-validator (REQ-FN-024)  
+**Status**: NOT STARTED — Issue created 2025-11-10  
 **Acceptance Criteria**:
 
 - [ ] Global `ValidationPipe` configured

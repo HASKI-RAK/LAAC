@@ -42,13 +42,16 @@ This architecture covers:
 
 ### 2.1 Key Requirements (Architecturally Significant)
 
-- **REQ-FN-001, 002**: Client API + xAPI LRS integration
+- **REQ-FN-001, 002**: Client API + multiple xAPI LRS integration
 - **REQ-FN-003, 004, 005**: Metrics catalog, computation, and retrieval
 - **REQ-FN-006, 007**: Caching with invalidation
 - **REQ-FN-010**: Extensible metric architecture (bachelor thesis integration)
+- **REQ-FN-017**: Multi-instance support with per-instance filtering
 - **REQ-FN-023, 024**: Authentication, authorization, input validation
+- **REQ-FN-025**: LRS instance health monitoring
 - **REQ-NF-005, 017, 018**: Performance SLOs (p95 < 2s)
 - **REQ-NF-010**: Metric isolation and testability
+- **REQ-NF-013**: Multi-instance data isolation
 - **REQ-NF-019, 020**: Security baseline and testing
 
 ### 2.2 Quality Attributes
@@ -145,15 +148,29 @@ This architecture covers:
 
 ### ADR-007: Circuit Breaker for LRS Client
 
-**Status**: Proposed (Future Enhancement)  
-**Context**: REQ-NF-018 requires graceful degradation when LRS is slow/unavailable  
-**Decision**: Implement circuit breaker pattern using library (e.g., Cockatiel, opossum) to prevent cascading failures  
+**Status**: Accepted  
+**Context**: REQ-NF-018 requires graceful degradation when LRS is slow/unavailable; multi-LRS (REQ-FN-002, 025) requires per-instance resilience  
+**Decision**: Implement circuit breaker pattern per LRS instance using library (e.g., Cockatiel, opossum) to prevent cascading failures  
 **Consequences**:
 
 - ✅ System remains responsive when LRS degrades
 - ✅ Automatic failure detection and recovery
 - ⚠️ Requires monitoring and tuning of thresholds (error rate, timeout)
 - ⚠️ Adds complexity to LRS client logic
+
+### ADR-008: LRS-Based Instance Identification
+
+**Status**: Accepted  
+**Context**: REQ-FN-017, REQ-NF-013 require reliable instance identification for data isolation; xAPI statements may have inconsistent or missing context fields  
+**Decision**: Use LRS source (from REQ-FN-002 configuration) as primary `instanceId` for all statements retrieved from that endpoint, with optional validation against statement context  
+**Consequences**:
+
+- ✅ Guarantees 1:1 mapping between LRS configuration and statement source
+- ✅ Eliminates ambiguity from missing or inconsistent xAPI context fields
+- ✅ Simplifies multi-instance isolation enforcement (source = truth)
+- ✅ Configuration-driven, no runtime parsing complexity
+- ⚠️ Assumes LRS instances never share authentication or return cross-instance statements
+- ⚠️ Optional context validation can detect configuration errors (log warning if mismatch)
 
 ---
 
@@ -189,12 +206,18 @@ This architecture covers:
          ▼
 ┌──────────────────────────────────────────────────────────────┐
 │                     Data Access Layer                         │
-│  • CacheService (Redis) • LRSClient (xAPI HTTP)              │
+│  • CacheService (Redis) • LRSClientFactory (Multi-Instance)  │
+│  • LRSHealthMonitor • Circuit Breakers per LRS               │
 └───────────────┬──────────────────────┬───────────────────────┘
                 │                      │
                 ▼                      ▼
-        ┌──────────────┐       ┌────────────────┐
-        │ Redis Cache  │       │ Yetanalytics   │
+        ┌──────────────┐       ┌────────────────────────────────┐
+        │ Redis Cache  │       │ Multiple xAPI LRS Instances    │
+        │  (Shared)    │       │  • LRS HS-KE (hs-ke)           │
+        └──────────────┘       │  • LRS HS-RV (hs-ab)           │
+                               │  • LRS HS-... (hs-...)         │
+                               │  Each: Yetanalytics xAPI 1.0.3 │
+                               └────────────────────────────────┘
         │              │       │ LRS (xAPI)     │
         └──────────────┘       └────────────────┘
 ```
@@ -244,9 +267,26 @@ This architecture covers:
 
 - `CacheService`: Implements `ICacheService` interface, Redis client with cache-aside pattern
   - Methods: `get(key)`, `set(key, value, ttl)`, `invalidate(key)`, `invalidatePattern(pattern)`
-- `LRSClient`: Implements `ILRSClient` interface, HTTP client for xAPI LRS (Yetanalytics)
-  - Method: `getStatements(query)` — Fetches xAPI statements with filters
-  - Includes timeout configuration, retry logic with exponential backoff, circuit breaker (future)
+  - Cache keys include `instanceId` for multi-instance isolation (REQ-NF-013)
+- `LRSClientFactory`: Creates and manages multiple `ILRSClient` instances (one per configured LRS)
+  - Configuration from `LRS_INSTANCES` env var (REQ-FN-002)
+  - Per-instance connection pooling and circuit breaker (ADR-007, REQ-FN-025)
+- `ILRSClient` (Interface): Abstracts xAPI LRS protocol
+  ```typescript
+  interface ILRSClient {
+    instanceId: string;
+    queryStatements(filters: xAPIQueryFilters): Promise<xAPIStatement[]>;
+    getInstanceHealth(): Promise<LRSHealthStatus>;
+  }
+  ```
+- `LRSClient`: Implements `ILRSClient`, HTTP client for xAPI LRS (Yetanalytics)
+  - Method: `queryStatements(filters)` — Fetches xAPI statements with filters, tags with `instanceId`
+  - Method: `getInstanceHealth()` — Queries `/xapi/about` for health check (REQ-FN-025)
+  - Includes timeout configuration (default: 10s), retry logic with exponential backoff, circuit breaker
+- `LRSHealthMonitor`: Periodic health checks for all LRS instances (REQ-FN-025)
+  - Polls each LRS every 30s, updates health status
+  - Drives circuit breaker state transitions
+  - Exposes health metrics to Prometheus
 
 #### **AdminModule** (Operational APIs)
 
@@ -257,23 +297,60 @@ This architecture covers:
 
 ### 4.3 Data Flow (Typical Request)
 
-1. **Client** sends `GET /api/v1/metrics/course-completion/results?courseId=123&start=2025-01-01`
+#### Single-Instance Query
+
+1. **Client** sends `GET /api/v1/metrics/course-completion/results?instanceId=hs-ke&courseId=123&start=2025-01-01`
 2. **CorrelationIdMiddleware** injects `X-Correlation-ID` if not present
 3. **AuthGuard** validates JWT token, extracts scopes
 4. **ScopesGuard** checks for `analytics:read` scope
 5. **RateLimitGuard** checks request rate
-6. **ValidationPipe** validates query parameters
+6. **ValidationPipe** validates query parameters (including `instanceId`)
 7. **MetricsController** delegates to `MetricsService.getResults()`
-8. **MetricsService** checks **CacheService** for cached result
+8. **MetricsService** checks **CacheService** for cached result with key: `cache:course-completion:hs-ke:courseId=123:v1`
    - **Cache hit**: Return cached result (sub-100ms)
    - **Cache miss**: Proceed to computation
 9. **ComputationFactory** resolves metric provider (Quick or Thesis)
-10. **MetricProvider** calls **LRSClient** to fetch xAPI statements
-11. **LRSClient** queries Yetanalytics LRS via HTTP (with timeout and retry)
-12. **MetricProvider** computes result from xAPI data
-13. **CacheService** stores result with TTL
-14. **MetricsService** returns result to controller
-15. **Response** sent to client with correlation ID in headers
+10. **MetricProvider** requests **LRSClientFactory** to get client for `instanceId=hs-ke`
+11. **LRSClient** (for hs-ke) queries that instance's LRS via HTTP with circuit breaker protection
+    - Applies timeout (10s), retry logic with exponential backoff
+    - If circuit open (instance unhealthy), throws `ServiceUnavailableException`
+12. **LRSClient** tags all retrieved statements with `instanceId=hs-ke`
+13. **MetricProvider** computes result from xAPI data
+14. **CacheService** stores result with TTL and `instanceId` in key
+15. **MetricsService** returns result to controller with metadata: `{"instanceId": "hs-ke"}`
+16. **Response** sent to client with correlation ID in headers
+
+#### Multi-Instance Aggregated Query
+
+1. **Client** sends `GET /api/v1/metrics/course-completion/results?courseId=123&start=2025-01-01` (no `instanceId`)
+2. Steps 2-7 same as single-instance
+3. **MetricsService** identifies cross-instance query, checks cache per instance:
+   - `cache:course-completion:hs-ke:courseId=123:v1`
+   - `cache:course-completion:hs-rv:courseId=123:v1`
+   - **Partial cache hit**: Use cached results for hs-ke, compute for hs-rv
+4. **ComputationFactory** resolves metric provider
+5. **MetricProvider** calls **LRSClientFactory.getAllClients()** to get all configured instances
+6. For each instance without cached result:
+   - **LRSClient** queries that instance's LRS concurrently (Promise.all pattern)
+   - Circuit breaker may skip unhealthy instances, log warning
+   - Tags statements with respective `instanceId`
+7. **MetricProvider** aggregates results across all instances:
+   - Merges xAPI data from all sources
+   - Computes cross-instance analytics
+   - Tracks which instances contributed data
+8. **CacheService** stores per-instance results with TTL
+9. **MetricsService** returns aggregated result with metadata:
+   ```json
+   {
+     "result": {...},
+     "metadata": {
+       "includedInstances": ["hs-ke", "hs-rv"],
+       "excludedInstances": [],
+       "aggregated": true
+     }
+   }
+   ```
+10. **Response** sent to client with correlation ID
 
 ---
 
@@ -302,13 +379,14 @@ This architecture covers:
     │   Port: 3000     │          │   Port: 9000     │
     └────────┬─────────┘          └──────────────────┘
              │
-       ┌─────┴──────┐
-       │            │
-       ▼            ▼
-┌─────────────┐  ┌──────────────────┐
-│ Redis Cache │  │ Yetanalytics LRS │
-│ Port: 6379  │  │ (External)       │
-└─────────────┘  └──────────────────┘
+       ┌─────┴──────┬────────────────┬───────────────┐
+       │            │                │               │
+       ▼            ▼                ▼               ▼
+┌─────────────┐  ┌────────────┐ ┌────────────┐ ┌────────────┐
+│ Redis Cache │  │ LRS HS-KE  │ │ LRS HS-AB  │ │ LRS HS-... │
+│ Port: 6379  │  │ (External) │ │ (External) │ │ (External) │
+│   Shared    │  │ Instance 1 │ │ Instance 2 │ │ Instance N │
+└─────────────┘  └────────────┘ └────────────┘ └────────────┘
 ```
 
 ### 5.2 Container Strategy

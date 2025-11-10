@@ -20,6 +20,7 @@ LAAC (Learning Analytics Analyzing Center) is a NestJS-based intermediary system
 - Write **pure, stateless functions** for metric computations (determinism requirement REQ-NF-004).
 - Ensure all changes align with the requirements specified in `docs/SRS.md`.
 - Maintain **traceability** by referencing the relevant REQ-\* ID in code comments, tests, and documentation.
+- Dont create a summary document of your changes after finishing work.
 
 ## Workflow Integration
 
