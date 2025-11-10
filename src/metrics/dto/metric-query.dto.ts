@@ -52,7 +52,7 @@ export class MetricQueryDto {
     example: '2025-01-01T00:00:00.000Z',
   })
   @IsOptional()
-  @IsISO8601({ message: 'start must be a valid ISO 8601 date' })
+  @IsISO8601({}, { message: 'start must be a valid ISO 8601 date' })
   start?: string;
 
   @ApiProperty({
@@ -61,7 +61,7 @@ export class MetricQueryDto {
     example: '2025-12-31T23:59:59.999Z',
   })
   @IsOptional()
-  @IsISO8601({ message: 'end must be a valid ISO 8601 date' })
+  @IsISO8601({}, { message: 'end must be a valid ISO 8601 date' })
   end?: string;
 
   @ApiProperty({
@@ -71,7 +71,9 @@ export class MetricQueryDto {
     example: DashboardLevel.COURSE,
   })
   @IsOptional()
-  @IsEnum(DashboardLevel, { message: 'level must be one of: course, topic, element' })
+  @IsEnum(DashboardLevel, {
+    message: 'level must be one of: course, topic, element',
+  })
   level?: DashboardLevel;
 
   @ApiProperty({

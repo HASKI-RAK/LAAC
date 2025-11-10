@@ -6,42 +6,38 @@ import {
   IsBoolean,
   Matches,
   ValidateIf,
-  registerDecorator,
-  ValidationOptions,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  Validate,
   ValidationArguments,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 /**
- * Custom validator decorator to ensure mutual exclusivity between cache invalidation options
+ * Custom class-level validator to ensure mutual exclusivity between cache invalidation options
  * Only one of: key, pattern, or all can be specified at a time
+ * This is applied at the class level to avoid duplicate error messages
  */
-function ValidateMutualExclusivity(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: 'validateMutualExclusivity',
-      target: object.constructor,
-      propertyName: propertyName,
-      options: validationOptions,
-      validator: {
-        validate(_value: unknown, args: ValidationArguments) {
-          const dto = args.object as CacheInvalidateDto;
-          const providedFields = [
-            dto.key !== undefined && dto.key !== null,
-            dto.pattern !== undefined && dto.pattern !== null,
-            dto.all !== undefined && dto.all !== null,
-          ].filter(Boolean).length;
+@ValidatorConstraint({ name: 'CacheInvalidateMutualExclusivity', async: false })
+export class CacheInvalidateMutualExclusivityConstraint
+  implements ValidatorConstraintInterface
+{
+  validate(_value: unknown, args: ValidationArguments) {
+    const dto = args.object as CacheInvalidateDto;
+    const providedFields = [
+      dto.key !== undefined && dto.key !== null,
+      dto.pattern !== undefined && dto.pattern !== null,
+      dto.all !== undefined && dto.all !== null,
+    ].filter(Boolean).length;
 
-          // Exactly one field must be provided
-          return providedFields === 1;
-        },
-        defaultMessage() {
-          return 'Exactly one of key, pattern, or all must be specified';
-        },
-      },
-    });
-  };
+    // Allow 0 (empty request - controller will handle) or exactly 1 field
+    return providedFields === 0 || providedFields === 1;
+  }
+
+  defaultMessage() {
+    return 'Exactly one of key, pattern, or all must be specified';
+  }
 }
 
 /**
@@ -59,6 +55,12 @@ function ValidateMutualExclusivity(validationOptions?: ValidationOptions) {
  * Controller logic should enforce that at least one field is provided for the operation.
  */
 export class CacheInvalidateDto {
+  // Hidden property for class-level validation
+  // This ensures mutual exclusivity is checked once per DTO instance
+  @Validate(CacheInvalidateMutualExclusivityConstraint, {
+    message: 'Exactly one of key, pattern, or all must be specified',
+  })
+  private readonly _mutualExclusivityCheck: undefined;
   @ApiProperty({
     required: false,
     description:
@@ -67,7 +69,6 @@ export class CacheInvalidateDto {
   })
   @ValidateIf((o: CacheInvalidateDto) => o.key !== undefined)
   @IsString()
-  @ValidateMutualExclusivity()
   key?: string;
 
   @ApiProperty({
@@ -78,11 +79,10 @@ export class CacheInvalidateDto {
   })
   @ValidateIf((o: CacheInvalidateDto) => o.pattern !== undefined)
   @IsString()
-  @Matches(/^[a-zA-Z0-9:*?[\]\-]+$/, {
+  @Matches(/^[a-zA-Z0-9:*?[\]-]+$/, {
     message:
       'Pattern may contain only alphanumeric characters, colons, hyphens, and Redis glob characters (*, ?, []).',
   })
-  @ValidateMutualExclusivity()
   pattern?: string;
 
   @ApiProperty({
@@ -95,6 +95,5 @@ export class CacheInvalidateDto {
   @ValidateIf((o: CacheInvalidateDto) => o.all !== undefined)
   @Type(() => Boolean)
   @IsBoolean()
-  @ValidateMutualExclusivity()
   all?: boolean;
 }

@@ -134,7 +134,7 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
 
   describe('Edge cases', () => {
     it('should accept empty object (all fields are optional, controller enforces at least one)', async () => {
-      // Note: The mutual exclusivity validator only runs when fields are provided
+      // Note: With class-level validator, empty objects now pass validation (0 fields allowed)
       // Controller logic should enforce that at least one field is required for the operation
       const dto = plainToInstance(CacheInvalidateDto, {});
       const errors = await validate(dto);
@@ -147,8 +147,11 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
         pattern: 'cache:*',
       });
       const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+      // With class-level validation, we get exactly 1 error (not duplicates)
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toHaveProperty(
+        'CacheInvalidateMutualExclusivity',
+      );
     });
 
     it('should reject when both key and all are provided', async () => {
@@ -157,8 +160,10 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
         all: true,
       });
       const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toHaveProperty(
+        'CacheInvalidateMutualExclusivity',
+      );
     });
 
     it('should reject when both pattern and all are provided', async () => {
@@ -167,8 +172,10 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
         all: true,
       });
       const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toHaveProperty(
+        'CacheInvalidateMutualExclusivity',
+      );
     });
 
     it('should reject when all three fields are provided', async () => {
@@ -178,8 +185,10 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
         all: true,
       });
       const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toHaveProperty(
+        'CacheInvalidateMutualExclusivity',
+      );
     });
 
     it('should validate simple alphanumeric key', async () => {
