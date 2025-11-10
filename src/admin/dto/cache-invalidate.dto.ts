@@ -31,7 +31,7 @@ export class CacheInvalidateDto {
   @IsString()
   @Matches(/^[a-zA-Z0-9:*?[\]-]+$/, {
     message:
-      'Pattern must contain only alphanumeric characters, colons, and Redis glob characters (*, ?, [], -)',
+      'Pattern may contain only alphanumeric characters, colons, hyphens, and Redis glob characters (*, ?, []).',
   })
   pattern?: string;
 
