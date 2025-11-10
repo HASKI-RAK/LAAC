@@ -71,7 +71,7 @@ export class MetricQueryDto {
     example: DashboardLevel.COURSE,
   })
   @IsOptional()
-  @IsEnum(DashboardLevel)
+  @IsEnum(DashboardLevel, { message: 'level must be one of: course, topic, element' })
   level?: DashboardLevel;
 
   @ApiProperty({
