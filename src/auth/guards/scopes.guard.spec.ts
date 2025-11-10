@@ -46,7 +46,6 @@ describe('REQ-FN-023: ScopesGuard', () => {
     let mockContext: ExecutionContext;
 
     beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mockContext = {
         getHandler: jest.fn(),
         getClass: jest.fn(),

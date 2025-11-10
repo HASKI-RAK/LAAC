@@ -101,7 +101,6 @@ describe('REQ-FN-023: JwtStrategy', () => {
       };
 
       expect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         new JwtStrategy(mockConfigService as any);
       }).toThrow('JWT_SECRET is not configured');
     });

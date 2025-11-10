@@ -30,30 +30,25 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
 
   describe('Public Endpoints', () => {
     it('/ (GET) - should be accessible without authentication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer()).get('/').expect(200);
     });
 
     it('/health (GET) - should be accessible without authentication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer()).get('/health').expect(200);
     });
 
     it('/health/liveness (GET) - should be accessible without authentication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer())
         .get('/health/liveness')
         .expect(200)
         .expect((res) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           expect(res.body.status).toBe('ok');
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
           expect(res.body.version).toBeDefined();
         });
     });
 
     it('/health/readiness (GET) - should be accessible without authentication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer())
         .get('/health/readiness')
         .expect((res) => {
@@ -67,7 +62,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
     it('should return 401 when accessing protected endpoint without token', async () => {
       // Assuming we have a protected endpoint (will be created in metrics module)
       // For now, we just test that unprotected endpoints work
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer()).get('/').expect(200);
     });
 
@@ -76,7 +71,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
 
       // This test will fail if there are no protected endpoints yet
       // It's a placeholder for when metrics endpoints are added
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${invalidToken}`)
@@ -97,7 +92,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
 
       // This test will fail if there are no protected endpoints yet
       // It's a placeholder for when metrics endpoints are added
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${expiredToken}`)
@@ -111,7 +106,6 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
         scopes: ['analytics:read'],
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${validToken}`)
@@ -127,7 +121,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       });
 
       // This is a placeholder test - will be meaningful when metrics endpoints exist
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${token}`)
@@ -141,7 +135,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       });
 
       // This is a placeholder test - will be meaningful when protected endpoints exist
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${token}`)
@@ -155,7 +149,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       });
 
       // This is a placeholder test - will be meaningful when admin endpoints exist
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${token}`)
@@ -185,12 +179,10 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
     });
 
     it('should allow access to all endpoints when AUTH_ENABLED=false', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(bypassApp.getHttpServer()).get('/').expect(200);
     });
 
     it('should not require token when auth is disabled', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(bypassApp.getHttpServer())
         .get('/health/liveness')
         .expect(200);
@@ -205,7 +197,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       });
 
       // This test will be meaningful when protected endpoints exist
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${invalidToken}`)
@@ -219,7 +211,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       });
 
       // This test will be meaningful when protected endpoints exist
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${invalidToken}`)
@@ -232,7 +224,6 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
         scopes: [],
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return request(app.getHttpServer())
         .get('/')
         .set('Authorization', `Bearer ${validToken}`)

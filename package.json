@@ -33,6 +33,8 @@
     "@nestjs/terminus": "^11.0.0",
     "@willsoto/nestjs-prometheus": "^6.0.2",
     "axios": "^1.12.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "cls-hooked": "^4.2.2",
     "ioredis": "^5.8.1",
     "joi": "^18.0.1",
