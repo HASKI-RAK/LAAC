@@ -1,4 +1,3 @@
-
 ---
 id: REQ-FN-002
 title: Multiple xAPI LRS Integration
@@ -10,16 +9,16 @@ owner: TODO
 version: 0.2
 ---
 
-
 ## Description
+
 The system shall integrate with multiple xAPI-compliant Learning Record Store (LRS) instances, each with independent configuration (endpoint URL, authentication credentials), enabling concurrent queries across different data sources. Each LRS instance is identified by a unique `instanceId` for data isolation and routing.
 
-
 ## Rationale
+
 Fulfills the mediator role by sourcing analytics input from multiple xAPI-capable LRS instances, supporting multi-university deployments where each institution operates its own LRS.
 
-
 ## Acceptance Criteria
+
 - **Multi-LRS Configuration**: The system accepts configuration for multiple LRS instances via environment variables or structured configuration file:
   - Each instance SHALL include: `instanceId` (unique identifier), `name` (human-readable label), `endpoint` (xAPI LRS URL), `auth` (authentication credentials)
   - Configuration formats supported:
@@ -27,8 +26,8 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
     - Individual env vars with instance prefix: `LRS_HS_KE_ENDPOINT`, `LRS_HS_KE_USERNAME`, `LRS_HS_KE_PASSWORD`
   - Minimum one LRS instance required; application SHALL fail startup if no instances configured
 - **Authentication Mechanisms**: The system SHALL support the following xAPI authentication methods per LRS instance:
-  - HTTP Basic Authentication (username + password)
-  - OAuth 2.0 Bearer tokens (future enhancement)
+  - HTTP Basic Authentication (username + password) — mandatory baseline authentication
+  - The system SHOULD support OAuth 2.0 Bearer tokens (future enhancement)
   - Custom header-based authentication if required by LRS implementation
 - **xAPI Query Capabilities**: For each configured LRS instance, the system SHALL:
   - Query statements within specified time ranges (`since`, `until` parameters)
@@ -56,8 +55,8 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
   }
   ```
 
-
 ## Verification
+
 - **Configuration Tests**:
   - Unit tests verify parsing of multi-LRS configuration from JSON and env vars
   - Validation tests ensure startup fails with clear error when required fields missing
@@ -77,29 +76,29 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
   - Verify concurrent queries complete within SLO targets (REQ-NF-005, 017)
   - Verify connection pooling limits prevent resource exhaustion
 
-
 ## Dependencies
+
 - REQ-FN-001 (Client-facing API) — receives aggregated data from multiple LRS
 - REQ-FN-014 (Secrets management) — provides secure credential storage per instance
 - REQ-FN-017 (Multi-instance support) — defines instance identification and filtering
 - REQ-NF-018 (Graceful degradation) — timeout and circuit breaker requirements
 
-
 ## Assumptions / Constraints
+
 - All LRS instances are xAPI 1.0.x compliant (prefer 1.0.3)
 - Each LRS exposes standard Statement API endpoint (`/xapi/statements`)
 - No direct database access to LRS backends is assumed
 - LRS instances do not share authentication realms (each has independent credentials)
 - Statement format follows xAPI specification with extensions documented in `docs/resources/xapi/`
 
-
 ## API/Interface Impact
+
 - Internal `ILRSClient` interface used by DataAccessModule
 - No direct exposure to client-facing API (encapsulated in data access layer)
 - Configuration impact: requires environment variable or config file schema for multi-LRS setup
 
-
 ## Observability
+
 - **Logging**: All LRS interactions logged with:
   - `instanceId`, `correlationId`, query parameters, response time, status code
   - Authentication failures logged as security events (without credentials)
@@ -111,8 +110,8 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
 - **Health Checks**: `/health/readiness` includes LRS connectivity status per instance
 - **Tracing**: Distributed tracing spans for each LRS query with instance metadata
 
-
 ## Risks / Open Questions
+
 - **Q**: What if an LRS instance has temporary network issues?
   - **A**: Circuit breaker opens after N consecutive failures, returns cached data or partial results; health check marks instance unhealthy
 - **Q**: How to handle LRS version incompatibilities?
@@ -120,14 +119,14 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
 - **Q**: Should we support dynamic LRS instance registration at runtime?
   - **A**: Phase 1: No, config-driven only. Phase 2+: Consider admin API for runtime registration
 
-
 ## References
+
 - Stakeholder Need(s): [SG-4-001](../strs-needs/SG-4-001.md), [SG-4-012](../strs-needs/SG-4-012.md)
 - xAPI Specification: [https://github.com/adlnet/xAPI-Spec](https://github.com/adlnet/xAPI-Spec)
 - Yetanalytics LRS Documentation: [https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md](https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md)
 - Frontend xAPI Context Structure: `docs/resources/xapi/frontend-xapi.md`
 
-
 ## Change History
+
 - v0.2 — Extended to support multiple LRS instances with independent configuration and authentication
 - v0.1 — Initial draft

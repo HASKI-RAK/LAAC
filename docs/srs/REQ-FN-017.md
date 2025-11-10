@@ -6,12 +6,12 @@ status: Draft
 priority: High
 stakeholder_trace: SG-4-012
 owner: TODO
-version: 0.2
+version: 0.3
 ---
 
 ## Description
 
-The system shall support querying multiple university LRS instances (each with independent endpoints per REQ-FN-002), extract the source instance identifier from xAPI statement context, and provide both per-instance filtered analytics and global cross-instance aggregated analytics. The `instanceId` from LRS configuration (REQ-FN-002) shall be the primary identifier for all instance-scoped operations.
+The system shall support querying multiple university LRS instances (each with independent endpoints per REQ-FN-002) and provide both per-instance filtered analytics and global cross-instance aggregated analytics. The `instanceId` from LRS configuration (REQ-FN-002) is THE authoritative source identifier for all statements retrieved from that LRS endpoint (see ADR-008 in ARCHITECTURE.md). Optional validation against xAPI statement context may be performed for consistency checking.
 
 ## Rationale
 
@@ -19,18 +19,19 @@ HASKI serves multiple universities with independent LRS deployments. Analytics m
 
 ## Acceptance Criteria
 
-- **LRS Instance Configuration**: Leverages multi-LRS configuration from REQ-FN-002:
-  - Each configured LRS has `instanceId`, `name`, `endpoint`, `auth` (from REQ-FN-002)
-  - The `instanceId` from LRS configuration is used as the source identifier for all statements retrieved from that LRS
-  - Example: Statements from LRS configured with `{"id":"hs-ke",...}` are tagged with `instanceId="hs-ke"`
-- **Statement-to-Instance Mapping**: Primary strategy uses LRS source:
-  - All statements retrieved from a specific LRS endpoint are tagged with that LRS's `instanceId`
-  - This ensures 1:1 mapping between LRS configuration and statement source
-- **Fallback Instance Extraction** (validation/verification only): System MAY validate `instanceId` against statement context for consistency:
-  1. Primary: `context.extensions["https://wiki.haski.app/"].domain` → extract instance identifier
-  2. Secondary: `context.contextActivities.parent[].definition.name.en` (e.g., "HS-KE")
-  3. Tertiary: `context.platform` if configured with instance mapping
-  - If validation detects mismatch between LRS `instanceId` and statement context, log warning but trust LRS configuration
+- **LRS Instance Configuration as Authoritative Source**: Leverages multi-LRS configuration from REQ-FN-002:
+  - Each configured LRS has `instanceId`, `name`, `endpoint`, `auth` (per REQ-FN-002)
+  - The `instanceId` from LRS configuration is THE authoritative source identifier for all statements retrieved from that LRS endpoint
+  - All statements retrieved from a specific LRS endpoint are automatically tagged with that LRS's `instanceId` during ingestion
+  - Example: Statements from LRS configured with `{"id":"hs-ke","endpoint":"https://lrs.ke.haski.app",...}` are tagged with `instanceId="hs-ke"`
+  - This ensures deterministic 1:1 mapping between LRS configuration and statement source (per ADR-008)
+- **Optional Context Validation** (consistency checking only): System MAY validate `instanceId` against xAPI statement context fields for configuration error detection:
+  - Validation sources (in order of preference):
+    1. `context.extensions["https://wiki.haski.app/"].domain`
+    2. `context.contextActivities.parent[].definition.name.en` (e.g., "HS-KE")
+    3. `context.platform` (if instance mapping configured)
+  - If validation detects mismatch between LRS `instanceId` and statement context: log warning at WARN level, but ALWAYS trust LRS configuration
+  - Validation is NOT mandatory for operation; system functions correctly even if statement context lacks instance identifiers
 - **Instance Tagging**: Each processed xAPI statement SHALL include `instanceId` field:
   - Set from LRS configuration during data ingestion
   - Immutable once set (no runtime modification)
@@ -76,18 +77,19 @@ HASKI serves multiple universities with independent LRS deployments. Analytics m
 ## Verification
 
 - **Configuration Tests**:
-  - Unit tests verify instance tagging from LRS configuration
-  - Tests confirm statements from LRS endpoint X receive `instanceId=X`
-  - Tests verify instance metadata endpoint returns configured instances
+  - Unit tests verify automatic instance tagging from LRS configuration during statement ingestion
+  - Tests confirm statements from LRS endpoint X receive `instanceId=X` (deterministic mapping)
+  - Tests verify instance metadata endpoint returns configured instances with correct health status
 - **Instance Isolation Tests**:
   - E2E tests with mock data from multiple LRS instances verify:
     - Query `?instanceId=hs-ke` returns only hs-ke data
     - Query without `instanceId` returns aggregated data from all instances
     - Query `?instanceId=hs-ke,hs-rv` returns correct aggregation
   - Tests verify identity isolation: student ID "12345" from hs-ke != "12345" from hs-rv
-- **Context Validation Tests** (optional consistency check):
-  - Unit tests verify statement context parsing with production-like structures
-  - Tests log warning when LRS `instanceId` doesn't match statement context (but trust LRS config)
+- **Optional Context Validation Tests** (consistency checking only):
+  - Unit tests verify statement context parsing with production-like xAPI structures
+  - Tests verify warning logged when LRS `instanceId` doesn't match statement context (but LRS config is trusted)
+  - Tests verify system operates correctly when statement context lacks instance identifiers (no validation performed)
 - **Partial Results Tests**:
   - Integration tests simulate one LRS unavailable
   - Verify partial results returned with correct metadata
@@ -122,15 +124,19 @@ HASKI serves multiple universities with independent LRS deployments. Analytics m
 
 ## Risks / Open Questions
 
-- Need to define behavior if instance identifier is missing from statements (reject, use default, log warning?).
+- **RESOLVED**: Instance identifier strategy consolidated to LRS configuration as single source of truth (ADR-008).
 - Clarify aggregation semantics for metrics that don't naturally aggregate (e.g., "last three elements" across instances).
+- **Assumption**: LRS instances never share authentication realms or return cross-instance statements (each LRS is single-tenant for its university).
 
 ## References
 
 - Stakeholder Need(s): [SG-4-012](../strs-needs/SG-4-012.md)
-- Example xAPI context structure provided in requirement discussion
+- Architecture Decision: [ADR-008: LRS-Based Instance Identification](../architecture/ARCHITECTURE.md#adr-008-lrs-based-instance-identification)
+- Related Requirements: [REQ-FN-002](REQ-FN-002.md), [REQ-NF-013](REQ-NF-013.md)
+- Example xAPI context structure: `docs/resources/xapi/frontend-xapi.md`
 
 ## Change History
 
+- v0.3 — Consolidated instance identification strategy: LRS configuration is THE authoritative source; fallback context validation is optional consistency check only (references ADR-008)
 - v0.2 — Clarified LRS-based instance tagging as primary strategy (references REQ-FN-002)
 - v0.1 — Initial draft

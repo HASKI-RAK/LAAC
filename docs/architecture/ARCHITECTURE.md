@@ -148,7 +148,8 @@ This architecture covers:
 
 ### ADR-007: Circuit Breaker for LRS Client
 
-**Status**: Accepted  
+**Status**: Proposed  
+**Implementation**: Deferred to Phase 2 (optional enhancement per REQ-NF-018)  
 **Context**: REQ-NF-018 requires graceful degradation when LRS is slow/unavailable; multi-LRS (REQ-FN-002, 025) requires per-instance resilience  
 **Decision**: Implement circuit breaker pattern per LRS instance using library (e.g., Cockatiel, opossum) to prevent cascading failures  
 **Consequences**:
@@ -207,7 +208,7 @@ This architecture covers:
 ┌──────────────────────────────────────────────────────────────┐
 │                     Data Access Layer                         │
 │  • CacheService (Redis) • LRSClientFactory (Multi-Instance)  │
-│  • LRSHealthMonitor • Circuit Breakers per LRS               │
+│  • LRSHealthMonitor • Circuit Breakers per LRS (Phase 2)     │
 └───────────────┬──────────────────────┬───────────────────────┘
                 │                      │
                 ▼                      ▼
@@ -270,7 +271,7 @@ This architecture covers:
   - Cache keys include `instanceId` for multi-instance isolation (REQ-NF-013)
 - `LRSClientFactory`: Creates and manages multiple `ILRSClient` instances (one per configured LRS)
   - Configuration from `LRS_INSTANCES` env var (REQ-FN-002)
-  - Per-instance connection pooling and circuit breaker (ADR-007, REQ-FN-025)
+  - Per-instance connection pooling; circuit breaker planned for Phase 2 (ADR-007, REQ-FN-025)
 - `ILRSClient` (Interface): Abstracts xAPI LRS protocol
   ```typescript
   interface ILRSClient {
@@ -282,10 +283,10 @@ This architecture covers:
 - `LRSClient`: Implements `ILRSClient`, HTTP client for xAPI LRS (Yetanalytics)
   - Method: `queryStatements(filters)` — Fetches xAPI statements with filters, tags with `instanceId`
   - Method: `getInstanceHealth()` — Queries `/xapi/about` for health check (REQ-FN-025)
-  - Includes timeout configuration (default: 10s), retry logic with exponential backoff, circuit breaker
+  - Includes timeout configuration (default: 10s), retry logic with exponential backoff; circuit breaker planned for Phase 2 (ADR-007)
 - `LRSHealthMonitor`: Periodic health checks for all LRS instances (REQ-FN-025)
   - Polls each LRS every 30s, updates health status
-  - Drives circuit breaker state transitions
+  - Will drive circuit breaker state transitions (Phase 2, ADR-007)
   - Exposes health metrics to Prometheus
 
 #### **AdminModule** (Operational APIs)
@@ -311,9 +312,9 @@ This architecture covers:
    - **Cache miss**: Proceed to computation
 9. **ComputationFactory** resolves metric provider (Quick or Thesis)
 10. **MetricProvider** requests **LRSClientFactory** to get client for `instanceId=hs-ke`
-11. **LRSClient** (for hs-ke) queries that instance's LRS via HTTP with circuit breaker protection
+11. **LRSClient** (for hs-ke) queries that instance's LRS via HTTP
     - Applies timeout (10s), retry logic with exponential backoff
-    - If circuit open (instance unhealthy), throws `ServiceUnavailableException`
+    - Circuit breaker protection planned for Phase 2 (ADR-007); if implemented and circuit open, would throw `ServiceUnavailableException`
 12. **LRSClient** tags all retrieved statements with `instanceId=hs-ke`
 13. **MetricProvider** computes result from xAPI data
 14. **CacheService** stores result with TTL and `instanceId` in key
@@ -332,7 +333,7 @@ This architecture covers:
 5. **MetricProvider** calls **LRSClientFactory.getAllClients()** to get all configured instances
 6. For each instance without cached result:
    - **LRSClient** queries that instance's LRS concurrently (Promise.all pattern)
-   - Circuit breaker may skip unhealthy instances, log warning
+   - Phase 2: Circuit breaker will skip unhealthy instances, log warning (ADR-007)
    - Tags statements with respective `instanceId`
 7. **MetricProvider** aggregates results across all instances:
    - Merges xAPI data from all sources
@@ -681,13 +682,13 @@ export interface ILRSClient {
 
 ## 13. Risk Mitigation
 
-| Risk                        | Impact | Mitigation                                                   |
-| --------------------------- | ------ | ------------------------------------------------------------ |
-| **LRS Unavailable**         | High   | Timeouts, circuit breaker, graceful degradation (REQ-NF-018) |
-| **Cache Unavailable**       | Medium | Fall through to computation, monitor cache hit ratio         |
-| **Metric Computation Slow** | Medium | Cache results, async processing, SLO monitoring (REQ-NF-017) |
-| **Authentication Bypass**   | High   | Security tests in CI (REQ-NF-020), regular audits            |
-| **Metric Definition Drift** | Medium | Traceability checks (REQ-NF-003), versioned specs            |
+| Risk                        | Impact | Mitigation                                                                                           |
+| --------------------------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| **LRS Unavailable**         | High   | Timeouts, retry logic, graceful degradation (REQ-NF-018); circuit breaker planned (ADR-007, Phase 2) |
+| **Cache Unavailable**       | Medium | Fall through to computation, monitor cache hit ratio                                                 |
+| **Metric Computation Slow** | Medium | Cache results, async processing, SLO monitoring (REQ-NF-017)                                         |
+| **Authentication Bypass**   | High   | Security tests in CI (REQ-NF-020), regular audits                                                    |
+| **Metric Definition Drift** | Medium | Traceability checks (REQ-NF-003), versioned specs                                                    |
 
 ---
 

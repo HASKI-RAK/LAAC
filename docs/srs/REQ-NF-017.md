@@ -1,25 +1,31 @@
 ---
 id: REQ-NF-017
-title: Analytics Endpoint Latency SLO (Detailed)
+title: Analytics Endpoint Latency SLO
 type: Non-Functional
 status: Draft
 priority: High
-stakeholder_trace: SG-4-010
+stakeholder_trace: SG-4-003, SG-4-010
 owner: TODO
-version: 0.1
+version: 0.2
 ---
 
 ## Description
+
 Analytics endpoints shall meet specific latency service level objectives (SLOs) under documented nominal load and dataset conditions, ensuring responsive client integrations.
 
+**Note**: This requirement supersedes REQ-NF-005 and serves as the single authoritative source for performance SLOs.
+
 ## Rationale
-Defines the performance contract with clients and enables validation of service responsiveness.
+
+Defines the performance contract with clients and enables validation of service responsiveness. Consolidates all performance targets into a single comprehensive requirement to avoid duplication and ambiguity.
 
 ## Acceptance Criteria
+
 - SLO targets for read/analytics endpoints:
   - P95 latency ≤ 1s end-to-end (warm cache)
   - P50 latency ≤ 500ms end-to-end (warm cache)
-  - P95 latency ≤ 2s for cold cache scenarios
+  - P95 latency ≤ 2s for cold cache scenarios (first request after cache invalidation)
+  - Batch endpoint P95 ≤ 2s for up to 5 metrics in one request
   - Cache hits are measurably faster than cache misses (≥3× improvement per REQ-NF-006)
 - Nominal load profile:
   - Peak: 20 concurrent students
@@ -34,30 +40,38 @@ Defines the performance contract with clients and enables validation of service 
 - SLO monitoring: Latency histograms exported via metrics (REQ-FN-021) with percentile aggregation
 
 ## Verification
+
 - Performance tests (REQ-FN-022) validate SLO compliance under nominal conditions
 - Metrics dashboards track actual P50/P95 latencies in production
 - Load tests confirm system meets SLO at documented load profile
 
 ## Dependencies
+
 - REQ-FN-006 (caching) to achieve latency targets
 - REQ-FN-021 (metrics export) for latency monitoring
 - REQ-FN-022 (performance testing)
 
 ## Assumptions / Constraints
+
 - Network to LRS is reliable with typical latency budget (<100ms)
 - Vertical scaling (CPU/memory) is available as needed
 - No horizontal scaling required for nominal load
 
 ## Observability
+
 - Latency percentiles (P50, P90, P95, P99) exported via metrics endpoint
 - Alerts trigger when P95 exceeds SLO threshold for sustained period
 
 ## Risks / Open Questions
+
 - External LRS slowness may degrade performance; tracked via LRS query latency metrics
 
 ## References
-- Stakeholder Need(s): [SG-4-010](../strs-needs/SG-4-010.md)
+
+- Stakeholder Need(s): [SG-4-003](../strs-needs/SG-4-003.md), [SG-4-010](../strs-needs/SG-4-010.md)
+- Supersedes: REQ-NF-005 (Analytics Endpoint Performance)
 
 ## Change History
-- v0.1 — Initial draft
 
+- v0.2 — Consolidated with REQ-NF-005; added batch endpoint SLO; updated stakeholder traces
+- v0.1 — Initial draft

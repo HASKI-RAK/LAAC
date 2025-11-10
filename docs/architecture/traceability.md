@@ -16,63 +16,75 @@ This document maps each requirement from `docs/SRS.md` to the architectural comp
 
 ---
 
+## Implementation Status Legend
+
+The traceability matrix includes implementation status for each requirement:
+
+- **✅ Complete**: Fully implemented and tested with passing tests
+- **🟡 In Progress**: Partially implemented, some components exist but incomplete
+- **❌ Not Started**: No implementation yet, planned for future development
+- **🔵 Deferred**: Planned for future phase or contingent on external factors
+
+**Update Cadence**: Weekly during active development sprints; quarterly during maintenance phases.  
+**Last Updated**: 2025-11-10
+
+---
+
 ## Functional Requirements Traceability
 
-| Requirement ID | Title                                               | Architecture Mapping                                | Components                                                        | ADR/Section           |
-| -------------- | --------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | --------------------- |
-| **REQ-FN-001** | Client-Facing Intermediary API                      | MetricsModule, MetricsController, API Gateway Layer | `MetricsController`, `AuthGuard`, `ValidationPipe`                | ADR-004, Section 4.2  |
-| **REQ-FN-002** | xAPI LRS Integration                                | DataAccessModule, LRSClient                         | `LRSClient`, HTTP client with xAPI query support                  | Section 4.2, 8.2      |
-| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | MetricsModule, MetricsRegistry                      | `MetricsRegistry`, `GET /metrics` endpoint                        | Section 4.2, 4.3      |
-| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ComputationModule, MetricProviders                  | `IMetricComputation`, `QuickMetricProvider`, `ComputationFactory` | ADR-002, Section 4.2  |
-| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | MetricsModule, MetricsService                       | `MetricsService.getResults()`, `GET /metrics/:id/results`         | Section 4.3           |
-| **REQ-FN-006** | Analytics Results Caching                           | DataAccessModule, CacheService                      | `CacheService` (Redis), cache-aside pattern                       | ADR-003, Section 8.1  |
-| **REQ-FN-007** | Cache Invalidation and Refresh                      | AdminModule, CacheController                        | `CacheController`, `POST /admin/cache/invalidate`                 | Section 4.2           |
-| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | NestJS Swagger integration                          | `@nestjs/swagger` decorators, auto-generated spec                 | ADR-004, Section 10.1 |
-| **REQ-FN-009** | Interactive API Documentation UI                    | Swagger UI integration                              | Swagger UI served at `/api/docs`                                  | ADR-004               |
-| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ComputationModule, IMetricComputation interface     | `IMetricComputation`, plugin-based registration                   | ADR-002, Section 11.1 |
-| **REQ-FN-011** | Metric Contribution Guide and Templates             | Documentation + code templates                      | Template files, contribution guide (future)                       | Section 11.2          |
-| **REQ-FN-012** | Container Image Build and Registry                  | Dockerfile, CI/CD pipeline                          | GitHub Actions workflow, Docker build                             | Section 5.2           |
-| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | Deployment manifests                                | `docker-compose.dev.yml`, `docker-compose.prod.yml`               | Section 5.1, 5.4      |
-| **REQ-FN-014** | Secrets and Configuration Management                | CoreModule, ConfigService                           | `ConfigService`, environment variables, Docker secrets            | Section 4.2, 5.3      |
-| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | GitHub Actions workflows                            | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`        | Section 7.2           |
-| **REQ-FN-016** | API Versioning and Deprecation Policy               | API design, versioning strategy                     | URL-based versioning (`/v1/metrics`), deprecation headers         | Section 11.3          |
-| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | Deployment architecture, shared Redis               | Multiple LAAC containers, shared Redis cache                      | Section 5.4, 6.2      |
-| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | This document and PlantUML diagrams                 | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`           | Section 1-17          |
-| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | Design patterns, module structure                   | Module boundaries, dependency injection, interfaces               | Section 12.1, 12.2    |
-| **REQ-FN-020** | Structured Logging with Correlation IDs             | CoreModule, LoggerService                           | `LoggerService` (Winston), correlation ID middleware              | ADR-006, Section 10.1 |
-
-| **REQ-FN-020** | Structured Logging with Correlation IDs | CoreModule (IMPLEMENTED) | `LoggerService` (Winston) — implemented at `src/core/logger/logger.service.ts`; `CorrelationIdMiddleware` — implemented at `src/core/middleware/correlation-id.middleware.ts` | ADR-006, Section 10.1 |
-| **REQ-FN-021** | Metrics Export and Monitoring Endpoints | AdminModule, MetricsExporter | `MetricsExporter`, `GET /metrics` (Prometheus format) | Section 10.2 |
-| **REQ-FN-022** | Performance Testing and SLO Validation | Testing strategy, observability | Load tests (k6/Artillery), SLO dashboards | Section 7.2, 10.2 |
-| **REQ-FN-023** | Authentication and Authorization Framework | AuthModule, JWT strategy | `JwtAuthGuard`, `ScopesGuard`, JWT validation | ADR-005, Section 9.1, 9.2 |
-| **REQ-FN-024** | Input Validation and Rate Limiting | API Gateway Layer | `ValidationPipe` (class-validator), `RateLimitGuard` | Section 4.2, 9.3, 9.4 |
+| Requirement ID | Title                                               | Implementation Status | Architecture Mapping                                | Components                                                        | ADR/Section               |
+| -------------- | --------------------------------------------------- | --------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | ------------------------- |
+| **REQ-FN-001** | Client-Facing Intermediary API                      | 🟡 In Progress        | MetricsModule, MetricsController, API Gateway Layer | `MetricsController`, `AuthGuard`, `ValidationPipe`                | ADR-004, Section 4.2      |
+| **REQ-FN-002** | xAPI LRS Integration                                | ❌ Not Started        | DataAccessModule, LRSClient                         | `LRSClient`, HTTP client with xAPI query support                  | Section 4.2, 8.2          |
+| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | 🟡 In Progress        | MetricsModule, MetricsRegistry                      | `MetricsRegistry`, `GET /metrics` endpoint                        | Section 4.2, 4.3          |
+| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ❌ Not Started        | ComputationModule, MetricProviders                  | `IMetricComputation`, `QuickMetricProvider`, `ComputationFactory` | ADR-002, Section 4.2      |
+| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | ❌ Not Started        | MetricsModule, MetricsService                       | `MetricsService.getResults()`, `GET /metrics/:id/results`         | Section 4.3               |
+| **REQ-FN-006** | Analytics Results Caching                           | ❌ Not Started        | DataAccessModule, CacheService                      | `CacheService` (Redis), cache-aside pattern                       | ADR-003, Section 8.1      |
+| **REQ-FN-007** | Cache Invalidation and Refresh                      | ❌ Not Started        | AdminModule, CacheController                        | `CacheController`, `POST /admin/cache/invalidate`                 | Section 4.2               |
+| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | ❌ Not Started        | NestJS Swagger integration                          | `@nestjs/swagger` decorators, auto-generated spec                 | ADR-004, Section 10.1     |
+| **REQ-FN-009** | Interactive API Documentation UI                    | ❌ Not Started        | Swagger UI integration                              | Swagger UI served at `/api/docs`                                  | ADR-004                   |
+| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ❌ Not Started        | ComputationModule, IMetricComputation interface     | `IMetricComputation`, plugin-based registration                   | ADR-002, Section 11.1     |
+| **REQ-FN-011** | Metric Contribution Guide and Templates             | 🔵 Deferred           | Documentation + code templates                      | Template files, contribution guide (future)                       | Section 11.2              |
+| **REQ-FN-012** | Container Image Build and Registry                  | ❌ Not Started        | Dockerfile, CI/CD pipeline                          | GitHub Actions workflow, Docker build                             | Section 5.2               |
+| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | ✅ Complete           | Deployment manifests                                | `docker-compose.dev.yml`, `docker-compose.prod.yml`               | Section 5.1, 5.4          |
+| **REQ-FN-014** | Secrets and Configuration Management                | ❌ Not Started        | CoreModule, ConfigService                           | `ConfigService`, environment variables, Docker secrets            | Section 4.2, 5.3          |
+| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | ❌ Not Started        | GitHub Actions workflows                            | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`        | Section 7.2               |
+| **REQ-FN-016** | API Versioning and Deprecation Policy               | ❌ Not Started        | API design, versioning strategy                     | URL-based versioning (`/v1/metrics`), deprecation headers         | Section 11.3              |
+| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | ❌ Not Started        | Deployment architecture, shared Redis               | Multiple LAAC containers, shared Redis cache                      | Section 5.4, 6.2          |
+| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | ✅ Complete           | This document and PlantUML diagrams                 | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`           | Section 1-17              |
+| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | ✅ Complete           | Design patterns, module structure                   | Module boundaries, dependency injection, interfaces               | Section 12.1, 12.2        |
+| **REQ-FN-020** | Structured Logging with Correlation IDs             | ✅ Complete           | CoreModule, LoggerService                           | `LoggerService` (Winston), correlation ID middleware              | ADR-006, Section 10.1     |
+| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | 🟡 In Progress        | AdminModule, MetricsExporter                        | `MetricsExporter`, `GET /metrics` (Prometheus format)             | Section 10.2              |
+| **REQ-FN-022** | Performance Testing and SLO Validation              | 🔵 Deferred           | Testing strategy, observability                     | Load tests (k6/Artillery), SLO dashboards                         | Section 7.2, 10.2         |
+| **REQ-FN-023** | Authentication and Authorization Framework          | ✅ Complete           | AuthModule, JWT strategy                            | `JwtAuthGuard`, `ScopesGuard`, JWT validation                     | ADR-005, Section 9.1, 9.2 |
+| **REQ-FN-024** | Input Validation and Rate Limiting                  | 🟡 In Progress        | API Gateway Layer                                   | `ValidationPipe` (class-validator), `RateLimitGuard`              | Section 4.2, 9.3, 9.4     |
 
 ---
 
 ## Non-Functional Requirements Traceability
 
-| Requirement ID | Title                                               | Architecture Mapping              | Components                                                      | ADR/Section                       |
-| -------------- | --------------------------------------------------- | --------------------------------- | --------------------------------------------------------------- | --------------------------------- |
-| **REQ-NF-001** | Core Data Source Scope (xAPI LRS)                   | Constraint, LRSClient             | `LRSClient` only queries xAPI endpoints                         | Section 2.3, 8.2                  |
-| **REQ-NF-002** | Standalone Deployability                            | CoreModule (IMPLEMENTED) | `HealthController` with liveness and readiness endpoints — implemented at `src/core/health/health.controller.ts`; `RedisHealthIndicator` and `LrsHealthIndicator` — implemented at `src/core/health/indicators/`; Docker Compose with all dependencies | Section 5.1, 5.2, 10.3                  |
-| **REQ-NF-003** | Metrics Traceability and Coverage Verification      | Validation tooling (future)       | CI checks for CSV-to-implementation sync                        | Section 4.2 (REQ-FN-003 note)     |
-| **REQ-NF-004** | Determinism, Idempotency, and Result Consistency    | Computation logic design          | Stateless computation functions, pure logic                     | Section 6.1, 12.2                 |
-| **REQ-NF-005** | Analytics Endpoint Performance (CSV Metrics)        | Caching, optimization             | `CacheService`, async processing, Redis                         | ADR-003, Section 6.1              |
-| **REQ-NF-006** | Cache Performance and Hit Ratio Targets             | Cache strategy, monitoring        | Redis with TTL, hit ratio metrics                               | Section 8.1, 10.2                 |
-| **REQ-NF-007** | Cache Consistency and Correctness                   | Cache invalidation, TTL           | Explicit invalidation API, TTL expiration                       | ADR-003, Section 4.3              |
-| **REQ-NF-008** | API Documentation Completeness and Accuracy         | OpenAPI generation                | Swagger decorators, auto-generated docs                         | ADR-004, Section 10.1             |
-| **REQ-NF-009** | Metric Development Velocity and Lead Time           | Extension architecture            | Plugin interface, clear onboarding                              | ADR-002, Section 11.1             |
-| **REQ-NF-010** | Metric Isolation and Testability                    | Module design, DI                 | Each metric is isolated, mockable via DI                        | Section 7.2, 12.1                 |
-| **REQ-NF-011** | Deployment Automation and Reliability               | CI/CD, Docker Compose             | GitHub Actions, health checks, rollback                         | Section 5.1, 7.2                  |
-| **REQ-NF-012** | Deployment Rollback and Recovery                    | Versioned images, blue-green      | Tagged Docker images, Traefik rolling updates                   | Section 5.1 (Deployment Strategy) |
-| **REQ-NF-013** | Multi-Instance Data Isolation and Consistency       | Shared cache, cache key design    | Redis shared cache with namespaced keys                         | Section 8.1, 5.4                  |
-| **REQ-NF-014** | Architecture Documentation Currency and Maintenance | This document, review process     | Quarterly architecture reviews, PlantUML updates                | Section 17                        |
-| **REQ-NF-015** | Developer Onboarding and Architecture Comprehension | Documentation structure, diagrams | `ARCHITECTURE.md`, PlantUML diagrams, code comments             | Section 1.3, 7.1                  |
-| **REQ-NF-016** | Observability Baseline and Alert Guidance           | Logging, metrics, health checks   | `LoggerService`, `MetricsExporter`, health endpoints            | Section 10.1, 10.2, 10.3          |
-| **REQ-NF-017** | Analytics Endpoint Latency SLO (Detailed)           | Performance design, caching       | Cache-first strategy, async processing, SLO monitoring          | Section 2.2, 10.2                 |
-| **REQ-NF-018** | Graceful Degradation and Timeout Handling           | Error handling, circuit breaker   | Timeout configs, fallback responses, 503 on LRS failure         | Section 6.3, 13                   |
-| **REQ-NF-019** | Security Baseline and Secure Defaults               | Security architecture             | TLS termination (Traefik), secrets management, input validation | Section 9.1-9.4, ADR-005          |
-| **REQ-NF-020** | Security Testing and Compliance Validation          | CI security checks, test strategy | Secret scanning, vulnerability scans, authz tests               | Section 7.2, 9.4                  |
+| Requirement ID | Title                                               | Implementation Status | Architecture Mapping              | Components                                                      | ADR/Section                       |
+| -------------- | --------------------------------------------------- | --------------------- | --------------------------------- | --------------------------------------------------------------- | --------------------------------- |
+| **REQ-NF-001** | Core Data Source Scope (xAPI LRS)                   | ❌ Not Started        | Constraint, LRSClient             | `LRSClient` only queries xAPI endpoints                         | Section 2.3, 8.2                  |
+| **REQ-NF-002** | Standalone Deployability                            | ✅ Complete           | CoreModule, HealthController      | Health endpoints (liveness/readiness), Docker Compose           | Section 5.1, 5.2, 10.3            |
+| **REQ-NF-003** | Metrics Traceability and Coverage Verification      | 🔵 Deferred           | Validation tooling (future)       | CI checks for CSV-to-implementation sync                        | Section 4.2 (REQ-FN-003 note)     |
+| **REQ-NF-004** | Determinism, Idempotency, and Result Consistency    | ❌ Not Started        | Computation logic design          | Stateless computation functions, pure logic                     | Section 6.1, 12.2                 |
+| **REQ-NF-005** | Analytics Endpoint Performance (CSV Metrics)        | ❌ Not Started        | Caching, optimization             | `CacheService`, async processing, Redis                         | ADR-003, Section 6.1              |
+| **REQ-NF-006** | Cache Performance and Hit Ratio Targets             | ❌ Not Started        | Cache strategy, monitoring        | Redis with TTL, hit ratio metrics                               | Section 8.1, 10.2                 |
+| **REQ-NF-007** | Cache Consistency and Correctness                   | ❌ Not Started        | Cache invalidation, TTL           | Explicit invalidation API, TTL expiration                       | ADR-003, Section 4.3              |
+| **REQ-NF-008** | API Documentation Completeness and Accuracy         | ❌ Not Started        | OpenAPI generation                | Swagger decorators, auto-generated docs                         | ADR-004, Section 10.1             |
+| **REQ-NF-009** | Metric Development Velocity and Lead Time           | ❌ Not Started        | Extension architecture            | Plugin interface, clear onboarding                              | ADR-002, Section 11.1             |
+| **REQ-NF-010** | Metric Isolation and Testability                    | ❌ Not Started        | Module design, DI                 | Each metric is isolated, mockable via DI                        | Section 7.2, 12.1                 |
+| **REQ-NF-011** | Deployment Automation and Reliability               | ❌ Not Started        | CI/CD, Docker Compose             | GitHub Actions, health checks, rollback                         | Section 5.1, 7.2                  |
+| **REQ-NF-012** | Deployment Rollback and Recovery                    | ❌ Not Started        | Versioned images, blue-green      | Tagged Docker images, Traefik rolling updates                   | Section 5.1 (Deployment Strategy) |
+| **REQ-NF-013** | Multi-Instance Data Isolation and Consistency       | ❌ Not Started        | Shared cache, cache key design    | Redis shared cache with namespaced keys                         | Section 8.1, 5.4                  |
+| **REQ-NF-014** | Architecture Documentation Currency and Maintenance | ✅ Complete           | This document, review process     | Quarterly architecture reviews, PlantUML updates                | Section 17                        |
+| **REQ-NF-015** | Developer Onboarding and Architecture Comprehension | ✅ Complete           | Documentation structure, diagrams | `ARCHITECTURE.md`, PlantUML diagrams, code comments             | Section 1.3, 7.1                  |
+| **REQ-NF-016** | Observability Baseline and Alert Guidance           | 🟡 In Progress        | Logging, metrics, health checks   | `LoggerService`, `MetricsExporter`, health endpoints            | Section 10.1, 10.2, 10.3          |
+| **REQ-NF-017** | Analytics Endpoint Latency SLO (Detailed)           | ❌ Not Started        | Performance design, caching       | Cache-first strategy, async processing, SLO monitoring          | Section 2.2, 10.2                 |
+| **REQ-NF-018** | Graceful Degradation and Timeout Handling           | 🔵 Deferred           | Error handling, circuit breaker   | Timeout configs, fallback responses, 503 on LRS failure         | Section 6.3, 13                   |
+| **REQ-NF-019** | Security Baseline and Secure Defaults               | 🟡 In Progress        | Security architecture             | TLS termination (Traefik), secrets management, input validation | Section 9.1-9.4, ADR-005          |
+| **REQ-NF-020** | Security Testing and Compliance Validation          | ❌ Not Started        | CI security checks, test strategy | Secret scanning, vulnerability scans, authz tests               | Section 7.2, 9.4                  |
 
 ---
 
@@ -173,20 +185,24 @@ This document maps each requirement from `docs/SRS.md` to the architectural comp
 
 ## Unresolved Gaps (For Future Work)
 
-| Gap            | Description                      | Action Required                              |
-| -------------- | -------------------------------- | -------------------------------------------- |
-| **REQ-FN-011** | Metric contribution guide        | Create `docs/CONTRIBUTING.md` with templates |
-| **REQ-NF-003** | CSV-to-implementation validation | Implement CI check script                    |
-| **REQ-FN-022** | Performance testing setup        | Add k6/Artillery scripts, SLO dashboards     |
-| **REQ-NF-018** | Circuit breaker pattern          | Implement circuit breaker for LRS client     |
+| Gap            | Status         | Description                      | Action Required                               |
+| -------------- | -------------- | -------------------------------- | --------------------------------------------- |
+| **REQ-FN-011** | 🔵 Deferred    | Metric contribution guide        | Create `docs/CONTRIBUTING.md` with templates  |
+| **REQ-NF-003** | 🔵 Deferred    | CSV-to-implementation validation | Implement CI check script                     |
+| **REQ-FN-022** | 🔵 Deferred    | Performance testing setup        | Add k6/Artillery scripts, SLO dashboards      |
+| **REQ-NF-018** | 🔵 Deferred    | Circuit breaker pattern          | Implement circuit breaker for LRS client      |
+| **REQ-FN-001** | 🟡 In Progress | Client-facing API                | Complete controller endpoints with validation |
+| **REQ-FN-003** | 🟡 In Progress | Metrics catalog                  | Implement registry and discovery endpoints    |
+| **REQ-FN-021** | 🟡 In Progress | Prometheus metrics               | Complete all metric exporters                 |
 
 ---
 
 ## Approval & Maintenance
 
-| Version | Date       | Author            | Changes                     |
-| ------- | ---------- | ----------------- | --------------------------- |
-| 0.1     | 2025-10-20 | Architecture Team | Initial traceability matrix |
+| Version | Date       | Author            | Changes                                     |
+| ------- | ---------- | ----------------- | ------------------------------------------- |
+| 0.1     | 2025-10-20 | Architecture Team | Initial traceability matrix                 |
+| 0.2     | 2025-11-10 | Architecture Team | Added implementation status tracking column |
 
 **Next Review**: 2026-01-20 (Quarterly)  
 **Maintained By**: Architecture Team  

@@ -72,7 +72,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-002 — Standalone Deployability → `docs/srs/REQ-NF-002.md`
 - REQ-NF-003 — Metrics Traceability and Coverage Verification → `docs/srs/REQ-NF-003.md`
 - REQ-NF-004 — Determinism, Idempotency, and Result Consistency → `docs/srs/REQ-NF-004.md`
-- REQ-NF-005 — Analytics Endpoint Performance (CSV Metrics) → `docs/srs/REQ-NF-005.md`
+- REQ-NF-005 — ~~Analytics Endpoint Performance (CSV Metrics)~~ [**DEPRECATED** — superseded by REQ-NF-017] → `docs/srs/REQ-NF-005.md`
 - REQ-NF-006 — Cache Performance and Hit Ratio Targets → `docs/srs/REQ-NF-006.md`
 - REQ-NF-007 — Cache Consistency and Correctness → `docs/srs/REQ-NF-007.md`
 - REQ-NF-008 — API Documentation Completeness and Accuracy → `docs/srs/REQ-NF-008.md`
@@ -84,7 +84,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-NF-014 — Architecture Documentation Currency and Maintenance → `docs/srs/REQ-NF-014.md`
 - REQ-NF-015 — Developer Onboarding and Architecture Comprehension → `docs/srs/REQ-NF-015.md`
 - REQ-NF-016 — Observability Baseline and Alert Guidance → `docs/srs/REQ-NF-016.md`
-- REQ-NF-017 — Analytics Endpoint Latency SLO (Detailed) → `docs/srs/REQ-NF-017.md`
+- REQ-NF-017 — Analytics Endpoint Latency SLO [consolidates REQ-NF-005] → `docs/srs/REQ-NF-017.md`
 - REQ-NF-018 — Graceful Degradation and Timeout Handling → `docs/srs/REQ-NF-018.md`
 - REQ-NF-019 — Security Baseline and Secure Defaults → `docs/srs/REQ-NF-019.md`
 - REQ-NF-020 — Security Testing and Compliance Validation → `docs/srs/REQ-NF-020.md`
