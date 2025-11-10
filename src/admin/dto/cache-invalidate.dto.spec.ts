@@ -133,21 +133,53 @@ describe('REQ-FN-024: CacheInvalidateDto Validation', () => {
   });
 
   describe('Edge cases', () => {
-    it('should validate with empty object (all fields optional)', async () => {
+    it('should accept empty object (all fields are optional, controller enforces at least one)', async () => {
+      // Note: The mutual exclusivity validator only runs when fields are provided
+      // Controller logic should enforce that at least one field is required for the operation
       const dto = plainToInstance(CacheInvalidateDto, {});
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
 
-    it('should validate with both key and pattern', async () => {
-      // Note: In practice, the controller should enforce mutual exclusivity
-      // But the DTO itself allows both
+    it('should reject when both key and pattern are provided', async () => {
       const dto = plainToInstance(CacheInvalidateDto, {
         key: 'cache:specific:key',
         pattern: 'cache:*',
       });
       const errors = await validate(dto);
-      expect(errors).toHaveLength(0);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+    });
+
+    it('should reject when both key and all are provided', async () => {
+      const dto = plainToInstance(CacheInvalidateDto, {
+        key: 'cache:specific:key',
+        all: true,
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+    });
+
+    it('should reject when both pattern and all are provided', async () => {
+      const dto = plainToInstance(CacheInvalidateDto, {
+        pattern: 'cache:*',
+        all: true,
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
+    });
+
+    it('should reject when all three fields are provided', async () => {
+      const dto = plainToInstance(CacheInvalidateDto, {
+        key: 'cache:specific:key',
+        pattern: 'cache:*',
+        all: true,
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints).toHaveProperty('validateMutualExclusivity');
     });
 
     it('should validate simple alphanumeric key', async () => {
