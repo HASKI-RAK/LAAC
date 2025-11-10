@@ -61,7 +61,7 @@ export class MetricQueryDto {
     example: '2025-12-31T23:59:59.999Z',
   })
   @IsOptional()
-  @IsISO8601()
+  @IsISO8601({ message: 'end must be a valid ISO 8601 date' })
   end?: string;
 
   @ApiProperty({
