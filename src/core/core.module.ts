@@ -11,6 +11,7 @@ import { configFactory, configValidationSchema } from './config';
 import { LoggerService } from './logger';
 import { CorrelationIdMiddleware } from './middleware';
 import { HealthModule } from './health';
+import { MetricsPrometheusController } from '../admin/controllers/metrics-prometheus.controller';
 
 @Module({
   imports: [
@@ -29,11 +30,13 @@ import { HealthModule } from './health';
     // REQ-NF-002: Health check endpoints
     HealthModule,
     // REQ-FN-021: Prometheus metrics export at /metrics endpoint
+    // Use custom controller with @Public() decorator to allow unauthenticated access
     PrometheusModule.register({
       path: '/metrics',
       defaultMetrics: {
         enabled: true, // Enable default Node.js metrics
       },
+      controller: MetricsPrometheusController, // Custom controller with @Public() decorator
     }),
   ],
   controllers: [],
