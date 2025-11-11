@@ -51,6 +51,15 @@ export interface LogConfig {
 }
 
 /**
+ * Rate limiting configuration interface
+ * Implements REQ-FN-024: Input Validation and Rate Limiting
+ */
+export interface RateLimitConfig {
+  ttl: number; // Time window in seconds
+  limit: number; // Max requests per window
+}
+
+/**
  * Complete application configuration interface
  * Aggregates all configuration sections
  */
@@ -60,4 +69,5 @@ export interface Configuration {
   redis: RedisConfig;
   lrs: LrsConfig;
   log: LogConfig;
+  rateLimit: RateLimitConfig;
 }

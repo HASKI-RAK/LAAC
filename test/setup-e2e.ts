@@ -7,3 +7,6 @@ process.env.LRS_URL = 'https://test-lrs.example.com/xapi';
 process.env.LRS_API_KEY = 'test-lrs-api-key';
 process.env.LOG_LEVEL = 'debug';
 process.env.NODE_ENV = 'test';
+// REQ-FN-024: Rate limiting configuration for testing
+process.env.RATE_LIMIT_TTL = '60'; // 60 seconds window
+process.env.RATE_LIMIT_MAX = '100'; // 100 requests per window
