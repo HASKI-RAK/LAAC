@@ -54,7 +54,6 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
     let mockContext: ExecutionContext;
 
     beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mockContext = {
         getHandler: jest.fn(),
         getClass: jest.fn(),
@@ -110,7 +109,6 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
     let mockContext: ExecutionContext;
 
     beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       mockContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue({
@@ -124,17 +122,15 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
     it('should return user on successful authentication', () => {
       const user = { userId: '123', scopes: ['analytics:read'] };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = guard.handleRequest(null, user, null, mockContext);
 
       expect(result).toEqual(user);
     });
 
     it('should throw UnauthorizedException when user is not present', () => {
-      expect(() =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        guard.handleRequest(null, null, null, mockContext),
-      ).toThrow(UnauthorizedException);
+      expect(() => guard.handleRequest(null, null, null, mockContext)).toThrow(
+        UnauthorizedException,
+      );
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
@@ -148,10 +144,9 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
     it('should throw UnauthorizedException on error', () => {
       const error = new Error('Token expired');
 
-      expect(() =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        guard.handleRequest(error, null, null, mockContext),
-      ).toThrow(UnauthorizedException);
+      expect(() => guard.handleRequest(error, null, null, mockContext)).toThrow(
+        UnauthorizedException,
+      );
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
@@ -166,10 +161,9 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
     it('should log info message with reason from info object', () => {
       const info = { message: 'No auth token provided' };
 
-      expect(() =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        guard.handleRequest(null, null, info, mockContext),
-      ).toThrow(UnauthorizedException);
+      expect(() => guard.handleRequest(null, null, info, mockContext)).toThrow(
+        UnauthorizedException,
+      );
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
