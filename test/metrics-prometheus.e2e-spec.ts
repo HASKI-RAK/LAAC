@@ -124,7 +124,6 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
         .expect(200);
 
       // Should succeed without any auth headers
-      expect(response.status).toBe(200);
       expect(response.text).toContain('# HELP');
     });
 
