@@ -10,8 +10,10 @@ import { Public } from '../../auth/decorators';
  * Provides metrics export at /prometheus (root level, no API prefix)
  * Implements REQ-FN-021: Prometheus metrics export
  *
- * Note: Changed from /metrics to /prometheus to avoid conflict with analytics catalog at /api/v1/metrics
- * Prometheus scrapers can be configured to use any path via scrape_configs
+ * Note: Changed from /metrics to /prometheus for clearer separation of concerns.
+ * There is no technical conflict, since analytics catalog uses /api/v1/metrics (with API prefix).
+ * Using /prometheus makes the endpoint purpose explicit and avoids ambiguity for operators.
+ * Prometheus scrapers can be configured to use any path via scrape_configs.
  */
 @Controller('prometheus')
 @Public() // Public endpoint for Prometheus scraping
