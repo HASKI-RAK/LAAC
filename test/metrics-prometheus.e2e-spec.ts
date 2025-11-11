@@ -42,8 +42,6 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/metrics')
         .expect(200);
-
-      expect(response.status).toBe(200);
     });
 
     it('should return Prometheus text format', async () => {
