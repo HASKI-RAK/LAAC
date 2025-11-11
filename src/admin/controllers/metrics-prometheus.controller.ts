@@ -34,10 +34,8 @@ export class MetricsPrometheusController {
    * for scraping by monitoring tools like Prometheus
    */
   @Get()
-  @ApiExcludeEndpoint() // Exclude from Swagger as it's not a REST API endpoint
   @ApiOperation({
     summary: 'Prometheus metrics endpoint',
-    description:
       'Returns metrics in Prometheus/OpenMetrics format for scraping by monitoring tools. ' +
       'Includes HTTP request metrics, authentication metrics, cache metrics, and LRS query metrics. ' +
       'This endpoint is publicly accessible (no authentication required).',
