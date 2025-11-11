@@ -34,7 +34,7 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
-# Run tests
+## Run tests
 
 ```bash
 # unit tests
@@ -46,6 +46,311 @@ $ yarn run test:e2e
 # test coverage
 $ yarn run test:cov
 ```
+
+## Docker Compose Deployment
+
+> **REQ-FN-013**: This project provides Docker Compose configurations for both development and production environments with hot-reload support and Traefik integration.
+
+### Prerequisites
+
+1. **Install Docker and Docker Compose**:
+   - Docker: [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
+   - Docker Compose V2+ is included with Docker Desktop
+
+2. **Create environment configuration**:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Configure environment variables** in `.env`:
+   - For development: Use default values from `.env.example`
+   - For production: Set all required variables (see `.env.example` for details)
+
+### Development Environment
+
+The development environment provides hot-reload capabilities for rapid iteration with local Redis.
+
+#### Start Development Environment
+
+```bash
+# Start all services (app + Redis)
+docker compose -f docker-compose.dev.yml up
+
+# Or run in detached mode (background)
+docker compose -f docker-compose.dev.yml up -d
+
+# View logs
+docker compose -f docker-compose.dev.yml logs -f laac
+```
+
+#### Access the Application
+
+- **Application**: [http://localhost:3000](http://localhost:3000)
+- **Health Check**: [http://localhost:3000/health/liveness](http://localhost:3000/health/liveness)
+- **API Documentation**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+- **Redis**: `localhost:6379` (accessible for debugging)
+
+#### Hot-Reload in Development
+
+The development compose file mounts your source code into the container:
+
+```yaml
+volumes:
+  - ./src:/app/src:ro
+  - ./test:/app/test:ro
+```
+
+When you edit files in `src/` or `test/`, NestJS automatically detects changes and restarts the application. No container rebuild needed!
+
+**Note**: If you modify `package.json` or install new dependencies, you must rebuild the container:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+#### Start Only Redis (Optional)
+
+If you prefer running the app with `yarn start:dev` locally but need Redis:
+
+```bash
+# Start only Redis service
+docker compose -f docker-compose.dev.yml up -d redis
+
+# Verify Redis is running
+docker compose -f docker-compose.dev.yml ps
+
+# Run app locally
+yarn start:dev
+```
+
+#### Stop Development Environment
+
+```bash
+# Stop and remove containers
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove containers + volumes (clears Redis data)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+### Production Environment
+
+The production environment uses pre-built Docker images with Traefik reverse proxy integration for HTTPS and load balancing.
+
+#### Prerequisites for Production
+
+1. **Traefik Reverse Proxy**: Must be running with Let's Encrypt configured
+2. **External Network**: Create the Traefik network
+   ```bash
+   docker network create traefik_web
+   ```
+
+3. **Docker Image**: Build and push to registry (handled by CI/CD):
+   ```bash
+   # Manual build and push (if not using CI/CD)
+   docker build -t ghcr.io/haski-rak/laac:latest .
+   docker push ghcr.io/haski-rak/laac:latest
+   ```
+
+4. **Environment Variables**: Configure in `.env`:
+   ```bash
+   NODE_ENV=production
+   SUBDOMAIN=laac
+   DOMAIN_NAME=example.com
+   DOCKER_REGISTRY_URL=ghcr.io/haski-rak/laac
+   IMAGE_TAG=latest
+   GENERIC_TIMEZONE=Europe/Berlin
+   
+   # Set secure secrets (NEVER commit these!)
+   JWT_SECRET=<generated-secure-secret>
+   LRS_API_KEY=<your-lrs-api-key>
+   REDIS_PASSWORD=<optional-redis-password>
+   ```
+
+#### Start Production Environment
+
+```bash
+# Start all services in detached mode
+docker compose up -d
+
+# View logs
+docker compose logs -f laac
+
+# Check service health
+docker compose ps
+```
+
+#### Access the Application (Production)
+
+- **Application**: `https://laac.example.com` (via Traefik)
+- **Health Check**: `https://laac.example.com/health/liveness`
+- **Prometheus Metrics**: `https://laac.example.com/metrics`
+
+**Note**: Replace `laac.example.com` with your configured `${SUBDOMAIN}.${DOMAIN_NAME}`.
+
+#### Traefik Integration
+
+The production compose file includes Traefik labels for automatic service discovery and routing:
+
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.laac.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
+  - "traefik.http.routers.laac.entrypoints=websecure"
+  - "traefik.http.routers.laac.tls=true"
+  - "traefik.http.routers.laac.tls.certresolver=le"
+  - "traefik.http.services.laac.loadbalancer.server.port=3000"
+```
+
+These labels configure:
+- ✅ HTTPS with automatic Let's Encrypt certificates
+- ✅ HTTP to HTTPS redirect
+- ✅ Load balancing for multiple instances
+- ✅ Service health monitoring
+
+#### Portainer Deployment
+
+To deploy in Portainer:
+
+1. **Navigate to Stacks** → **Add Stack**
+2. **Upload** `docker-compose.yml` or paste its contents
+3. **Configure Environment Variables** in Portainer's environment editor:
+   - Set all required variables from `.env.example`
+   - Use Portainer secrets for sensitive values
+4. **Deploy Stack**
+
+Portainer will automatically:
+- Pull the Docker image from the registry
+- Create required networks and volumes
+- Register the service with Traefik
+- Monitor health checks and restart on failure
+
+#### Stop Production Environment
+
+```bash
+# Stop services (keeps volumes)
+docker compose down
+
+# Stop and remove all data (including Redis)
+docker compose down -v
+```
+
+### Docker Compose Files
+
+| File | Purpose | Use Case |
+|------|---------|----------|
+| `docker-compose.dev.yml` | Development environment | Local development with hot-reload |
+| `docker-compose.yml` | Production environment | Portainer/production deployment with Traefik |
+
+### Environment Variables Reference
+
+See `.env.example` for a complete list of required environment variables. Key variables:
+
+#### Application Configuration
+- `NODE_ENV`: Environment mode (development/production)
+- `PORT`: Application port (default: 3000)
+- `LOG_LEVEL`: Logging verbosity (error/warn/log/debug/verbose)
+
+#### Security
+- `JWT_SECRET`: JWT signing secret (min 32 chars, **CRITICAL**)
+- `AUTH_ENABLED`: Enable/disable authentication (default: true)
+
+#### Redis Cache
+- `REDIS_HOST`: Redis hostname (default: localhost for dev, redis for Docker)
+- `REDIS_PORT`: Redis port (default: 6379)
+- `REDIS_PASSWORD`: Redis password (optional, recommended for production)
+
+#### LRS Integration
+- `LRS_URL`: Learning Record Store xAPI endpoint (**REQUIRED**)
+- `LRS_API_KEY`: LRS authentication key (**CRITICAL**)
+
+#### Docker & Traefik (Production Only)
+- `DOCKER_REGISTRY_URL`: Container registry URL
+- `IMAGE_TAG`: Docker image tag (e.g., latest, v1.0.0)
+- `SUBDOMAIN`: Application subdomain (e.g., laac)
+- `DOMAIN_NAME`: Base domain (e.g., example.com)
+- `GENERIC_TIMEZONE`: Container timezone (e.g., Europe/Berlin)
+
+### Health Checks
+
+Both environments include health checks for monitoring:
+
+```bash
+# Check application health
+curl http://localhost:3000/health/liveness
+
+# Check application + dependencies (Redis, LRS)
+curl http://localhost:3000/health/readiness
+```
+
+Health checks are used by:
+- Docker Compose: Auto-restart unhealthy containers
+- Portainer: Dashboard monitoring and alerting
+- Traefik: Load balancer health-based routing
+
+### Troubleshooting
+
+#### Port Already in Use
+
+```bash
+# Check what's using port 3000
+lsof -i :3000  # macOS/Linux
+netstat -ano | findstr :3000  # Windows
+
+# Change port in .env
+PORT=3001
+```
+
+#### Hot-Reload Not Working (Dev)
+
+1. Verify volumes are mounted:
+   ```bash
+   docker compose -f docker-compose.dev.yml exec laac ls -la /app/src
+   ```
+
+2. Check file changes are detected:
+   ```bash
+   docker compose -f docker-compose.dev.yml logs -f laac
+   ```
+
+3. Rebuild if you changed dependencies:
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build
+   ```
+
+#### Traefik Not Routing (Production)
+
+1. Verify Traefik network exists:
+   ```bash
+   docker network ls | grep traefik_web
+   ```
+
+2. Check Traefik can see the service:
+   ```bash
+   docker compose logs -f laac
+   ```
+
+3. Verify environment variables are set:
+   ```bash
+   docker compose config | grep -A 5 labels
+   ```
+
+#### Redis Connection Failed
+
+1. Check Redis is healthy:
+   ```bash
+   docker compose ps redis
+   ```
+
+2. Test Redis connection:
+   ```bash
+   docker compose exec redis redis-cli ping
+   # Should respond: PONG
+   ```
+
+3. Verify `REDIS_HOST` in `.env`:
+   - Development with Docker: `REDIS_HOST=redis`
+   - Development without Docker: `REDIS_HOST=localhost`
 
 ## API Documentation
 
@@ -99,42 +404,6 @@ To disable Swagger UI and OpenAPI spec endpoints in production:
 The Swagger UI and spec endpoints will return 404 when disabled.
 
 ## Run tests
-
-## Local Redis (Dev)
-
-This project already reads Redis settings from `.env` (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`). To run a local Redis for development:
-
-1. Ensure `.env` exists and uses the defaults:
-
-   - `REDIS_HOST=localhost`
-   - `REDIS_PORT=6379`
-   - `REDIS_PASSWORD=` (empty for dev)
-
-2. Start Redis with Docker Compose:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d redis
-   ```
-
-3. Verify Redis is healthy:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml ps
-   # or
-   curl -s http://localhost:3000/health/readiness | jq .
-   # (with the app running via `yarn start:dev`; Redis should show status "up")
-   ```
-
-4. Stop Redis when done:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml down
-   ```
-
-Notes:
-
-- The dev Redis runs without a password. If you need a password, set `REDIS_PASSWORD` in `.env` and adjust the `command` in `docker-compose.dev.yml` to use `--requirepass`.
-- No code changes are required; the app connects via `ioredis` using the values from `.env`.
 
 ## Configuration and Secrets Management
 
