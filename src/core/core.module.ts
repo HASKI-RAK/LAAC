@@ -11,6 +11,7 @@ import { configFactory, configValidationSchema } from './config';
 import { LoggerService } from './logger';
 import { CorrelationIdMiddleware } from './middleware';
 import { HealthModule } from './health';
+import { CustomPrometheusController } from './prometheus/custom-prometheus.controller';
 
 @Module({
   imports: [
@@ -28,15 +29,16 @@ import { HealthModule } from './health';
     }),
     // REQ-NF-002: Health check endpoints
     HealthModule,
-    // REQ-FN-021: Prometheus metrics export at /metrics endpoint
+    // REQ-FN-021: Prometheus metrics export
+    // Use custom controller to avoid path conflict with analytics catalog
     PrometheusModule.register({
-      path: '/metrics',
+      controller: CustomPrometheusController, // Custom controller at /prometheus instead of /metrics
       defaultMetrics: {
         enabled: true, // Enable default Node.js metrics
       },
     }),
   ],
-  controllers: [],
+  controllers: [], // CustomPrometheusController registered via PrometheusModule
   providers: [
     // REQ-FN-020: Global structured logger
     LoggerService,

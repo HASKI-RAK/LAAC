@@ -33,7 +33,13 @@ async function bootstrap() {
   // Set global API prefix (e.g., /api/v1)
   const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
   app.setGlobalPrefix(apiPrefix, {
-    exclude: ['/', 'health', 'health/liveness', 'health/readiness', 'metrics'], // Exclude public routes from prefix
+    exclude: [
+      '/',
+      'health',
+      'health/liveness',
+      'health/readiness',
+      'prometheus',
+    ], // Exclude public routes from prefix
   });
 
   // REQ-FN-008/009: Configure Swagger/OpenAPI documentation
