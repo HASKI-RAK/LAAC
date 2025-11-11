@@ -407,6 +407,8 @@ interface MetricCatalogResponse {
 
 **Story Points**: 3 | **Assigned To**: TBD
 
+**Status**: Issue created (#25) — skeleton issue added on 2025-11-10 to track implementation and tests.
+
 ---
 
 #### Story 3.3: Admin Endpoints (Skeleton)
@@ -428,6 +430,8 @@ interface MetricCatalogResponse {
 - [ ] Write e2e tests
 
 **Story Points**: 2 | **Assigned To**: TBD
+
+**Status**: Issue created (#26) — skeleton issue added on 2025-11-10 for cache invalidation endpoint.
 
 ---
 
@@ -451,6 +455,8 @@ interface MetricCatalogResponse {
 - [ ] Write e2e tests
 
 **Story Points**: 1 | **Assigned To**: TBD
+
+**Status**: Issue created (#27) — exporter skeleton added on 2025-11-10 to expose `/metrics` and register custom metrics.
 
 ---
 
