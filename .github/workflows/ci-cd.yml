@@ -202,10 +202,6 @@ jobs:
             # to succeed even if webhook fails (reliability issue in SRS)
             exit 0
           fi
-        env:
-          # Ensure webhook URL is available (will fail gracefully if not set)
-          PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
-
       # Step 8: Report deployment status
       - name: Report deployment status
         if: always()
