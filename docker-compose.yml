@@ -38,7 +38,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health/liveness"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/liveness', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -89,8 +89,11 @@ services:
     volumes:
       - redis_data:/data
     
-    # Note: For production with authentication, set REDIS_PASSWORD in .env
-    # and modify command to: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    # Note: For production Redis authentication, DO NOT use environment variable substitution in the command array.
+    # Instead, use one of the following secure approaches:
+    # Option A: Mount a custom redis.conf with 'requirepass YOUR_PASSWORD' and set command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    # Option B: Use Docker secrets and set command: sh -c 'redis-server --appendonly yes --requirepass "$(cat /run/secrets/redis_password)"'
+    # See docs/srs/REQ-FN-014.md for details on secrets management.
 
   # LRS (Learning Record Store) - External Service Reference
   # REQ-FN-002: Configure LRS_URL in .env to point to your production LRS instance
