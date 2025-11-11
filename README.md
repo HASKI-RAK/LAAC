@@ -403,8 +403,6 @@ To disable Swagger UI and OpenAPI spec endpoints in production:
 
 The Swagger UI and spec endpoints will return 404 when disabled.
 
-## Run tests
-
 ## Configuration and Secrets Management
 
 > **REQ-FN-014**: This project follows secure configuration management practices to prevent credential leaks and support deployment across environments.
