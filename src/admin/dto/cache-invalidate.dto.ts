@@ -61,6 +61,11 @@ export class CacheInvalidateDto {
     message: 'Exactly one of key, pattern, or all must be specified',
   })
   private readonly _mutualExclusivityCheck: undefined;
+
+  /**
+   * Specific cache key to invalidate (mutually exclusive with pattern and all)
+   * @example "cache:course-completion:course:123:v1"
+   */
   @ApiProperty({
     required: false,
     description:
@@ -71,6 +76,11 @@ export class CacheInvalidateDto {
   @IsString()
   key?: string;
 
+  /**
+   * Cache key pattern for bulk invalidation using Redis glob patterns
+   * Supports wildcards: * (any characters), ? (single character), [] (character set)
+   * @example "cache:course-completion:*"
+   */
   @ApiProperty({
     required: false,
     description:
@@ -85,6 +95,10 @@ export class CacheInvalidateDto {
   })
   pattern?: string;
 
+  /**
+   * If true, invalidates all cache entries (use with caution in production)
+   * @example false
+   */
   @ApiProperty({
     required: false,
     description:

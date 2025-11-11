@@ -44,45 +44,65 @@ async function bootstrap() {
 
   // REQ-FN-008/009: Configure Swagger/OpenAPI documentation
   // REQ-FN-023: Add bearer authentication security scheme
-  const config = new DocumentBuilder()
-    .setTitle('LAAC - Learning Analytics Analyzing Center')
-    .setDescription(
-      'RESTful API for learning analytics metrics computation and retrieval. ' +
-        'Provides access to xAPI-based analytics from Learning Record Stores (LRS). ' +
-        'Requires JWT authentication with appropriate scopes.',
-    )
-    .setVersion('1.0.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT-auth', // Security scheme name
-    )
-    .addTag('Health', 'Health check and readiness endpoints (public)')
-    .addTag('Metrics', 'Metrics catalog and computation endpoints')
-    .addTag('Admin', 'Administrative endpoints (cache, config)')
-    .build();
+  // Check if Swagger is enabled (default: true for dev, can be disabled via env)
+  const swaggerEnabled = process.env.SWAGGER_ENABLED !== 'false';
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true, // Keep auth token in browser
-    },
-  });
+  if (swaggerEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle('LAAC - Learning Analytics Analyzing Center')
+      .setDescription(
+        'RESTful API for learning analytics metrics computation and retrieval. ' +
+          'Provides access to xAPI-based analytics from Learning Record Stores (LRS). ' +
+          'Requires JWT authentication with appropriate scopes.',
+      )
+      .setVersion('1.0.0')
+      .setContact('LAAC Support', 'https://github.com/HASKI-RAK/LAAC', '')
+      .setLicense('Apache 2.0', 'https://www.apache.org/licenses/LICENSE-2.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT-auth', // Security scheme name
+      )
+      .addTag('Health', 'Health check and readiness endpoints (public)')
+      .addTag('Metrics', 'Metrics catalog and computation endpoints')
+      .addTag('Admin', 'Administrative endpoints (cache, config)')
+      .addTag('Prometheus', 'Prometheus metrics endpoint (public)')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+
+    // Setup Swagger UI at /api/docs
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true, // Keep auth token in browser
+      },
+      jsonDocumentUrl: '/api-docs/openapi.json', // REQ-FN-008: Expose JSON spec
+    });
+  }
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log(`Application listening on port ${port}`, 'Bootstrap');
-  logger.log(
-    `API documentation available at http://localhost:${port}/api/docs`,
-    'Bootstrap',
-  );
+
+  if (swaggerEnabled) {
+    logger.log(
+      `API documentation available at http://localhost:${port}/api/docs`,
+      'Bootstrap',
+    );
+    logger.log(
+      `OpenAPI spec available at http://localhost:${port}/api-docs/openapi.json`,
+      'Bootstrap',
+    );
+  } else {
+    logger.log('Swagger UI is disabled (SWAGGER_ENABLED=false)', 'Bootstrap');
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

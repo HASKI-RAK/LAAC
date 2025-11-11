@@ -10,6 +10,10 @@ import { MetricCatalogItemDto } from './metric-catalog-item.dto';
  * Implements REQ-FN-003: Metrics Catalog and Discovery
  */
 export class MetricsCatalogResponseDto {
+  /**
+   * Array of available metrics in the catalog
+   * @example [{ "id": "course-completion-rate", "dashboardLevel": "course", "description": "Percentage of completed activities" }]
+   */
   @ApiProperty({
     description: 'Array of available metrics in the catalog',
     type: [MetricCatalogItemDto],
