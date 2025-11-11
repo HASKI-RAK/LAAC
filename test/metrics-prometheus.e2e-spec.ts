@@ -158,7 +158,7 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
           // Basic validation: should have metric name followed by space and number or special value
 
           expect(line).toMatch(
-            /^[a-zA-Z_:][a-zA-Z0-9_:]*(\{.*\})?\s+[\d.eE+-]+|^[a-zA-Z_:][a-zA-Z0-9_:]*(\{.*\})?\s+(NaN|Nan|\+Inf|-Inf)/,
+            /^[a-zA-Z_:][a-zA-Z0-9_:]*(\{.*\})?\s+([\d.eE+-]+|NaN|Nan|\+Inf|-Inf)/,
           );
         }
       });
