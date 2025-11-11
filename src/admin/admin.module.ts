@@ -12,12 +12,7 @@ import { MetricsRegistryService } from './services/metrics-registry.service';
 
 @Module({
   imports: [
-    // REQ-FN-021: Register custom Prometheus metrics
-    PrometheusModule.register({
-      defaultMetrics: {
-        enabled: false, // Already enabled globally in CoreModule
-      },
-    }),
+    // No PrometheusModule registration here; handled globally in CoreModule (REQ-FN-021)
   ],
   controllers: [], // Controller is registered in CoreModule with @Public() decorator
   providers: [
