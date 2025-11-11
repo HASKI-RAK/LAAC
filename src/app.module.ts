@@ -45,6 +45,8 @@ import { Configuration } from './core/config';
             maxRetriesPerRequest: 1,
             enableReadyCheck: true,
           });
+          // Attach error event handler to prevent unhandled error crashes (REQ-NF-016)
+          redis.on('error', () => {});
           storage = new ThrottlerStorageRedisService(redis);
         }
 
