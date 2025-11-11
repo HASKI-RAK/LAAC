@@ -26,20 +26,27 @@ import { Configuration } from './core/config';
       useFactory: (configService: ConfigService<Configuration>) => {
         const redisConfig = configService.get('redis', { infer: true });
         const rateLimitConfig = configService.get('rateLimit', { infer: true });
+        const nodeEnv = configService.get('app.nodeEnv', { infer: true });
 
-        if (!redisConfig || !rateLimitConfig) {
-          throw new Error('Redis or rate limit configuration is missing');
+        if (!rateLimitConfig) {
+          throw new Error('Rate limit configuration is missing');
         }
 
-        // Create Redis client for throttler storage
-        const redis = new Redis({
-          host: redisConfig.host,
-          port: redisConfig.port,
-          password: redisConfig.password,
-          // Throttler-specific settings
-          maxRetriesPerRequest: 1,
-          enableReadyCheck: true,
-        });
+        // Use in-memory storage for test environment when Redis is not available
+        // Use Redis storage for development and production
+        let storage: ThrottlerStorageRedisService | undefined;
+        if (nodeEnv !== 'test' && redisConfig) {
+          // Create Redis client for throttler storage
+          const redis = new Redis({
+            host: redisConfig.host,
+            port: redisConfig.port,
+            password: redisConfig.password,
+            // Throttler-specific settings
+            maxRetriesPerRequest: 1,
+            enableReadyCheck: true,
+          });
+          storage = new ThrottlerStorageRedisService(redis);
+        }
 
         return {
           throttlers: [
@@ -49,7 +56,7 @@ import { Configuration } from './core/config';
               limit: rateLimitConfig.limit,
             },
           ],
-          storage: new ThrottlerStorageRedisService(redis),
+          storage, // undefined will use in-memory storage
         };
       },
     }),
@@ -66,7 +73,7 @@ import { Configuration } from './core/config';
     makeCounterProvider({
       name: 'rate_limit_rejections_total',
       help: 'Total number of requests rejected due to rate limiting',
-      labelNames: ['endpoint', 'status'],
+      labelNames: ['path'],
     }),
   ],
 })

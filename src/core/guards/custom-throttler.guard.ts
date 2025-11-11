@@ -62,8 +62,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 
       // Increment Prometheus counter (REQ-FN-021)
       this.rateLimitCounter.inc({
-        endpoint: request.path,
-        status: '429',
+        path: request.path,
       });
 
       // Re-throw the exception
