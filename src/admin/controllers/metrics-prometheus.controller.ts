@@ -18,7 +18,7 @@ import { Public } from '../../auth/decorators';
  * This is distinct from the analytics catalog at /api/v1/metrics (REQ-FN-003)
  * The @Controller() decorator without path allows PrometheusModule to set the path
  */
-@ApiTags('Metrics')
+@ApiTags('Prometheus')
 @Controller()
 @Public() // REQ-FN-021: Metrics endpoint must be publicly accessible for scraping
 export class MetricsPrometheusController {
