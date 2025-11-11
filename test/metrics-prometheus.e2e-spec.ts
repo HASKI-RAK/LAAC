@@ -136,7 +136,6 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
         .expect(200);
 
       // Should still succeed even with invalid token
-      expect(response.status).toBe(200);
     });
   });
 
