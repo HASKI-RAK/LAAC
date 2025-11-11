@@ -4,6 +4,9 @@
 
 # Learning Analytics Analyzing Center (LAAC)
 
+[![CI/CD Pipeline](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml)
+[![NestJS CI](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml)
+
 Provide processed learning analytics by compiling data from a Learning Record Store (LRS).
 
 ## Description
@@ -188,6 +191,142 @@ For more details, see:
 - `docs/srs/REQ-FN-014.md` - Requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
 - `src/core/config/` - Configuration validation implementation
+
+## CI/CD Pipeline and Deployment
+
+> **REQ-FN-015**: The project uses GitHub Actions for automated testing, building, and deployment.
+
+### Pipeline Overview
+
+The CI/CD pipeline (`.github/workflows/ci-cd.yml`) automatically runs on every push to the `main` branch:
+
+1. **Test Stage**: Runs linting, unit tests, E2E tests, and generates coverage reports
+2. **Build Stage**: Builds Docker image with multi-architecture support (amd64, arm64)
+3. **Push Stage**: Pushes image to GitHub Container Registry (GHCR) with proper tags
+4. **Deploy Stage**: Triggers Portainer webhook to redeploy the application stack
+
+### Pipeline Status
+
+Check the current pipeline status:
+- **CI/CD Pipeline**: [![CI/CD Status](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml)
+- **Pull Request Tests**: [![NestJS CI](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml)
+
+### Repository Secrets Configuration
+
+To enable the CI/CD pipeline, configure the following repository secrets in **Settings > Secrets and variables > Actions**:
+
+#### Required Secrets
+
+| Secret Name | Description | Example | Required |
+|-------------|-------------|---------|----------|
+| `PORTAINER_WEBHOOK_URL` | Portainer webhook URL for stack redeploy | `https://portainer.example.com/api/webhooks/<id>` | **Yes** |
+
+#### Optional Secrets (for custom registries)
+
+The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN` (automatically provided). Custom registry credentials are not currently supported, but the workflow can be extended if needed.
+
+| Secret Name | Description | Example | Required |
+|-------------|-------------|---------|----------|
+| `DOCKER_REGISTRY_URL` | Container registry URL | `ghcr.io`, `docker.io` | No (default: `ghcr.io`) |
+
+### Setting Up Portainer Webhook
+
+1. **Create Webhook in Portainer**:
+   - Navigate to your Portainer stack (Stacks > LAAC)
+   - Enable webhook in stack settings
+   - Copy the webhook URL
+
+2. **Configure GitHub Secret**:
+   ```bash
+   # In GitHub repository:
+   # Settings > Secrets and variables > Actions > New repository secret
+   # Name: PORTAINER_WEBHOOK_URL
+   # Value: https://portainer.example.com/api/webhooks/<webhook-id>
+   ```
+
+3. **Test Webhook** (optional):
+   ```bash
+   curl -X POST "https://portainer.example.com/api/webhooks/<webhook-id>" \
+     -H "Content-Type: application/json" \
+     -d '{"test": true}'
+   ```
+
+### Docker Image Tags
+
+The pipeline creates the following Docker image tags:
+
+- **`latest`**: Always points to the most recent build from `main` branch
+- **`<short-sha>`**: Short commit SHA (7 characters) for rollback capability
+- **`<long-sha>`**: Full commit SHA for complete traceability
+
+Example:
+```bash
+ghcr.io/haski-rak/laac:latest
+ghcr.io/haski-rak/laac:a1b2c3d
+ghcr.io/haski-rak/laac:a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
+```
+
+### Manual Deployment Trigger
+
+You can manually trigger the CI/CD pipeline from the GitHub Actions UI:
+
+1. Navigate to **Actions** tab
+2. Select **CI/CD Pipeline** workflow
+3. Click **Run workflow** button
+4. Select `main` branch and click **Run workflow**
+
+### Deployment Verification
+
+After a successful deployment:
+
+1. **Check GitHub Actions**: Verify all steps completed successfully (green checkmarks)
+2. **Check Portainer**: Verify stack update event in activity logs
+3. **Check Application Health**: 
+   ```bash
+   curl https://your-domain.com/health/readiness
+   # Should return HTTP 200 with status "ok"
+   ```
+
+### Troubleshooting
+
+#### Pipeline Fails at Test Stage
+- Check test logs in GitHub Actions for specific failure
+- Run tests locally: `yarn test` and `yarn test:e2e`
+- Ensure all dependencies are properly installed
+
+#### Pipeline Fails at Build Stage
+- Check Dockerfile syntax and build context
+- Verify base image availability
+- Check for disk space issues in runner
+
+#### Pipeline Fails at Push Stage
+- Verify `GITHUB_TOKEN` permissions (packages: write)
+- Check GitHub Container Registry status
+- Ensure repository allows package publishing
+
+#### Webhook Invocation Fails
+- Verify `PORTAINER_WEBHOOK_URL` secret is set correctly
+- Check Portainer webhook is enabled and accessible
+- Test webhook manually with `curl`
+- Note: Webhook failure does not block image push (reliability consideration from REQ-FN-015)
+
+### Rollback Procedure
+
+If a deployment causes issues, you can rollback to a previous version:
+
+1. **Identify previous working version** (check GitHub Actions history for SHA)
+2. **Update Portainer stack** to use the specific SHA tag:
+   ```yaml
+   services:
+     laac:
+       image: ghcr.io/haski-rak/laac:<previous-sha>
+   ```
+3. **Redeploy stack** in Portainer UI or trigger webhook manually
+
+For more details, see:
+- `.github/workflows/ci-cd.yml` - Full pipeline implementation
+- `docs/srs/REQ-FN-015.md` - CI/CD requirements specification
+- `docs/architecture/ARCHITECTURE.md` Section 9 - Deployment architecture
 
 ## Health and Readiness Endpoints
 
