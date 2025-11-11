@@ -81,6 +81,19 @@ export const configValidationSchema = Joi.object({
     .valid('error', 'warn', 'log', 'debug', 'verbose')
     .default('log')
     .description('Application log level'),
+
+  // Rate Limiting Configuration (REQ-FN-024)
+  RATE_LIMIT_TTL: Joi.number()
+    .integer()
+    .min(1)
+    .default(60)
+    .description('Rate limit time window in seconds (default: 60)'),
+
+  RATE_LIMIT_MAX: Joi.number()
+    .integer()
+    .min(1)
+    .default(100)
+    .description('Maximum requests per time window (default: 100)'),
 });
 
 /**
@@ -116,6 +129,10 @@ export const configFactory = () => ({
   },
   log: {
     level: (process.env.LOG_LEVEL || 'log') as Configuration['log']['level'],
+  },
+  rateLimit: {
+    ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
+    limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
   },
 });
 

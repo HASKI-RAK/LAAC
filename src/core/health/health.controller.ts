@@ -3,6 +3,7 @@
 
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import {
   HealthCheck,
   HealthCheckService,
@@ -23,10 +24,12 @@ import { Public } from '../../auth/decorators';
  * - GET /health/readiness: Returns 200 if app + Redis + LRS are reachable
  *
  * Note: These endpoints are public (bypass authentication per REQ-FN-023)
+ * Note: These endpoints skip rate limiting (REQ-FN-024)
  */
 @ApiTags('Health')
 @Controller('health')
 @Public() // REQ-FN-023: Health endpoints are public
+@SkipThrottle() // REQ-FN-024: Health endpoints bypass rate limiting
 export class HealthController {
   private readonly version: string;
 

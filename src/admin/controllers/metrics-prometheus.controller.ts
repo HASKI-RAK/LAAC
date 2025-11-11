@@ -3,6 +3,7 @@
 
 import { Controller, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { register } from 'prom-client';
 import { Public } from '../../auth/decorators';
@@ -15,12 +16,14 @@ import { Public } from '../../auth/decorators';
  * - GET /metrics: Returns metrics in Prometheus/OpenMetrics text format
  *
  * Note: This endpoint is PUBLIC (no authentication) to allow Prometheus scraping
+ * Note: This endpoint skips rate limiting (REQ-FN-024) for monitoring purposes
  * This is distinct from the analytics catalog at /api/v1/metrics (REQ-FN-003)
  * The @Controller() decorator without path allows PrometheusModule to set the path
  */
 @ApiTags('Prometheus')
 @Controller()
 @Public() // REQ-FN-021: Metrics endpoint must be publicly accessible for scraping
+@SkipThrottle() // REQ-FN-024: Metrics endpoint bypasses rate limiting
 export class MetricsPrometheusController {
   /**
    * Get Prometheus metrics
