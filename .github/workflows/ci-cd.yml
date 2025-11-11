@@ -173,12 +173,17 @@ jobs:
           # Extract short SHA for image tag reference
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
-          # Invoke Portainer webhook with image tag metadata
+          # Invoke Portainer webhook with image tag metadata (safe JSON construction)
           WEBHOOK_URL="${{ secrets.PORTAINER_WEBHOOK_URL }}"
+          PAYLOAD=$(jq -n \
+            --arg tag "${SHORT_SHA}" \
+            --arg sha "${{ github.sha }}" \
+            --arg repo "${{ github.repository }}" \
+            --arg actor "${{ github.actor }}" \
+            '{image_tag: $tag, commit_sha: $sha, repository: $repo, actor: $actor}')
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEBHOOK_URL}" \
             -H "Content-Type: application/json" \
-            -d "{\"image_tag\":\"${SHORT_SHA}\",\"commit_sha\":\"${{ github.sha }}\",\"repository\":\"${{ github.repository }}\",\"actor\":\"${{ github.actor }}\"}")
-
+            -d "${PAYLOAD}")
           # Extract HTTP status code from response
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n-1)
