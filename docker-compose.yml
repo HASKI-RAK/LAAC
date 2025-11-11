@@ -1,0 +1,131 @@
+# ===================================================================
+# LAAC Production Environment (REQ-FN-013)
+# ===================================================================
+# This Docker Compose configuration provides a production-ready
+# deployment with Traefik reverse proxy integration and Portainer
+# stack compatibility.
+#
+# Prerequisites:
+#   1. Create Traefik external network: docker network create traefik_web
+#   2. Configure Traefik with Let's Encrypt cert resolver (name: le)
+#   3. Set environment variables in .env file or Portainer secrets
+#   4. Build and push Docker image to registry (CI/CD pipeline)
+#
+# Usage:
+#   docker compose up -d
+#
+# Features:
+#   - Traefik integration: Automatic HTTPS with Let's Encrypt
+#   - Health checks: Monitoring and auto-restart
+#   - Redis persistence: Appendonly file (AOF) for data durability
+#   - Multi-instance ready: Shared Redis for horizontal scaling
+# ===================================================================
+
+version: "3.8"
+
+services:
+  # LAAC Application (Production Mode)
+  # REQ-FN-013: Production service with Traefik integration
+  laac:
+    image: ${DOCKER_REGISTRY_URL:-ghcr.io/haski-rak/laac}:${IMAGE_TAG:-latest}
+    container_name: laac-prod
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TZ=${GENERIC_TIMEZONE:-Europe/Berlin}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/liveness', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      # Traefik configuration for reverse proxy (REQ-FN-013)
+      - "traefik.enable=true"
+      
+      # HTTP Router: Redirect to HTTPS
+      - "traefik.http.routers.laac-http.rule=Host(`${SUBDOMAIN:-laac}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.laac-http.entrypoints=web"
+      - "traefik.http.routers.laac-http.middlewares=https-redirect"
+      
+      # HTTPS Router: Main application router
+      - "traefik.http.routers.laac.rule=Host(`${SUBDOMAIN:-laac}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.laac.entrypoints=websecure"
+      - "traefik.http.routers.laac.tls=true"
+      - "traefik.http.routers.laac.tls.certresolver=le"
+      
+      # Service: Backend load balancer configuration
+      - "traefik.http.services.laac.loadbalancer.server.port=3000"
+      
+      # Middleware: HTTPS redirect
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+    networks:
+      - traefik_web
+      - laac_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Redis Cache (Production Mode)
+  # REQ-FN-006: Persistent cache service for production
+  redis:
+    image: redis:7-alpine
+    container_name: laac-redis-prod
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - laac_network
+    volumes:
+      - redis_data:/data
+    
+    # Note: For production Redis authentication, DO NOT use environment variable substitution in the command array.
+    # Instead, use one of the following secure approaches:
+    # Option A: Mount a custom redis.conf with 'requirepass YOUR_PASSWORD' and set command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    # Option B: Use Docker secrets and set command: sh -c 'redis-server --appendonly yes --requirepass "$(cat /run/secrets/redis_password)"'
+    # See docs/srs/REQ-FN-014.md for details on secrets management.
+
+  # LRS (Learning Record Store) - External Service Reference
+  # REQ-FN-002: Configure LRS_URL in .env to point to your production LRS instance
+  # The LRS should be accessible from the LAAC container network
+  #
+  # If running LRS in the same Docker environment, uncomment and configure:
+  # lrs:
+  #   image: yetanalytics/lrsql:latest
+  #   container_name: laac-lrs-prod
+  #   restart: always
+  #   environment:
+  #     - LRSQL_API_KEY_DEFAULT=${LRS_API_KEY}
+  #   networks:
+  #     - laac_network
+  #   volumes:
+  #     - lrs_data:/data
+
+networks:
+  # External network for Traefik reverse proxy integration
+  # Must be created before deploying: docker network create traefik_web
+  traefik_web:
+    external: true
+  
+  # Internal network for service-to-service communication
+  laac_network:
+    driver: bridge
+
+volumes:
+  # Redis persistent storage
+  redis_data:
+    driver: local
+  
+  # LRS persistent storage (if running LRS in Docker)
+  # lrs_data:
+  #   driver: local

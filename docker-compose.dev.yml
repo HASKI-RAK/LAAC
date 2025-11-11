@@ -1,6 +1,59 @@
-version: "3.9"
+# ===================================================================
+# LAAC Development Environment (REQ-FN-013)
+# ===================================================================
+# This Docker Compose configuration provides a local development
+# environment with hot-reload capabilities for rapid iteration.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+#
+# Features:
+#   - Hot-reload: Source code changes trigger automatic restart
+#   - Local Redis: Development cache with RDB persistence
+#   - Port exposure: Direct access to app and Redis
+# ===================================================================
+
+version: "3.8"
 
 services:
+  # LAAC Application (Development Mode)
+  # REQ-FN-013: Development service with hot-reload
+  laac:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    container_name: laac-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Hot-reload: Bind mount source code for file watching
+      - ./src:/app/src:ro
+      - ./test:/app/test:ro
+      # Preserve node_modules from container (don't overwrite)
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - laac-dev
+    command: ["yarn", "run", "start:dev"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/liveness', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis Cache (Development Mode)
+  # REQ-FN-006: Cache service for development
   redis:
     image: redis:7-alpine
     container_name: laac-redis-dev
@@ -14,13 +67,40 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+    networks:
+      - laac-dev
+    volumes:
+      - redis_data:/data
 
-    # Note: For local dev we run without a password. If you
-    # enable a password, set REDIS_PASSWORD in your .env and
-    # add: command: ["redis-server", "--requirepass", "$REDIS_PASSWORD"]
+    # Note: For local dev we run without a password. If you enable a password:
+    # Set REDIS_PASSWORD in your .env and use shell expansion:
+    #   command: sh -c 'redis-server --requirepass "$REDIS_PASSWORD"'
+    # (Do NOT use ["redis-server", "--requirepass", "$REDIS_PASSWORD"] as it will not expand the variable.)
+    # Alternatively, for simple testing, use a fixed password:
+    #   command: ["redis-server", "--requirepass", "dev-password-here"]
+
+  # LRS (Learning Record Store) - External Service Reference
+  # REQ-FN-002: Configure LRS_URL in .env to point to your LRS instance
+  # Options:
+  #   1. Use external LRS: Set LRS_URL=https://your-lrs-instance.com/xapi
+  #   2. Run local mock LRS: Add a mock service here or use a separate container
+  #
+  # Example mock LRS service (uncomment to enable):
+  # lrs-mock:
+  #   image: yetanalytics/lrsql:latest
+  #   container_name: laac-lrs-dev
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - LRSQL_API_KEY_DEFAULT=test-api-key
+  #   networks:
+  #     - laac-dev
 
 networks:
-  default:
-    name: laac-dev
+  laac-dev:
     driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
 
