@@ -1,0 +1,221 @@
+# ==============================================================================
+# LAAC CI/CD Pipeline (REQ-FN-015)
+# ==============================================================================
+# Implements automated testing, building, and deployment for LAAC
+# 
+# Traceability:
+# - REQ-FN-015: CI/CD Pipeline with GitHub Actions
+# - REQ-FN-012: Container image build and management
+# - REQ-FN-014: Secrets management for deployment
+# - REQ-FN-013: Docker Compose deployment configurations
+#
+# Workflow Steps:
+# 1. Test Stage: Lint, unit tests, E2E tests, coverage
+# 2. Build Stage: Docker image build with multi-architecture support
+# 3. Push Stage: Push to container registry with proper tags
+# 4. Deploy Stage: Trigger Portainer webhook for stack redeploy
+#
+# Security:
+# - All sensitive values stored in repository secrets
+# - No credentials exposed in logs (GitHub auto-masks secrets)
+# - Image attestation for supply chain security
+# ==============================================================================
+
+name: CI/CD Pipeline
+
+# Trigger on push to main branch
+on:
+  push:
+    branches: ['main']
+  # Allow manual workflow runs for testing
+  workflow_dispatch:
+
+# Environment variables shared across all jobs
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '22'
+
+jobs:
+  # ==============================================================================
+  # Job 1: Test and Quality Checks
+  # ==============================================================================
+  test:
+    name: Test & Quality Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js environment
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Step 4: Run linting
+      - name: Run ESLint
+        run: yarn lint
+
+      # Step 5: Run unit tests
+      - name: Run unit tests
+        run: yarn test
+
+      # Step 6: Run E2E tests
+      - name: Run E2E tests
+        run: yarn test:e2e
+
+      # Step 7: Generate coverage report
+      - name: Generate test coverage
+        run: yarn test:cov
+
+      # Step 8: Upload coverage report as artifact (optional, for tracking)
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+      # Step 9: Build application (validates TypeScript compilation)
+      - name: Build application
+        run: yarn build
+
+  # ==============================================================================
+  # Job 2: Build, Push, and Deploy
+  # ==============================================================================
+  build-push-deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+    needs: test  # Only run if tests pass
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx (for multi-platform builds and caching)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Login to container registry
+      # Note: For GHCR (GitHub Container Registry), use GITHUB_TOKEN
+      # For other registries, use DOCKER_REGISTRY_USER and DOCKER_REGISTRY_PASSWORD secrets
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 4: Extract metadata for Docker (tags, labels)
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Tag with 'latest' for main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag with short SHA for rollback capability
+            type=sha,prefix=,format=short
+            # Tag with full SHA (optional, for complete traceability)
+            type=sha,prefix=,format=long
+
+      # Step 5: Build and push Docker image
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Enable build caching for faster builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Build for multiple platforms (amd64 for x86, arm64 for ARM servers)
+          platforms: linux/amd64,linux/arm64
+
+      # Step 6: Generate artifact attestation (supply chain security)
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      # Step 7: Trigger Portainer webhook for stack redeploy
+      # Note: PORTAINER_WEBHOOK_URL must be configured in repository secrets
+      # Format: https://portainer.example.com/api/webhooks/<webhook-id>
+      - name: Trigger Portainer deployment
+        if: success()
+        run: |
+          echo "Triggering Portainer webhook for stack redeploy..."
+          
+          # Extract short SHA for image tag reference
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          # Invoke Portainer webhook with image tag metadata
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"image_tag\":\"${SHORT_SHA}\",\"commit_sha\":\"${{ github.sha }}\",\"repository\":\"${{ github.repository }}\",\"actor\":\"${{ github.actor }}\"}")
+          
+          # Extract HTTP status code from response
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "Portainer webhook response (HTTP $HTTP_CODE):"
+          echo "$BODY"
+          
+          # Check if webhook was successful (HTTP 200-299)
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Portainer deployment triggered successfully"
+            exit 0
+          else
+            echo "⚠️ Portainer webhook returned HTTP $HTTP_CODE"
+            echo "Deployment may need manual intervention"
+            # Note: We don't fail the workflow here to allow image push to succeed
+            # even if webhook fails (webhook reliability issue mentioned in SRS)
+            exit 0
+          fi
+        env:
+          # Ensure webhook URL is available (will fail gracefully if not set)
+          PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+
+      # Step 8: Report deployment status
+      - name: Report deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ CI/CD Pipeline completed successfully"
+            echo "📦 Docker image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+            echo "🏷️  Tags: latest, $(echo ${{ github.sha }} | cut -c1-7)"
+            echo "🚀 Deployment triggered via Portainer webhook"
+          else
+            echo "❌ CI/CD Pipeline failed"
+            echo "Check logs above for details"
+          fi
+
+  # ==============================================================================
+  # Job 3: Deployment Verification (Optional)
+  # ==============================================================================
+  # Note: This job could be extended to verify deployment health
+  # by checking Portainer API or application health endpoints
+  # For MVP, we rely on Portainer's internal health checks
