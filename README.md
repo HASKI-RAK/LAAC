@@ -34,7 +34,7 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
-## Run tests
+# Run tests
 
 ```bash
 # unit tests
@@ -46,6 +46,59 @@ $ yarn run test:e2e
 # test coverage
 $ yarn run test:cov
 ```
+
+## API Documentation
+
+> **REQ-FN-008/009**: This project provides interactive API documentation via Swagger UI and a machine-readable OpenAPI specification.
+
+### Accessing API Documentation
+
+Once the application is running (via `yarn start` or `yarn start:dev`), you can access:
+
+- **Swagger UI**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+  - Interactive API documentation with "Try it out" functionality
+  - Pre-configured with JWT bearer authentication
+  - Explore all endpoints, request/response schemas, and error codes
+
+- **OpenAPI Spec (JSON)**: [http://localhost:3000/api-docs/openapi.json](http://localhost:3000/api-docs/openapi.json)
+  - Machine-readable OpenAPI 3.0 specification
+  - Use for API client generation, testing tools, or CI/CD validation
+
+### Example API Requests
+
+```bash
+# Health check (public, no auth required)
+curl http://localhost:3000/health/liveness
+
+# Get metrics catalog (requires JWT token)
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  http://localhost:3000/api/v1/metrics
+
+# Get specific metric details
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  http://localhost:3000/api/v1/metrics/course-completion-rate
+
+# Prometheus metrics (public, no auth required)
+curl http://localhost:3000/metrics
+```
+
+### Disabling Swagger in Production
+
+To disable Swagger UI and OpenAPI spec endpoints in production:
+
+1. Set the environment variable:
+   ```bash
+   SWAGGER_ENABLED=false
+   ```
+
+2. Or in your `.env` file:
+   ```
+   SWAGGER_ENABLED=false
+   ```
+
+The Swagger UI and spec endpoints will return 404 when disabled.
+
+## Run tests
 
 ## Local Redis (Dev)
 
