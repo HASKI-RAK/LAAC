@@ -39,9 +39,7 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
   describe('GET /metrics', () => {
     it('should be accessible without authentication', async () => {
       // REQ-FN-021: Metrics endpoint must be public for Prometheus scraping
-      const response = await request(app.getHttpServer())
-        .get('/metrics')
-        .expect(200);
+      await request(app.getHttpServer()).get('/metrics').expect(200);
     });
 
     it('should return Prometheus text format', async () => {
@@ -127,7 +125,7 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
 
     it('should work even when invalid auth is provided', async () => {
       // REQ-FN-021: Metrics should be public regardless of auth headers
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .get('/metrics')
         .set('Authorization', 'Bearer invalid-token')
         .expect(200);

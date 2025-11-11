@@ -41,6 +41,9 @@ import { MetricsRegistryService } from './services/metrics-registry.service';
       buckets: [0.1, 0.5, 1, 2, 5, 10], // Seconds
     }),
     // REQ-FN-021: HTTP metrics
+    // NOTE: The 'endpoint' label should use route patterns (e.g., '/api/v1/metrics/:id')
+    // rather than actual paths with parameter values to prevent high cardinality issues.
+    // When recording these metrics, normalize dynamic path segments to their patterns.
     makeCounterProvider({
       name: 'http_requests_total',
       help: 'Total HTTP requests by method, endpoint, and status',

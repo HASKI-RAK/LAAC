@@ -75,8 +75,13 @@ export class MetricsRegistryService {
 
   /**
    * Record HTTP request
+   *
+   * IMPORTANT: To prevent high cardinality issues, the 'endpoint' parameter should use
+   * route patterns (e.g., '/api/v1/metrics/:id') rather than actual paths with parameter
+   * values (e.g., '/api/v1/metrics/123'). Normalize dynamic path segments before calling.
+   *
    * @param method - HTTP method (GET, POST, etc.)
-   * @param endpoint - Request endpoint
+   * @param endpoint - Request endpoint pattern (use route pattern, not actual path with IDs)
    * @param status - HTTP status code
    */
   recordHttpRequest(method: string, endpoint: string, status: string): void {
@@ -85,8 +90,13 @@ export class MetricsRegistryService {
 
   /**
    * Record HTTP request duration
+   *
+   * IMPORTANT: To prevent high cardinality issues, the 'endpoint' parameter should use
+   * route patterns (e.g., '/api/v1/metrics/:id') rather than actual paths with parameter
+   * values (e.g., '/api/v1/metrics/123'). Normalize dynamic path segments before calling.
+   *
    * @param method - HTTP method
-   * @param endpoint - Request endpoint
+   * @param endpoint - Request endpoint pattern (use route pattern, not actual path with IDs)
    * @param durationSeconds - Duration in seconds
    */
   recordHttpDuration(
