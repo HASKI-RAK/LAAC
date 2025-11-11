@@ -10,7 +10,7 @@ import { AppModule } from '../src/app.module';
 describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -32,7 +32,7 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 
@@ -105,7 +105,8 @@ describe('REQ-FN-021: Prometheus Metrics Endpoint (e2e)', () => {
       // REQ-FN-021: Custom metrics should be registered and present in output
       // Even if they have no samples yet, they should have HELP and TYPE definitions
       const hasCustomMetrics =
-        metricsText.includes('cache_hit_ratio') ||
+        metricsText.includes('cache_hits_total') ||
+        metricsText.includes('cache_misses_total') ||
         metricsText.includes('metric_computation_duration_seconds') ||
         metricsText.includes('lrs_query_duration_seconds') ||
         metricsText.includes('http_requests_total') ||

@@ -3,7 +3,6 @@
 
 import { Module } from '@nestjs/common';
 import {
-  PrometheusModule,
   makeCounterProvider,
   makeHistogramProvider,
   makeGaugeProvider,
@@ -17,10 +16,15 @@ import { MetricsRegistryService } from './services/metrics-registry.service';
   controllers: [], // Controller is registered in CoreModule with @Public() decorator
   providers: [
     MetricsRegistryService,
-    // REQ-FN-021: Cache metrics
-    makeGaugeProvider({
-      name: 'cache_hit_ratio',
-      help: 'Cache hit ratio per metric ID (REQ-FN-006)',
+    // REQ-FN-021: Cache metrics - separate counters for hits and misses
+    makeCounterProvider({
+      name: 'cache_hits_total',
+      help: 'Total cache hits per metric ID (REQ-FN-006)',
+      labelNames: ['metricId'],
+    }),
+    makeCounterProvider({
+      name: 'cache_misses_total',
+      help: 'Total cache misses per metric ID (REQ-FN-006)',
       labelNames: ['metricId'],
     }),
     // REQ-FN-021: Metric computation metrics

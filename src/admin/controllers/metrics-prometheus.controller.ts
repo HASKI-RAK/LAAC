@@ -2,12 +2,7 @@
 // Public endpoint for Prometheus/OpenMetrics scraping
 
 import { Controller, Get, Res } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiExcludeEndpoint,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { register } from 'prom-client';
 import { Public } from '../../auth/decorators';
@@ -21,9 +16,10 @@ import { Public } from '../../auth/decorators';
  *
  * Note: This endpoint is PUBLIC (no authentication) to allow Prometheus scraping
  * This is distinct from the analytics catalog at /api/v1/metrics (REQ-FN-003)
+ * The @Controller() decorator without path allows PrometheusModule to set the path
  */
 @ApiTags('Metrics')
-@Controller('metrics')
+@Controller()
 @Public() // REQ-FN-021: Metrics endpoint must be publicly accessible for scraping
 export class MetricsPrometheusController {
   /**
@@ -36,6 +32,7 @@ export class MetricsPrometheusController {
   @Get()
   @ApiOperation({
     summary: 'Prometheus metrics endpoint',
+    description:
       'Returns metrics in Prometheus/OpenMetrics format for scraping by monitoring tools. ' +
       'Includes HTTP request metrics, authentication metrics, cache metrics, and LRS query metrics. ' +
       'This endpoint is publicly accessible (no authentication required).',

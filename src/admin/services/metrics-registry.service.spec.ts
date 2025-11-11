@@ -5,7 +5,8 @@ import { MetricsRegistryService } from './metrics-registry.service';
 
 describe('REQ-FN-021: MetricsRegistryService', () => {
   let service: MetricsRegistryService;
-  let mockCacheHitRatio: jest.Mocked<Gauge<string>>;
+  let mockCacheHitsTotal: jest.Mocked<Counter<string>>;
+  let mockCacheMissesTotal: jest.Mocked<Counter<string>>;
   let mockMetricComputationDuration: jest.Mocked<Histogram<string>>;
   let mockLrsQueryDuration: jest.Mocked<Histogram<string>>;
   let mockHttpRequestsTotal: jest.Mocked<Counter<string>>;
@@ -15,9 +16,13 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
 
   beforeEach(async () => {
     // Create mock metrics
-    mockCacheHitRatio = {
-      set: jest.fn(),
-    } as unknown as jest.Mocked<Gauge<string>>;
+    mockCacheHitsTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCacheMissesTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
 
     mockMetricComputationDuration = {
       observe: jest.fn(),
@@ -50,7 +55,8 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
           provide: MetricsRegistryService,
           useFactory: () => {
             return new MetricsRegistryService(
-              mockCacheHitRatio,
+              mockCacheHitsTotal,
+              mockCacheMissesTotal,
               mockMetricComputationDuration,
               mockLrsQueryDuration,
               mockHttpRequestsTotal,
@@ -74,19 +80,17 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
     it('should record cache hit', () => {
       service.recordCacheHit('test-metric');
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(mockCacheHitRatio.set).toHaveBeenCalledWith(
-        { metricId: 'test-metric' },
-        1,
-      );
+      expect(mockCacheHitsTotal.inc).toHaveBeenCalledWith({
+        metricId: 'test-metric',
+      });
     });
 
     it('should record cache miss', () => {
       service.recordCacheMiss('test-metric');
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(mockCacheHitRatio.set).toHaveBeenCalledWith(
-        { metricId: 'test-metric' },
-        0,
-      );
+      expect(mockCacheMissesTotal.inc).toHaveBeenCalledWith({
+        metricId: 'test-metric',
+      });
     });
   });
 
