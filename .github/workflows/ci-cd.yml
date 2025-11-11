@@ -109,11 +109,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker Buildx (for multi-platform builds and caching)
+      # Step 2: Extract short SHA (used in multiple steps)
+      - name: Extract short SHA
+        id: sha
+        run: echo "short=$(echo "${{ github.sha }}" | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      # Step 2: Extract short SHA (used in multiple steps)
+      - name: Extract short SHA
+        id: sha
+        run: echo "short=$(echo "${{ github.sha }}" | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      # Step 3: Set up Docker Buildx (for multi-platform builds and caching)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 3: Login to container registry
+      # Step 4: Login to container registry
       # Note: For GHCR (GitHub Container Registry), use GITHUB_TOKEN
       # For other registries, use DOCKER_REGISTRY_USER and
       # DOCKER_REGISTRY_PASSWORD secrets
@@ -124,7 +134,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 4: Extract metadata for Docker (tags, labels)
+      # Step 5: Extract metadata for Docker (tags, labels)
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -138,7 +148,7 @@ jobs:
             # Tag with full SHA (optional, for complete traceability)
             type=sha,prefix=,format=long
 
-      # Step 5: Build and push Docker image
+      # Step 6: Build and push Docker image
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v5
@@ -154,7 +164,7 @@ jobs:
           # Build for multiple platforms (amd64 for x86, arm64 for ARM servers)
           platforms: linux/amd64,linux/arm64
 
-      # Step 6: Generate artifact attestation (supply chain security)
+      # Step 7: Generate artifact attestation (supply chain security)
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
@@ -162,21 +172,28 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-      # Step 7: Trigger Portainer webhook for stack redeploy
+      # Step 8: Trigger Portainer webhook for stack redeploy
       # Note: PORTAINER_WEBHOOK_URL must be configured in repository secrets
       # Format: https://portainer.example.com/api/webhooks/<webhook-id>
       - name: Trigger Portainer deployment
+        id: webhook
         if: success()
         run: |
           echo "Triggering Portainer webhook for stack redeploy..."
 
-          # Extract short SHA for image tag reference
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # Validate webhook URL is configured
+          WEBHOOK_URL="${{ secrets.PORTAINER_WEBHOOK_URL }}"
+          if [ -z "${WEBHOOK_URL}" ]; then
+            echo "⚠️ PORTAINER_WEBHOOK_URL secret is not set"
+            echo "Skipping Portainer deployment trigger"
+            echo "Note: Docker image was successfully pushed and can be deployed manually"
+            echo "webhook_invoked=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           # Invoke Portainer webhook with image tag metadata (safe JSON construction)
-          WEBHOOK_URL="${{ secrets.PORTAINER_WEBHOOK_URL }}"
           PAYLOAD=$(jq -n \
-            --arg tag "${SHORT_SHA}" \
+            --arg tag "${{ steps.sha.outputs.short }}" \
             --arg sha "${{ github.sha }}" \
             --arg repo "${{ github.repository }}" \
             --arg actor "${{ github.actor }}" \
@@ -184,6 +201,7 @@ jobs:
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEBHOOK_URL}" \
             -H "Content-Type: application/json" \
             -d "${PAYLOAD}")
+
           # Extract HTTP status code from response
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n-1)
@@ -194,15 +212,19 @@ jobs:
           # Check if webhook was successful (HTTP 200-299)
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             echo "✅ Portainer deployment triggered successfully"
+            echo "webhook_invoked=true" >> $GITHUB_OUTPUT
+            echo "webhook_status=success" >> $GITHUB_OUTPUT
             exit 0
           else
             echo "⚠️ Portainer webhook returned HTTP $HTTP_CODE"
             echo "Deployment may need manual intervention"
+            echo "webhook_invoked=true" >> $GITHUB_OUTPUT
+            echo "webhook_status=failed" >> $GITHUB_OUTPUT
             # Note: We don't fail the workflow here to allow image push
             # to succeed even if webhook fails (reliability issue in SRS)
             exit 0
           fi
-      # Step 8: Report deployment status
+      # Step 9: Report deployment status
       - name: Report deployment status
         if: always()
         run: |
@@ -210,9 +232,18 @@ jobs:
             echo "✅ CI/CD Pipeline completed successfully"
             IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
             echo "📦 Docker image pushed: ${IMG}"
-            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            echo "🏷️  Tags: latest, ${SHORT_SHA}"
-            echo "🚀 Deployment triggered via Portainer webhook"
+            echo "🏷️  Tags: latest, ${{ steps.sha.outputs.short }}"
+
+            # Report webhook status
+            if [ "${{ steps.webhook.outputs.webhook_invoked }}" == "true" ]; then
+              if [ "${{ steps.webhook.outputs.webhook_status }}" == "success" ]; then
+                echo "🚀 Portainer deployment triggered successfully"
+              else
+                echo "⚠️ Portainer webhook invocation failed (check step logs)"
+              fi
+            else
+              echo "ℹ️ Portainer webhook not configured (PORTAINER_WEBHOOK_URL secret not set)"
+            fi
           else
             echo "❌ CI/CD Pipeline failed"
             echo "Check logs above for details"

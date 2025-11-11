@@ -223,13 +223,11 @@ To enable the CI/CD pipeline, configure the following repository secrets in **Se
 
 #### Optional Secrets (for custom registries)
 
-The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN` (automatically provided). If you need to use a different registry:
+The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN` (automatically provided). Custom registry credentials are not currently supported, but the workflow can be extended if needed.
 
 | Secret Name | Description | Example | Required |
 |-------------|-------------|---------|----------|
 | `DOCKER_REGISTRY_URL` | Container registry URL | `ghcr.io`, `docker.io` | No (default: `ghcr.io`) |
-| `DOCKER_REGISTRY_USER` | Registry username | `myuser` | No (uses `github.actor` for GHCR) |
-| `DOCKER_REGISTRY_PASSWORD` | Registry password/token | `***` | No (uses `GITHUB_TOKEN` for GHCR) |
 
 ### Setting Up Portainer Webhook
 
