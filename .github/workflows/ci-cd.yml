@@ -114,11 +114,6 @@ jobs:
         id: sha
         run: echo "short=$(echo "${{ github.sha }}" | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      # Step 2: Extract short SHA (used in multiple steps)
-      - name: Extract short SHA
-        id: sha
-        run: echo "short=$(echo "${{ github.sha }}" | cut -c1-7)" >> $GITHUB_OUTPUT
-
       # Step 3: Set up Docker Buildx (for multi-platform builds and caching)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
