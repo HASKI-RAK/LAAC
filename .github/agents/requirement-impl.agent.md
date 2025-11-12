@@ -60,6 +60,7 @@ Implement the feature described in this issue according to the Software Requirem
 
 **Before Writing Code**:
 
+- Perform a brief web scan using the browsing mcp tool for best practices and common patterns relevant to the requirement and NestJS. Prefer official docs and reputable sources (NestJS docs, TypeScript docs, OWASP, RFCs, well‑maintained OSS repos). Capture 2–5 reference links and key takeaways in the issue comments to align design with real‑world examples and reduce future errors.
 - Read existing code in the target module (`src/{module-name}/`)
 - Identify dependencies (services, providers, guards, middleware)
 - Review related tests (`src/{module-name}/*.spec.ts`, `test/*.e2e-spec.ts`)
