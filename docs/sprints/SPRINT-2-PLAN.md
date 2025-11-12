@@ -43,7 +43,7 @@
 
 ### Success Criteria
 
-- [ ] Redis CacheService fully functional with cache invalidation
+- [x] Redis CacheService fully functional with cache invalidation
 - [ ] LRS client can execute xAPI queries with proper error handling
 - [ ] IMetricComputation interface implemented with examples
 - [ ] Circuit breaker protects against LRS failures
@@ -122,19 +122,19 @@ Implement Redis cache service, data access abstractions, and cache invalidation 
 
 **Description**: Implement `CacheService` with cache-aside pattern and TTL management (REQ-FN-006)
 
-**Acceptance Criteria**:
+-**Acceptance Criteria**:
 
-- [ ] `ICacheService` interface defined with get/set/delete/invalidate methods
-- [ ] Redis client lifecycle management (connect, disconnect, cleanup)
-- [ ] Cache key generation with metricId, scope, filters, version
-- [ ] TTL configurable per cache category (metrics: 1h, results: 5m, etc.)
-- [ ] Cache invalidation by key or pattern (glob)
-- [ ] Metrics tracked: cache_hits_total, cache_misses_total, cache_evictions_total
-- [ ] Graceful fallback if Redis unavailable (log warning, proceed without cache)
-- [ ] Unit tests for cache operations and pattern matching
-- [ ] E2E tests for cache hits/misses with real Redis
+- [x] `ICacheService` interface defined with get/set/delete/invalidate methods
+- [x] Redis client lifecycle management (connect, disconnect, cleanup)
+- [x] Cache key generation with metricId, scope, filters, version
+- [x] TTL configurable per cache category (metrics: 1h, results: 5m, etc.)
+- [x] Cache invalidation by key or pattern (glob)
+- [x] Metrics tracked: cache_hits_total, cache_misses_total, cache_evictions_total
+- [x] Graceful fallback if Redis unavailable (log warning, proceed without cache)
+- [x] Unit tests for cache operations and pattern matching
+- [x] E2E tests for cache hits/misses with real Redis
 
-**Implementation Scope**:
+-**Implementation Scope**: (COMPLETED)
 
 - `src/data-access/services/cache.service.ts` — Redis operations
 - `src/data-access/interfaces/cache.interface.ts` — ICacheService contract
@@ -142,7 +142,11 @@ Implement Redis cache service, data access abstractions, and cache invalidation 
 - `src/data-access/services/cache.service.spec.ts` — Unit tests
 - `test/cache.e2e-spec.ts` — E2E tests
 
-**Story Points**: 5 | **Assigned To**: [#52](https://github.com/HASKI-RAK/LAAC/issues/52)
+**Status**: COMPLETED — Implemented and merged (PR #58, tracked at issue #59)
+
+**Story Points**: 5 | **Assigned To**: [#59](https://github.com/HASKI-RAK/LAAC/issues/59)
+
+#### Story 6.2: Cache Invalidation Endpoint (3 pts)
 
 **Description**: Wire cache invalidation endpoint to actual Redis operations (REQ-FN-007)
 
@@ -341,7 +345,7 @@ Implement circuit breaker pattern and graceful degradation.
 
 Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DTO), and REQ-FN-025 (health checks).
 
-#### Story 9.1: Implement REQ-FN-026 Multi-LRS Config Parsing & Validation (3 pts) — [#58]
+#### Story 9.1: Implement REQ-FN-026 Multi-LRS Config Parsing & Validation (3 pts) — [#61]
 
 **Description**: Parse `LRS_INSTANCES` JSON and/or prefixed env vars, validate uniqueness and required fields, expose normalized config to DataAccess.
 
@@ -357,7 +361,7 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 - `src/core/config/config.interface.ts` — Add multi-instance types
 - `src/data-access/data-access.module.ts` — Provide `LRSClientFactory` with injected instances
 
-#### Story 9.2: Results Endpoints + MetricResult DTO (5 pts) — [#59]
+#### Story 9.2: Results Endpoints + MetricResult DTO (5 pts) — [#60]
 
 **Description**: Implement `GET /api/v1/metrics/:id/results` and `POST /api/v1/metrics/results` returning normalized `MetricResult`. Add `instanceId` support (single, list, wildcard).
 
@@ -374,7 +378,7 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 - `src/metrics/controllers/metrics.controller.ts` — Add results routes
 - `src/metrics/services/metrics.service.ts` — Orchestration stub
 
-#### Story 9.3: Health Check Alignment to REQ-FN-025 (4 pts) — [#60]
+#### Story 9.3: Health Check Alignment to REQ-FN-025 (4 pts) — [#62]
 
 **Description**: Use `/xapi/about` endpoint with same auth as analytics; treat 2xx, 401, and 403 as reachable. Add latency metrics.
 

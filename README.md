@@ -60,6 +60,7 @@ For detailed testing documentation, see **[docs/TESTING.md](docs/TESTING.md)**.
    - Docker Compose V2+ is included with Docker Desktop
 
 2. **Create environment configuration**:
+
    ```bash
    cp .env.example .env
    ```
@@ -143,11 +144,13 @@ The production environment uses pre-built Docker images with Traefik reverse pro
 
 1. **Traefik Reverse Proxy**: Must be running with Let's Encrypt configured
 2. **External Network**: Create the Traefik network
+
    ```bash
    docker network create traefik_web
    ```
 
 3. **Docker Image**: Build and push to registry (handled by CI/CD):
+
    ```bash
    # Manual build and push (if not using CI/CD)
    docker build -t ghcr.io/haski-rak/laac:latest .
@@ -155,6 +158,7 @@ The production environment uses pre-built Docker images with Traefik reverse pro
    ```
 
 4. **Environment Variables**: Configure in `.env`:
+
    ```bash
    NODE_ENV=production
    SUBDOMAIN=laac
@@ -162,7 +166,7 @@ The production environment uses pre-built Docker images with Traefik reverse pro
    DOCKER_REGISTRY_URL=ghcr.io/haski-rak/laac
    IMAGE_TAG=latest
    GENERIC_TIMEZONE=Europe/Berlin
-   
+
    # Set secure secrets (NEVER commit these!)
    JWT_SECRET=<generated-secure-secret>
    LRS_API_KEY=<your-lrs-api-key>
@@ -196,15 +200,16 @@ The production compose file includes Traefik labels for automatic service discov
 
 ```yaml
 labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.laac.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
-  - "traefik.http.routers.laac.entrypoints=websecure"
-  - "traefik.http.routers.laac.tls=true"
-  - "traefik.http.routers.laac.tls.certresolver=le"
-  - "traefik.http.services.laac.loadbalancer.server.port=3000"
+  - 'traefik.enable=true'
+  - 'traefik.http.routers.laac.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)'
+  - 'traefik.http.routers.laac.entrypoints=websecure'
+  - 'traefik.http.routers.laac.tls=true'
+  - 'traefik.http.routers.laac.tls.certresolver=le'
+  - 'traefik.http.services.laac.loadbalancer.server.port=3000'
 ```
 
 These labels configure:
+
 - ✅ HTTPS with automatic Let's Encrypt certificates
 - ✅ HTTP to HTTPS redirect
 - ✅ Load balancing for multiple instances
@@ -222,6 +227,7 @@ To deploy in Portainer:
 4. **Deploy Stack**
 
 Portainer will automatically:
+
 - Pull the Docker image from the registry
 - Create required networks and volumes
 - Register the service with Traefik
@@ -239,34 +245,39 @@ docker compose down -v
 
 ### Docker Compose Files
 
-| File | Purpose | Use Case |
-|------|---------|----------|
-| `docker-compose.dev.yml` | Development environment | Local development with hot-reload |
-| `docker-compose.yml` | Production environment | Portainer/production deployment with Traefik |
+| File                     | Purpose                 | Use Case                                     |
+| ------------------------ | ----------------------- | -------------------------------------------- |
+| `docker-compose.dev.yml` | Development environment | Local development with hot-reload            |
+| `docker-compose.yml`     | Production environment  | Portainer/production deployment with Traefik |
 
 ### Environment Variables Reference
 
 See `.env.example` for a complete list of required environment variables. Key variables:
 
 #### Application Configuration
+
 - `NODE_ENV`: Environment mode (development/production)
 - `PORT`: Application port (default: 3000)
 - `LOG_LEVEL`: Logging verbosity (error/warn/log/debug/verbose)
 
 #### Security
+
 - `JWT_SECRET`: JWT signing secret (min 32 chars, **CRITICAL**)
 - `AUTH_ENABLED`: Enable/disable authentication (default: true)
 
 #### Redis Cache
+
 - `REDIS_HOST`: Redis hostname (default: localhost for dev, redis for Docker)
 - `REDIS_PORT`: Redis port (default: 6379)
 - `REDIS_PASSWORD`: Redis password (optional, recommended for production)
 
 #### LRS Integration
+
 - `LRS_URL`: Learning Record Store xAPI endpoint (**REQUIRED**)
 - `LRS_API_KEY`: LRS authentication key (**CRITICAL**)
 
 #### Docker & Traefik (Production Only)
+
 - `DOCKER_REGISTRY_URL`: Container registry URL
 - `IMAGE_TAG`: Docker image tag (e.g., latest, v1.0.0)
 - `SUBDOMAIN`: Application subdomain (e.g., laac)
@@ -286,6 +297,7 @@ curl http://localhost:3000/health/readiness
 ```
 
 Health checks are used by:
+
 - Docker Compose: Auto-restart unhealthy containers
 - Portainer: Dashboard monitoring and alerting
 - Traefik: Load balancer health-based routing
@@ -306,11 +318,13 @@ PORT=3001
 #### Hot-Reload Not Working (Dev)
 
 1. Verify volumes are mounted:
+
    ```bash
    docker compose -f docker-compose.dev.yml exec laac ls -la /app/src
    ```
 
 2. Check file changes are detected:
+
    ```bash
    docker compose -f docker-compose.dev.yml logs -f laac
    ```
@@ -323,11 +337,13 @@ PORT=3001
 #### Traefik Not Routing (Production)
 
 1. Verify Traefik network exists:
+
    ```bash
    docker network ls | grep traefik_web
    ```
 
 2. Check Traefik can see the service:
+
    ```bash
    docker compose logs -f laac
    ```
@@ -340,11 +356,13 @@ PORT=3001
 #### Redis Connection Failed
 
 1. Check Redis is healthy:
+
    ```bash
    docker compose ps redis
    ```
 
 2. Test Redis connection:
+
    ```bash
    docker compose exec redis redis-cli ping
    # Should respond: PONG
@@ -356,7 +374,7 @@ PORT=3001
 
 ## API Documentation
 
-> **REQ-FN-008/009**: This project provides interactive API documentation via Swagger UI and a machine-readable OpenAPI specification.
+> **REQ‑FN‑008/009**: This project provides interactive API documentation via Swagger UI and a machine‑readable OpenAPI specification.
 
 ### Accessing API Documentation
 
@@ -371,29 +389,12 @@ Once the application is running (via `yarn start` or `yarn start:dev`), you can 
   - Machine-readable OpenAPI 3.0 specification
   - Use for API client generation, testing tools, or CI/CD validation
 
-### Example API Requests
-
-```bash
-# Health check (public, no auth required)
-curl http://localhost:3000/health/liveness
-
-# Get metrics catalog (requires JWT token)
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost:3000/api/v1/metrics
-
-# Get specific metric details
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost:3000/api/v1/metrics/course-completion-rate
-
-# Prometheus metrics (public, no auth required)
-curl http://localhost:3000/metrics
-```
-
-### Disabling Swagger in Production
+#### Disabling Swagger in Production
 
 To disable Swagger UI and OpenAPI spec endpoints in production:
 
 1. Set the environment variable:
+
    ```bash
    SWAGGER_ENABLED=false
    ```
@@ -404,6 +405,25 @@ To disable Swagger UI and OpenAPI spec endpoints in production:
    ```
 
 The Swagger UI and spec endpoints will return 404 when disabled.
+
+## API Versioning & Deprecation (REQ‑FN‑016)
+
+The public API is versioned using **URI path versioning**:
+
+| Version | Base Path     |
+| ------- | ------------- |
+| v1      | `/api/v1/...` |
+| v2      | `/api/v2/...` |
+
+_All responses include the header_ `X-API-Version: <major>` _so clients can detect the version they are talking to._
+
+When a major version is deprecated the service returns additional HTTP headers:
+
+- `Deprecation: <date>`: When the version will be deprecated
+- `Sunset: <date>`: When the version will be removed
+- `Link: </api/v2/...>; rel="next"`: URL of the next version's endpoint
+
+Clients should update to the latest version before the deprecation date to avoid service disruption.
 
 ## Configuration and Secrets Management
 
@@ -530,6 +550,7 @@ The CI/CD pipeline (`.github/workflows/ci-cd.yml`) automatically runs on every p
 ### Pipeline Status
 
 Check the current pipeline status:
+
 - **CI/CD Pipeline**: [![CI/CD Status](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml)
 - **Pull Request Tests**: [![NestJS CI](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml)
 
@@ -539,16 +560,16 @@ To enable the CI/CD pipeline, configure the following repository secrets in **Se
 
 #### Required Secrets
 
-| Secret Name | Description | Example | Required |
-|-------------|-------------|---------|----------|
-| `PORTAINER_WEBHOOK_URL` | Portainer webhook URL for stack redeploy | `https://portainer.example.com/api/webhooks/<id>` | **Yes** |
+| Secret Name             | Description                              | Example                                           | Required |
+| ----------------------- | ---------------------------------------- | ------------------------------------------------- | -------- |
+| `PORTAINER_WEBHOOK_URL` | Portainer webhook URL for stack redeploy | `https://portainer.example.com/api/webhooks/<id>` | **Yes**  |
 
 #### Optional Secrets (for custom registries)
 
 The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN` (automatically provided). Custom registry credentials are not currently supported, but the workflow can be extended if needed.
 
-| Secret Name | Description | Example | Required |
-|-------------|-------------|---------|----------|
+| Secret Name           | Description            | Example                | Required                |
+| --------------------- | ---------------------- | ---------------------- | ----------------------- |
 | `DOCKER_REGISTRY_URL` | Container registry URL | `ghcr.io`, `docker.io` | No (default: `ghcr.io`) |
 
 ### Setting Up Portainer Webhook
@@ -559,6 +580,7 @@ The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN
    - Copy the webhook URL
 
 2. **Configure GitHub Secret**:
+
    ```bash
    # In GitHub repository:
    # Settings > Secrets and variables > Actions > New repository secret
@@ -582,6 +604,7 @@ The pipeline creates the following Docker image tags:
 - **`<long-sha>`**: Full commit SHA for complete traceability
 
 Example:
+
 ```bash
 ghcr.io/haski-rak/laac:latest
 ghcr.io/haski-rak/laac:a1b2c3d
@@ -603,7 +626,7 @@ After a successful deployment:
 
 1. **Check GitHub Actions**: Verify all steps completed successfully (green checkmarks)
 2. **Check Portainer**: Verify stack update event in activity logs
-3. **Check Application Health**: 
+3. **Check Application Health**:
    ```bash
    curl https://your-domain.com/health/readiness
    # Should return HTTP 200 with status "ok"
@@ -612,21 +635,25 @@ After a successful deployment:
 ### Troubleshooting
 
 #### Pipeline Fails at Test Stage
+
 - Check test logs in GitHub Actions for specific failure
 - Run tests locally: `yarn test` and `yarn test:e2e`
 - Ensure all dependencies are properly installed
 
 #### Pipeline Fails at Build Stage
+
 - Check Dockerfile syntax and build context
 - Verify base image availability
 - Check for disk space issues in runner
 
 #### Pipeline Fails at Push Stage
+
 - Verify `GITHUB_TOKEN` permissions (packages: write)
 - Check GitHub Container Registry status
 - Ensure repository allows package publishing
 
 #### Webhook Invocation Fails
+
 - Verify `PORTAINER_WEBHOOK_URL` secret is set correctly
 - Check Portainer webhook is enabled and accessible
 - Test webhook manually with `curl`
@@ -646,6 +673,7 @@ If a deployment causes issues, you can rollback to a previous version:
 3. **Redeploy stack** in Portainer UI or trigger webhook manually
 
 For more details, see:
+
 - `.github/workflows/ci-cd.yml` - Full pipeline implementation
 - `docs/srs/REQ-FN-015.md` - CI/CD requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 9 - Deployment architecture
