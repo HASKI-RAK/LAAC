@@ -35,7 +35,7 @@ import { MetricsRegistryService } from './services/metrics-registry.service';
       name: 'cache_operations_duration_seconds',
       help: 'Cache operation duration in seconds (REQ-FN-006)',
       labelNames: ['operation'],
-      buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5], // Milliseconds to sub-second
+      buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5], // 1ms to 500ms
     }),
     // REQ-FN-021: Metric computation metrics
     makeHistogramProvider({
