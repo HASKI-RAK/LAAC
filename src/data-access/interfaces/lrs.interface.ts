@@ -69,7 +69,7 @@ export interface xAPIActivityDefinition {
   description?: { [language: string]: string };
   type?: string;
   moreInfo?: string;
-  extensions?: { [key: string]: any };
+  extensions?: Record<string, unknown>;
 }
 
 /**
@@ -81,7 +81,7 @@ export interface xAPIResult {
   completion?: boolean;
   response?: string;
   duration?: string;
-  extensions?: { [key: string]: any };
+  extensions?: Record<string, unknown>;
 }
 
 export interface xAPIScore {
@@ -103,7 +103,7 @@ export interface xAPIContext {
   platform?: string;
   language?: string;
   statement?: xAPIStatementRef;
-  extensions?: { [key: string]: any };
+  extensions?: Record<string, unknown>;
 }
 
 export interface xAPIGroup {

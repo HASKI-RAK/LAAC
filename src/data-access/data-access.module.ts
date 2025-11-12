@@ -10,8 +10,8 @@ import { AdminModule } from '../admin/admin.module';
     CoreModule,
     forwardRef(() => AdminModule),
     HttpModule.register({
-      timeout: 10000,
       maxRedirects: 5,
+      // Timeout is configured per-request in LRSClient.buildRequestConfig()
     }),
   ],
   controllers: [],

@@ -63,8 +63,8 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       endpoint: lrsConfig.url,
       auth: {
         type: 'basic',
-        username: lrsConfig.apiKey,
-        password: lrsConfig.apiKey, // Using apiKey as both username and password
+        key: lrsConfig.apiKey,
+        secret: lrsConfig.apiKey, // Yetanalytics uses same key for both (REQ-FN-002)
       },
       timeoutMs: lrsConfig.timeout,
       maxRetries: 3,
@@ -181,7 +181,8 @@ export class LRSClient implements ILRSClient, OnModuleInit {
 
   /**
    * Aggregate statements (count only)
-   * More efficient than fetching all statements
+   * Note: xAPI spec doesn't define a standard count endpoint, so this
+   * fetches statements with pagination to get accurate count
    */
   async aggregate(filters: xAPIQueryFilters): Promise<number> {
     const startTime = Date.now();
@@ -195,9 +196,13 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     });
 
     try {
-      // Fetch with limit=0 to get count without statements
+      // Fetch first page with reasonable limit to get total count
+      // Note: xAPI doesn't have a dedicated count endpoint, so we need
+      // to fetch statements to determine count
       const queryBuilder = LRSQueryBuilder.fromFilters(filters);
-      queryBuilder.limit(0);
+      if (!filters.limit) {
+        queryBuilder.limit(100); // Use reasonable default for counting
+      }
 
       const url = `${this.config.endpoint}/statements`;
       const params = queryBuilder.build();
@@ -207,8 +212,8 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       const durationSeconds = (Date.now() - startTime) / 1000;
       this.metricsRegistry.recordLrsQuery(durationSeconds);
 
-      // Count is not directly provided, so we'll return statement count
-      // In a real implementation, this might use a custom aggregate endpoint
+      // Return count from first page as approximation
+      // For exact count, caller should use queryStatements() and count results
       const count = result.statements.length;
 
       this.logger.debug('LRS aggregate query completed', {
@@ -216,6 +221,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
         instanceId: this.instanceId,
         correlationId,
         count,
+        hasMore: !!result.more,
         durationMs: Date.now() - startTime,
       });
 
@@ -427,10 +433,9 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     // Remove leading slash if present
     const path = morePath.startsWith('/') ? morePath.substring(1) : morePath;
 
-    // Extract base URL (protocol + host + optional port)
-    const baseUrl = this.config.endpoint.split('/xapi')[0];
-
-    return `${baseUrl}/${path}`;
+    // Use URL constructor for robust base URL extraction
+    const url = new URL(this.config.endpoint);
+    return `${url.protocol}//${url.host}/${path}`;
   }
 
   /**

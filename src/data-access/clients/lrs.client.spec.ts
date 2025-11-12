@@ -7,7 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
-import { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { LRSClient } from './lrs.client';
 import { LoggerService } from '../../core/logger/logger.service';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
@@ -15,6 +15,11 @@ import {
   xAPIStatement,
   xAPIStatementResult,
 } from '../interfaces/lrs.interface';
+
+// Mock Axios config for test responses
+const mockAxiosConfig: InternalAxiosRequestConfig = {
+  headers: {} as any,
+} as InternalAxiosRequestConfig;
 
 describe('REQ-FN-002: LRSClient', () => {
   let client: LRSClient;
@@ -135,7 +140,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get.mockReturnValue(of(mockResponse));
@@ -173,7 +178,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       const response2: AxiosResponse<xAPIStatementResult> = {
@@ -181,7 +186,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get
@@ -205,7 +210,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get.mockReturnValue(of(mockResponse));
@@ -265,7 +270,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Unauthorized',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 401',
         name: 'AxiosError',
@@ -290,7 +295,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Too Many Requests',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 429',
         name: 'AxiosError',
@@ -317,7 +322,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Internal Server Error',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 500',
         name: 'AxiosError',
@@ -342,7 +347,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Service Unavailable',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 503',
         name: 'AxiosError',
@@ -358,7 +363,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get
@@ -382,7 +387,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Not Found',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 404',
         name: 'AxiosError',
@@ -408,7 +413,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get.mockReturnValue(of(mockResponse));
@@ -441,7 +446,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get.mockReturnValue(of(mockResponse));
@@ -479,7 +484,7 @@ describe('REQ-FN-002: LRSClient', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: mockAxiosConfig,
       };
 
       mockHttpService.get.mockReturnValue(of(mockAboutResponse));
@@ -517,7 +522,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Unauthorized',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 401',
         name: 'AxiosError',
@@ -541,7 +546,7 @@ describe('REQ-FN-002: LRSClient', () => {
           statusText: 'Forbidden',
           data: {},
           headers: {},
-          config: {} as any,
+          config: mockAxiosConfig,
         },
         message: 'Request failed with status code 403',
         name: 'AxiosError',
