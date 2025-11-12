@@ -67,28 +67,55 @@ export function createMockRedis(): MockRedis {
       let deleted = 0;
       keys.forEach((key) => {
         if (storage.has(key)) {
-          storage.delete(key);
-          expirations.delete(key);
-          deleted++;
+          // Check if key is expired
+          const expiry = expirations.get(key);
+          if (expiry && Date.now() > expiry) {
+            // Already expired, don't count as deleted
+            storage.delete(key);
+            expirations.delete(key);
+          } else {
+            // Valid key, count as deleted
+            storage.delete(key);
+            expirations.delete(key);
+            deleted++;
+          }
         }
       });
       return Promise.resolve(deleted);
     }),
 
     exists: jest.fn((...keys: string[]) => {
-      return Promise.resolve(keys.filter((key) => storage.has(key)).length);
+      return Promise.resolve(
+        keys.filter((key) => {
+          if (!storage.has(key)) return false;
+          const expiry = expirations.get(key);
+          if (expiry && Date.now() > expiry) {
+            storage.delete(key);
+            expirations.delete(key);
+            return false;
+          }
+          return true;
+        }).length,
+      );
     }),
 
     expire: jest.fn((key: string, seconds: number) => {
+      // Check if key is expired
+      const existingExpiry = expirations.get(key);
+      if (existingExpiry && Date.now() > existingExpiry) {
+        storage.delete(key);
+        expirations.delete(key);
+        return Promise.resolve(0);
+      }
       if (!storage.has(key)) return Promise.resolve(0);
       expirations.set(key, Date.now() + seconds * 1000);
       return Promise.resolve(1);
     }),
 
     ttl: jest.fn((key: string) => {
+      if (!storage.has(key)) return Promise.resolve(-2); // Key doesn't exist
       const expiry = expirations.get(key);
       if (!expiry) return Promise.resolve(-1); // Key doesn't have expiration
-      if (!storage.has(key)) return Promise.resolve(-2); // Key doesn't exist
       const remaining = Math.ceil((expiry - Date.now()) / 1000);
       return Promise.resolve(remaining > 0 ? remaining : -2);
     }),

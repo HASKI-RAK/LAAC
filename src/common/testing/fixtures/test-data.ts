@@ -78,7 +78,7 @@ export const TEST_XAPI_STATEMENTS = [
   {
     id: 'statement-001',
     actor: {
-      objectType: 'Agent',
+      objectType: 'Agent' as const,
       name: 'Test Student',
       mbox: 'mailto:student@test.com',
     },
@@ -87,7 +87,7 @@ export const TEST_XAPI_STATEMENTS = [
       display: { 'en-US': 'completed' },
     },
     object: {
-      objectType: 'Activity',
+      objectType: 'Activity' as const,
       id: 'http://example.com/course/123',
       definition: {
         name: { 'en-US': 'Introduction to Testing' },
@@ -99,7 +99,7 @@ export const TEST_XAPI_STATEMENTS = [
   {
     id: 'statement-002',
     actor: {
-      objectType: 'Agent',
+      objectType: 'Agent' as const,
       name: 'Test Student',
       mbox: 'mailto:student@test.com',
     },
@@ -108,7 +108,7 @@ export const TEST_XAPI_STATEMENTS = [
       display: { 'en-US': 'experienced' },
     },
     object: {
-      objectType: 'Activity',
+      objectType: 'Activity' as const,
       id: 'http://example.com/topic/456',
       definition: {
         name: { 'en-US': 'Unit Testing Basics' },
@@ -117,7 +117,7 @@ export const TEST_XAPI_STATEMENTS = [
     },
     timestamp: '2025-11-12T11:00:00.000Z',
   },
-];
+] as const;
 
 /**
  * Sample metric query parameters
@@ -209,7 +209,9 @@ export function getTestMetric(
  * @param overrides - Partial statement to override defaults
  * @returns Complete xAPI statement
  */
-export function createTestStatement(overrides: any = {}): any {
+export function createTestStatement(
+  overrides: Partial<(typeof TEST_XAPI_STATEMENTS)[0]> = {},
+): (typeof TEST_XAPI_STATEMENTS)[0] {
   return {
     ...TEST_XAPI_STATEMENTS[0],
     ...overrides,
