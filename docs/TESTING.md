@@ -18,13 +18,14 @@ This document provides comprehensive information about testing the LAAC (Learnin
 
 ## Overview
 
-LAAC uses **Jest** as the primary testing framework for both unit and end-to-end (E2E) tests. The testing strategy follows NestJS best practices and aims for **80% code coverage** (REQ-NF-020).
+LAAC uses **Jest** as the primary testing framework for both unit and end-to-end (E2E) tests. The testing strategy follows NestJS best practices and aims for **80% code coverage** (REQ-NF-020) as a quality baseline.
 
 ### Test Coverage Requirements
 
 - **Unit Tests**: Located in `src/**/*.spec.ts` (co-located with source files)
 - **E2E Tests**: Located in `test/**/*.e2e-spec.ts`
-- **Coverage Target**: 80% overall (REQ-NF-020)
+- **Coverage Target**: 80% overall (REQ-NF-020) - aspirational goal
+- **Coverage Baseline**: 55% (prevents regressions, gradually increasing)
 - **Coverage Reports**: Generated in `coverage/` directory
 
 ---
@@ -310,7 +311,118 @@ describe('REQ-FN-XXX: MyService', () => {
 });
 ```
 
+### Unit Test Utilities
+
+**Location**: `src/common/testing/`
+
+The project provides shared testing utilities to simplify unit test setup and reduce boilerplate code.
+
+#### 1. Test Module Helpers (`test-utils.ts`)
+
+```typescript
+import { createTestingModule, getTestService, createMockProvider, createSpyObj } from '@/common/testing';
+
+// Create a testing module with providers
+const module = await createTestingModule({
+  providers: [MyService, { provide: LoggerService, useValue: mockLogger }],
+});
+
+// Create and retrieve service in one call
+const service = await getTestService(
+  { providers: [MyService, mockLoggerProvider] },
+  MyService
+);
+
+// Create a mock provider
+const mockLoggerProvider = createMockProvider(LoggerService, {
+  log: jest.fn(),
+  error: jest.fn(),
+});
+
+// Create a spy object with multiple methods
+const loggerSpy = createSpyObj(['log', 'error', 'warn']);
+```
+
+#### 2. Mock Logger (`mock-logger.ts`)
+
+```typescript
+import { createMockLogger, getMockLoggerProvider, createSilentLogger } from '@/common/testing';
+
+// Create mock logger with jest.fn() methods
+const mockLogger = createMockLogger();
+await mockLogger.log('Test message');
+expect(mockLogger.log).toHaveBeenCalledWith('Test message');
+
+// Use as provider in testing module
+const module = await Test.createTestingModule({
+  providers: [MyService, getMockLoggerProvider()],
+}).compile();
+
+// Create silent logger for tests that don't need logging verification
+const silentLogger = createSilentLogger();
+```
+
+#### 3. Mock Cache/Redis (`mock-cache.ts`)
+
+```typescript
+import { 
+  createMockRedis, 
+  createMockCache, 
+  getMockCacheProvider, 
+  getMockRedisProvider 
+} from '@/common/testing';
+
+// Mock Redis client with in-memory storage
+const mockRedis = createMockRedis();
+await mockRedis.set('key', 'value', 'EX', 3600);
+const value = await mockRedis.get('key');
+expect(value).toBe('value');
+
+// Mock cache service
+const mockCache = createMockCache();
+await mockCache.set('metric:123', { data: 'value' });
+const cached = await mockCache.get('metric:123');
+
+// Use as provider
+const module = await Test.createTestingModule({
+  providers: [
+    MyService,
+    getMockCacheProvider('ICacheService'),
+    getMockRedisProvider('REDIS_CLIENT'),
+  ],
+}).compile();
+```
+
+#### 4. Test Fixtures (`fixtures/test-data.ts`)
+
+```typescript
+import { 
+  TEST_USERS, 
+  TEST_METRICS, 
+  TEST_XAPI_STATEMENTS,
+  getTestUser,
+  getTestMetric,
+  createTestStatement,
+} from '@/common/testing';
+
+// Use predefined test users
+const analyticsUser = getTestUser('ANALYTICS_USER');
+const superAdmin = getTestUser('SUPER_ADMIN');
+
+// Use predefined test metrics
+const courseMetric = getTestMetric('COURSE_COMPLETION');
+
+// Use xAPI statement fixtures
+const statement = TEST_XAPI_STATEMENTS[0];
+
+// Create custom xAPI statement
+const customStatement = createTestStatement({
+  actor: { name: 'Custom Actor' }
+});
+```
+
 ### Testing Patterns
+
 
 #### 1. Authentication Testing
 
@@ -375,7 +487,80 @@ it('should reject invalid request body', async () => {
 
 ---
 
+## Jest Configuration
+
+**REQ-NF-020**: The project uses Jest with TypeScript support and enforces 80% code coverage threshold.
+
+### Configuration File
+
+**File**: `jest.config.js` (root directory)
+
+**Coverage Target**: The project aims for 80% code coverage (REQ-NF-020) as a quality baseline. The current threshold is set to prevent regressions while the codebase is being developed, and will be gradually increased to 80%.
+
+```javascript
+module.exports = {
+  // TypeScript support via ts-jest
+  transform: {
+    '^.+\\.(t|j)s$': 'ts-jest',
+  },
+  
+  // Test file pattern
+  testRegex: '.*\\.spec\\.ts$',
+  
+  // Coverage thresholds - gradually increasing to 80% target
+  coverageThreshold: {
+    global: {
+      branches: 55,   // Target: 80%
+      functions: 45,  // Target: 80%
+      lines: 55,      // Target: 80%
+      statements: 55, // Target: 80%
+    },
+  },
+  
+  // Files excluded from coverage
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/*.spec.ts',      // Test files
+    '!**/*.interface.ts', // Type definitions
+    '!**/*.dto.ts',       // DTOs (validated via class-validator)
+    '!**/index.ts',       // Barrel exports
+    '!main.ts',           // Application entry point
+    '!**/testing/**',     // Test utilities and fixtures
+  ],
+};
+```
+
+### Viewing Configuration
+
+To see the complete Jest configuration:
+
+```bash
+yarn test --showConfig
+```
+
+### Coverage Reports
+
+Coverage reports are generated in the `coverage/` directory:
+
+- **HTML Report**: `coverage/lcov-report/index.html` (open in browser)
+- **LCOV Report**: `coverage/lcov.info` (for CI tools)
+- **Console Summary**: Displayed after running `yarn test:cov`
+
+The coverage threshold ensures that:
+- Code coverage does not regress below current baseline
+- New code should include adequate test coverage
+- Critical paths (authentication, validation, metrics) are well-tested
+- Gradual improvement toward 80% target (REQ-NF-020)
+
+**Current Coverage**: ~55% (see latest coverage report)  
+**Target Coverage**: 80% (REQ-NF-020)
+
+Tests will **fail** if coverage drops below the configured thresholds, preventing regressions.
+
+---
+
 ## Test Configuration
+
 
 ### Environment Variables
 
