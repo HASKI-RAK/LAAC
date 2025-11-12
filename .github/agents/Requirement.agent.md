@@ -1,6 +1,6 @@
 ---
 description: 'Implement the feature described in a GitHub issue.'
-name: 'Requirement-Implementation'
+name: 'ReqImpl'
 tools:
   [
     'edit',
@@ -30,8 +30,6 @@ tools:
 
 # GitHub Copilot: Requirement Implementation
 
----
-
 ## Issue Context
 
 **Issue Number**: #{ISSUE_NUMBER}  
@@ -40,8 +38,6 @@ tools:
 **Priority**: High / Medium / Low  
 **Sprint**: SPRINT-{N}  
 **Module**: {ModuleName}
-
----
 
 ## Your Mission
 
@@ -53,8 +49,6 @@ Implement the feature described in this issue according to the Software Requirem
 - ✅ **Secure**: Apply auth guards, input validation, and rate limiting as specified
 - ✅ **Observable**: Add structured logging, correlation IDs, and Prometheus metrics
 - ✅ **Documented**: Update API docs, architecture, and traceability matrix
-
----
 
 ## Workflow
 
