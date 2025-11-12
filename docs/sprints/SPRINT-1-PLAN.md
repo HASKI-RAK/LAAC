@@ -53,6 +53,18 @@ Note: Issue #6 (Environment Configuration Setup) was consolidated into #10. #6 h
 
 ---
 
+## Wave 3 Ready for Implementation (2025-11-12)
+
+- [ ] Unit test setup and examples — story #41 (5.1) — **ASSIGNED TO COPILOT** (2025-11-12)
+- [ ] E2E test configuration — story #42 (5.2) — **ASSIGNED TO COPILOT** (2025-11-12)
+
+Wave 3 (Testing Foundation): 3 story points total
+
+- Story 5.1 (Unit Tests): 1 pt
+- Story 5.2 (E2E Tests): 2 pts
+
+---
+
 ## Architecture Reference
 
 **Key Documents**:
@@ -612,9 +624,10 @@ interface MetricCatalogResponse {
 
 **Priority**: Medium | **Story Points**: 3
 
-#### Story 5.1: Unit Test Setup & Examples
+#### Story 5.1: Unit Test Setup & Examples ([#41](https://github.com/HASKI-RAK/LAAC/issues/41))
 
 **Description**: Ensure Jest configuration and create test examples  
+**Status**: Issue created 2025-11-12 — Ready for implementation  
 **Acceptance Criteria**:
 
 - [ ] Jest configured with TypeScript support (already done)
@@ -634,9 +647,10 @@ interface MetricCatalogResponse {
 
 ---
 
-#### Story 5.2: E2E Test Setup
+#### Story 5.2: E2E Test Setup ([#42](https://github.com/HASKI-RAK/LAAC/issues/42))
 
 **Description**: Configure E2E tests with test database/cache  
+**Status**: Issue created 2025-11-12 — Ready for implementation  
 **Acceptance Criteria**:
 
 - [ ] E2E tests run against real NestJS app
