@@ -8,6 +8,7 @@ tools:
     'runCommands',
     'runTasks',
     'browser/*',
+    'context7/*',
     'github/github-mcp-server/issue_read',
     'github/github-mcp-server/issue_write',
     'github/github-mcp-server/list_issues',
@@ -106,6 +107,11 @@ Implement the feature described in this issue according to the Software Requirem
 - Use **DTOs** with `class-validator` decorators for input validation
 - Apply **guards** (`JwtAuthGuard`, `ScopesGuard`) for authentication/authorization
 - Use **pure, stateless functions** for business logic (especially metric computations)
+
+**Tool usage**:
+
+- Use tools as needed.
+- Use context7 to get up-to-date code examples and documentation.
 
 **Traceability Annotations**:
 
