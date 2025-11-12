@@ -47,6 +47,8 @@ $ yarn run test:e2e
 $ yarn run test:cov
 ```
 
+For detailed testing documentation, see **[docs/TESTING.md](docs/TESTING.md)**.
+
 ## Docker Compose Deployment
 
 > **REQ-FN-013**: This project provides Docker Compose configurations for both development and production environments with hot-reload support and Traefik integration.
