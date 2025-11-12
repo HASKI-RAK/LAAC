@@ -22,6 +22,7 @@ import { Configuration } from './core/config';
     AdminModule, // REQ-FN-021: AdminModule for metrics export
     // REQ-FN-024: Rate limiting configuration with Redis backend
     ThrottlerModule.forRootAsync({
+      imports: [CoreModule], // Import CoreModule to access ThrottlerRedisService
       inject: [ConfigService, ThrottlerRedisService],
       useFactory: (
         configService: ConfigService<Configuration>,
@@ -58,8 +59,6 @@ import { Configuration } from './core/config';
   controllers: [AppController],
   providers: [
     AppService,
-    // REQ-FN-024: Redis client lifecycle service
-    ThrottlerRedisService,
     // REQ-FN-024: Apply throttler guard globally
     {
       provide: APP_GUARD,

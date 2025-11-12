@@ -6,5 +6,15 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "setupFiles": ["<rootDir>/setup-e2e.ts"]
+  "setupFiles": ["<rootDir>/setup-e2e.ts"],
+  "testTimeout": 30000,
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/../src/$1"
+  },
+  "collectCoverageFrom": [
+    "../src/**/*.{ts,js}",
+    "!../src/**/*.spec.ts",
+    "!../src/**/*.e2e-spec.ts",
+    "!../src/main.ts"
+  ]
 }
