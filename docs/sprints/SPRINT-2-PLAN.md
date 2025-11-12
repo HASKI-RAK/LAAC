@@ -44,6 +44,7 @@
 ### Success Criteria
 
 - [x] Redis CacheService fully functional with cache invalidation
+- [x] Cache invalidation endpoint implemented and wired (PR #64)
 - [ ] LRS client can execute xAPI queries with proper error handling
 - [ ] IMetricComputation interface implemented with examples
 - [ ] Circuit breaker protects against LRS failures
@@ -152,13 +153,13 @@ Implement Redis cache service, data access abstractions, and cache invalidation 
 
 **Acceptance Criteria**:
 
-- [ ] `POST /admin/cache/invalidate` calls `CacheService.invalidate()`
-- [ ] Single key invalidation: `{ key: "cache:metrics:course-123" }`
-- [ ] Pattern-based invalidation: `{ pattern: "cache:metrics:*" }`
-- [ ] Admin scope enforcement: `admin:cache`
-- [ ] Success response includes invalidated count
-- [ ] E2E tests verify cache actually cleared
-- [ ] Metrics tracked: cache_invalidations_total
+- [x] `POST /admin/cache/invalidate` calls `CacheService.invalidate()`
+- [x] Single key invalidation: `{ key: "cache:metrics:course-123" }`
+- [x] Pattern-based invalidation: `{ pattern: "cache:metrics:*" }`
+- [x] Admin scope enforcement: `admin:cache`
+- [x] Success response includes invalidated count
+- [x] E2E tests verify cache actually cleared
+- [x] Metrics tracked: cache_invalidations_total
 
 **Implementation Scope**:
 
@@ -167,6 +168,8 @@ Implement Redis cache service, data access abstractions, and cache invalidation 
 - `test/admin-cache-invalidation.e2e-spec.ts` — E2E tests
 
 **Story Points**: 3 | **Assigned To**: [#50](https://github.com/HASKI-RAK/LAAC/issues/50)
+
+**Status**: ✅ COMPLETED — Implemented and merged (PR #64, merged Nov 12, 2025)
 
 ---
 
