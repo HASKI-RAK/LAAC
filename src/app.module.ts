@@ -10,6 +10,7 @@ import { CoreModule } from './core';
 import { AuthModule } from './auth';
 import { AdminModule } from './admin';
 import { MetricsModule } from './metrics';
+import { DataAccessModule } from './data-access';
 import { CustomThrottlerGuard } from './core/guards';
 import { ThrottlerRedisService } from './core/services';
 import { Configuration } from './core/config';
@@ -20,6 +21,7 @@ import { Configuration } from './core/config';
     AuthModule,
     MetricsModule,
     AdminModule, // REQ-FN-021: AdminModule for metrics export
+    DataAccessModule, // REQ-FN-006: DataAccessModule for cache service
     // REQ-FN-024: Rate limiting configuration with Redis backend
     ThrottlerModule.forRootAsync({
       imports: [CoreModule], // Import CoreModule to access ThrottlerRedisService
