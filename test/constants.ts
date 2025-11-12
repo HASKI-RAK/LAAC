@@ -48,7 +48,7 @@ export const TEST_ENDPOINTS = {
   HEALTH: '/health',
   HEALTH_LIVENESS: '/health/liveness',
   HEALTH_READINESS: '/health/readiness',
-  PROMETHEUS: '/prometheus',
+  PROMETHEUS: '/metrics',
 
   // Protected endpoints
   METRICS_CATALOG: '/api/v1/metrics',
