@@ -1,7 +1,31 @@
 ---
 description: 'Implement the feature described in a GitHub issue.'
+name: 'Requirement-Implementation'
 tools:
-  ['edit', 'search', 'runCommands', 'runTasks', 'browser/*', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/update_pull_request', 'usages', 'problems', 'changes', 'testFailure', 'githubRepo', 'sonarsource.sonarlint-vscode/sonarqube_getPotentialSecurityIssues', 'sonarsource.sonarlint-vscode/sonarqube_excludeFiles', 'sonarsource.sonarlint-vscode/sonarqube_setUpConnectedMode', 'sonarsource.sonarlint-vscode/sonarqube_analyzeFile', 'todos', 'runSubagent', 'runTests']
+  [
+    'edit',
+    'search',
+    'runCommands',
+    'runTasks',
+    'browser/*',
+    'github/github-mcp-server/issue_read',
+    'github/github-mcp-server/issue_write',
+    'github/github-mcp-server/list_issues',
+    'github/github-mcp-server/search_issues',
+    'github/github-mcp-server/update_pull_request',
+    'usages',
+    'problems',
+    'changes',
+    'testFailure',
+    'githubRepo',
+    'sonarsource.sonarlint-vscode/sonarqube_getPotentialSecurityIssues',
+    'sonarsource.sonarlint-vscode/sonarqube_excludeFiles',
+    'sonarsource.sonarlint-vscode/sonarqube_setUpConnectedMode',
+    'sonarsource.sonarlint-vscode/sonarqube_analyzeFile',
+    'todos',
+    'runSubagent',
+    'runTests',
+  ]
 ---
 
 # GitHub Copilot: Requirement Implementation
