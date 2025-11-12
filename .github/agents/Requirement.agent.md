@@ -1,7 +1,7 @@
 ---
-description: 'Implement the feature described in a GitHub issue according to the Software Requirements Specification (SRS), following LAACs architectural patterns, coding standards, and quality gates.'
+description: 'Implement the feature described in a GitHub issue.'
 tools:
-  ['edit', 'search', 'runCommands', 'runTasks', 'browser/*', 'github/github-mcp-server/add_comment_to_pending_review', 'github/github-mcp-server/add_issue_comment', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issue_types', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/list_pull_requests', 'github/github-mcp-server/merge_pull_request', 'github/github-mcp-server/pull_request_read', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/update_pull_request', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'sonarsource.sonarlint-vscode/sonarqube_getPotentialSecurityIssues', 'sonarsource.sonarlint-vscode/sonarqube_excludeFiles', 'sonarsource.sonarlint-vscode/sonarqube_setUpConnectedMode', 'sonarsource.sonarlint-vscode/sonarqube_analyzeFile', 'todos', 'runSubagent', 'runTests']
+  ['edit', 'search', 'runCommands', 'runTasks', 'browser/*', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/update_pull_request', 'usages', 'problems', 'changes', 'testFailure', 'githubRepo', 'sonarsource.sonarlint-vscode/sonarqube_getPotentialSecurityIssues', 'sonarsource.sonarlint-vscode/sonarqube_excludeFiles', 'sonarsource.sonarlint-vscode/sonarqube_setUpConnectedMode', 'sonarsource.sonarlint-vscode/sonarqube_analyzeFile', 'todos', 'runSubagent', 'runTests']
 ---
 
 # GitHub Copilot: Requirement Implementation
@@ -88,7 +88,6 @@ Implement the feature described in this issue according to the Software Requirem
 - Use **DTOs** with `class-validator` decorators for input validation
 - Apply **guards** (`JwtAuthGuard`, `ScopesGuard`) for authentication/authorization
 - Use **pure, stateless functions** for business logic (especially metric computations)
-
 
 **Traceability Annotations**:
 
@@ -181,6 +180,7 @@ this.logger.log('Action completed', {
 - PlantUML diagrams (`docs/architecture/*.puml`) — If architectural diagrams need updates
 
 **Add JSDoc Comments**:
+
 - Add concise JSDoc for public APIs
 
 ### 10. Final Checks
@@ -253,6 +253,7 @@ Closes #25
 ## Architecture Reference
 
 ### Module Overview
+
 ```
 src/
 ├── core/         # Logging, config, health (REQ-FN-020)
@@ -265,6 +266,7 @@ src/
 ```
 
 ### Key Interfaces
+
 ```typescript
 // Metric Computation (REQ-FN-010)
 export interface IMetricComputation {
@@ -272,7 +274,10 @@ export interface IMetricComputation {
   dashboardLevel: 'course' | 'topic' | 'element';
   description: string;
   version?: string;
-  compute(params: MetricParams, lrsData: xAPIStatement[]): Promise<MetricResult>;
+  compute(
+    params: MetricParams,
+    lrsData: xAPIStatement[],
+  ): Promise<MetricResult>;
   validateParams?(params: MetricParams): void;
 }
 
@@ -286,6 +291,7 @@ export interface ICacheService {
 ```
 
 ### REST API Conventions
+
 - Versioning: `/api/v1/`
 - Metrics: `GET /api/v1/metrics`, `GET /api/v1/metrics/:id`, `GET /api/v1/metrics/:id/results`
 - Admin: `POST /admin/cache/invalidate`
@@ -293,6 +299,7 @@ export interface ICacheService {
 - Health: `GET /health/liveness`, `GET /health/readiness`
 
 ### Cache Key Structure
+
 ```
 cache:{metricId}:{scope}:{filters}:{version}
 Example: cache:course-completion:course:123:v1
