@@ -57,7 +57,7 @@ export class CourseCompletionProvider implements IMetricComputation {
    * Analyzes xAPI statements to determine completion rate
    *
    * @param params - Must include courseId; optional since/until for time filtering
-   * @param lrsData - Array of xAPI statements from the LRS
+   * @param lrsData - Array of xAPI statements from the LRS (pre-filtered by time range if since/until provided)
    * @returns Metric result with completion percentage and metadata
    *
    * @remarks
@@ -66,6 +66,7 @@ export class CourseCompletionProvider implements IMetricComputation {
    * - Groups statements by unique actors (learners)
    * - Counts learners with at least one completion statement
    * - Returns 0 if no learners are found in the data
+   * - Time filtering (since/until params) is handled by the LRS query layer before statements reach this provider
    */
   compute(
     params: MetricParams,

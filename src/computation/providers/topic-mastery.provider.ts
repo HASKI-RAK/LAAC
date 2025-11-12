@@ -57,8 +57,8 @@ export class TopicMasteryProvider implements IMetricComputation {
    * Compute the topic mastery score
    * Analyzes xAPI statements to determine mastery level
    *
-   * @param params - Must include courseId and topicId
-   * @param lrsData - Array of xAPI statements from the LRS
+   * @param params - Must include courseId and topicId; optional since/until for time filtering
+   * @param lrsData - Array of xAPI statements from the LRS (pre-filtered by time range if since/until provided)
    * @returns Metric result with mastery score (0-100) and metadata
    *
    * @remarks
@@ -71,6 +71,7 @@ export class TopicMasteryProvider implements IMetricComputation {
    * - Score normalization: Uses result.score.scaled (0-1) if available,
    *   otherwise calculates (raw - min) / (max - min)
    * - Returns 0 if no scored statements found
+   * - Time filtering (since/until params) is handled by the LRS query layer before statements reach this provider
    */
   compute(
     params: MetricParams,

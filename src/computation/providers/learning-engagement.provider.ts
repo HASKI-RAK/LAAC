@@ -58,8 +58,8 @@ export class LearningEngagementProvider implements IMetricComputation {
    * Compute the learning engagement score
    * Analyzes xAPI statements to determine engagement level
    *
-   * @param params - Must include courseId; optional topicId for topic-level metrics
-   * @param lrsData - Array of xAPI statements from the LRS
+   * @param params - Must include courseId; optional topicId for topic-level metrics, since/until for time filtering
+   * @param lrsData - Array of xAPI statements from the LRS (pre-filtered by time range if since/until provided)
    * @returns Metric result with engagement score (0-100) and metadata
    *
    * @remarks
@@ -70,6 +70,7 @@ export class LearningEngagementProvider implements IMetricComputation {
    * - Engagement verbs: viewed, opened, interacted, attempted, experienced
    * - Score formula: min(100, (activityCount * 2 + avgTimeMinutes * 0.2))
    * - Returns 0 if no relevant statements found
+   * - Time filtering (since/until params) is handled by the LRS query layer before statements reach this provider
    */
   compute(
     params: MetricParams,
