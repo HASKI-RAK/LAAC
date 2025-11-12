@@ -19,7 +19,15 @@ Consumers need efficient retrieval and export of computed analytics for dashboar
 - Endpoint to fetch a single metric result and an endpoint to fetch a batch of metric results by IDs in one call.
 - Optional response format selection via `Accept` header or `format` query parameter; JSON is default, CSV supported when the payload is tabular.
 - Pagination and limits are provided for list-like results to prevent excessively large responses.
-- Results include consistent metadata (metricId, filters applied, generatedAt timestamp) to aid traceability.
+- Results include consistent metadata to aid traceability:
+  - `metricId`, `generatedAt`, `filters` (as received), `correlationId`
+  - Multi-instance metadata per REQ-FN-017: `includedInstances[]`, `excludedInstances[]`, `aggregated: boolean`
+- Instance scoping is supported consistently with REQ-FN-017:
+  - `instanceId` query parameter MAY be one of:
+    - a single instance (e.g., `instanceId=hs-ke`)
+    - a comma-separated list (e.g., `instanceId=hs-ke,hs-rv`)
+    - a wildcard for all (`instanceId=*`) or omitted (treated as all)
+  - When multiple instances are requested or implied, the service aggregates results according to metric semantics
 
 ## Verification
 - Contract/E2E tests for single and batch retrieval covering JSON and CSV modes for at least one tabular metric.
@@ -35,6 +43,24 @@ Consumers need efficient retrieval and export of computed analytics for dashboar
 - Endpoints:
   - GET /metrics/{id}/results
   - POST /metrics/results: { ids: string[], commonFilters: ... }
+  - Both endpoints accept `instanceId` as defined above and return metadata with `includedInstances` and `excludedInstances`.
+- Result Shape (JSON):
+  - Standard response object named `MetricResult`:
+    ```json
+    {
+      "metricId": "course-completion",
+      "value": 0.82,
+      "unit": "ratio",
+      "generatedAt": "2025-11-12T10:30:00Z",
+      "metadata": {
+        "filters": { "courseId": "course-123", "start": "2025-01-01" },
+        "includedInstances": ["hs-ke", "hs-rv"],
+        "excludedInstances": [],
+        "aggregated": true
+      }
+    }
+    ```
+- CSV format applies only when `value` is a list/table. Scalar results remain JSON-only or render as single-row CSV if explicitly requested.
 
 ## Observability
 - Request summaries include number of metrics requested, total compute time, and cache hit rates (see caching requirement).
@@ -47,4 +73,3 @@ Consumers need efficient retrieval and export of computed analytics for dashboar
 
 ## Change History
 - v0.1 — Initial draft
-

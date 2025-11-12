@@ -56,6 +56,8 @@ Multi-LRS architecture (REQ-FN-002, REQ-FN-017) requires visibility into each in
   - Configurable check interval (default: 30s)
   - Timeout per check (default: 5s, from REQ-FN-002)
   - Records last successful check timestamp and latency
+  - Authentication: use the SAME authentication as analytics queries (per instance)
+  - Status semantics: HTTP 2xx, 401, and 403 SHALL be considered "reachable" (authentication error but endpoint up)
 - **Circuit Breaker Integration**: Health status drives circuit breaker state (ADR-007):
   - After N consecutive failures (default: 3), mark instance `unhealthy` and open circuit
   - Circuit half-open after recovery timeout (default: 60s), retry single request

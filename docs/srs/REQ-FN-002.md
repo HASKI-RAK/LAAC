@@ -20,28 +20,38 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
 ## Acceptance Criteria
 
 - **Multi-LRS Configuration**: The system accepts configuration for multiple LRS instances via environment variables or structured configuration file:
-  - Each instance SHALL include: `instanceId` (unique identifier), `name` (human-readable label), `endpoint` (xAPI LRS URL), `auth` (authentication credentials)
+  - Each instance SHALL include: `instanceId` (unique identifier), `name` (human-readable label), `endpoint` (xAPI base URL, typically ending with `/xapi`), and `auth` (authentication configuration).
+  - `auth` MUST specify a `type` and credentials appropriate to that type:
+    - `type: "basic"` with either `username`/`password` OR `key`/`secret` (alias for Basic credentials provided by Yetanalytics). The HTTP header is `Authorization: Basic <base64(username:password)>`.
+    - `type: "bearer"` with `token` (OAuth 2.0 access token) — optional, MAY be added later.
+    - `type: "custom"` with `headers` (string-to-string map) — optional fallback for non-standard LRS implementations.
   - Configuration formats supported:
-    - JSON array: `LRS_INSTANCES='[{"id":"hs-ke","name":"HS Kempten","endpoint":"https://lrs.ke.haski.app","auth":{"username":"user","password":"pass"}},...]'`
-    - Individual env vars with instance prefix: `LRS_HS_KE_ENDPOINT`, `LRS_HS_KE_USERNAME`, `LRS_HS_KE_PASSWORD`
+    - JSON array env var: `LRS_INSTANCES='[{"id":"hs-ke","name":"HS Kempten","endpoint":"https://lrs.ke.haski.app/xapi","auth":{"type":"basic","username":"apiKey","password":"apiSecret"}}, ...]'`
+    - Individual env vars with instance prefix (normalized identifier): `LRS_HS_KE_ENDPOINT`, `LRS_HS_KE_AUTH_TYPE`, `LRS_HS_KE_USERNAME`, `LRS_HS_KE_PASSWORD`, or `LRS_HS_KE_KEY`, `LRS_HS_KE_SECRET`
   - Minimum one LRS instance required; application SHALL fail startup if no instances configured
 - **Authentication Mechanisms**: The system SHALL support the following xAPI authentication methods per LRS instance:
-  - HTTP Basic Authentication (username + password) — mandatory baseline authentication
-  - The system SHOULD support OAuth 2.0 Bearer tokens (future enhancement)
-  - Custom header-based authentication if required by LRS implementation
+  - HTTP Basic Authentication (username + password OR key + secret) — mandatory baseline
+  - OAuth 2.0 Bearer token — SHOULD be supported as a future enhancement
+  - Custom header-based authentication if required by the LRS implementation
+  - The LRS client SHALL construct the proper `Authorization` header based on `auth.type` and SHALL NOT send conflicting auth headers
 - **xAPI Query Capabilities**: For each configured LRS instance, the system SHALL:
+  - Send required xAPI headers on every request:
+    - `X-Experience-API-Version: 1.0.3` (default; 2.0.0 MAY be supported)
+    - `Accept: application/json`
   - Query statements within specified time ranges (`since`, `until` parameters)
   - Filter statements by actor (student/user identifiers)
   - Filter statements by verb (action types)
   - Filter statements by object/activity (course, content identifiers)
-  - Support xAPI Statement API pagination (using `more` link or cursor-based pagination)
-  - Respect xAPI version negotiation (prefer 1.0.3, support 1.0.0+)
+  - Handle xAPI Statement API pagination using the returned relative `more` link until exhausted
+  - Propagate correlation IDs from incoming requests using `X-Correlation-ID` header
+  - Respect xAPI version negotiation (prefer 1.0.3; support 1.0.0+ where feasible)
 - **Concurrent LRS Access**: The system SHALL query multiple LRS instances concurrently for cross-instance analytics without blocking:
   - Use non-blocking I/O or async patterns for parallel LRS queries
   - Implement per-instance connection pooling to optimize throughput
   - Aggregate results from multiple instances while preserving `instanceId` tags
 - **Error Handling and Resilience**: The system SHALL handle LRS failures gracefully:
   - Map LRS HTTP errors (4xx, 5xx) to standardized internal error types
+  - Treat 401/403 as authentication/authorization failures BUT consider the LRS reachable for health purposes
   - Implement configurable timeout per LRS instance (default: 10s query timeout)
   - Log LRS failures with `instanceId`, error type, and correlation ID
   - For multi-instance queries: return partial results from available instances with metadata indicating unavailable instances
@@ -50,7 +60,13 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
   ```typescript
   interface ILRSClient {
     instanceId: string;
+    /**
+     * Executes a GET /xapi/statements query with required headers and pagination handling.
+     * MUST send X-Experience-API-Version and Authorization; MUST follow `more` links until complete (or configured limit).
+     * MUST propagate correlation ID via X-Correlation-ID.
+     */
     queryStatements(filters: xAPIQueryFilters): Promise<xAPIStatement[]>;
+    /** Health check for this instance (e.g., GET /xapi/about) using SAME auth as queries */
     getInstanceHealth(): Promise<LRSHealthStatus>;
   }
   ```
@@ -107,7 +123,7 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
   - `lrs_query_total{instance_id,status}` (counter)
   - `lrs_auth_failures_total{instance_id}` (counter)
   - `lrs_connection_pool_size{instance_id}` (gauge)
-- **Health Checks**: `/health/readiness` includes LRS connectivity status per instance
+- **Health Checks**: `/health/readiness` includes LRS connectivity status per instance (401/403 considered reachable for health)
 - **Tracing**: Distributed tracing spans for each LRS query with instance metadata
 
 ## Risks / Open Questions
@@ -128,5 +144,6 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
 
 ## Change History
 
+- v0.3 — Clarified auth types and configuration schema; mandated xAPI headers, correlation ID propagation, and health semantics (401/403 reachable)
 - v0.2 — Extended to support multiple LRS instances with independent configuration and authentication
 - v0.1 — Initial draft
