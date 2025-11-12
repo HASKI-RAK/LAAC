@@ -44,7 +44,7 @@ export function authenticatedGet(
 export function authenticatedPost(
   app: INestApplication,
   url: string,
-  body: unknown = {},
+  body: Record<string, unknown> = {},
   tokenOptions: TestTokenOptions = {},
 ): Test {
   const token = generateJwt(tokenOptions);
@@ -65,7 +65,7 @@ export function authenticatedPost(
 export function authenticatedPut(
   app: INestApplication,
   url: string,
-  body: unknown = {},
+  body: Record<string, unknown> = {},
   tokenOptions: TestTokenOptions = {},
 ): Test {
   const token = generateJwt(tokenOptions);
@@ -86,7 +86,7 @@ export function authenticatedPut(
 export function authenticatedPatch(
   app: INestApplication,
   url: string,
-  body: unknown = {},
+  body: Record<string, unknown> = {},
   tokenOptions: TestTokenOptions = {},
 ): Test {
   const token = generateJwt(tokenOptions);
@@ -142,7 +142,7 @@ export function requestWithToken(
 export function postWithToken(
   app: INestApplication,
   url: string,
-  body: unknown,
+  body: Record<string, unknown>,
   token: string,
 ): Test {
   return getTestHttpServer(app)
