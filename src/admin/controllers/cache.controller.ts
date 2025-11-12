@@ -122,10 +122,7 @@ Implements REQ-FN-007: Cache Invalidation and Refresh
     // Extract admin user from JWT payload
     const adminUser = req.user?.sub ?? req.user?.username ?? 'unknown';
 
-    // Delegate to service (casting to Partial to avoid private property issues in tests)
-    return this.cacheAdminService.invalidateCache(
-      dto as Partial<CacheInvalidateDto>,
-      adminUser,
-    );
+    // Delegate to service (DTO is already validated by NestJS pipes)
+    return this.cacheAdminService.invalidateCache(dto, adminUser);
   }
 }

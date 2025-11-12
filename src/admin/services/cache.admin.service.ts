@@ -47,7 +47,7 @@ export class CacheAdminService {
    * @returns Invalidation response with count and status
    */
   async invalidateCache(
-    dto: Partial<CacheInvalidateDto>,
+    dto: CacheInvalidateDto,
     adminUser?: string,
   ): Promise<CacheInvalidateResponse> {
     const startTime = Date.now();
@@ -161,9 +161,6 @@ export class CacheAdminService {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      // Still record metrics for failed operations
-      this.recordInvalidationMetrics(operationType, 0);
-
       return {
         status: 'error',
         invalidatedCount: 0,
@@ -205,7 +202,7 @@ export class CacheAdminService {
     operationType: string;
     count: number;
     adminUser: string;
-    details: Partial<CacheInvalidateDto>;
+    details: CacheInvalidateDto;
   }): void {
     // TODO: Implement audit event emission once audit logging system is in place
     // For now, this is a placeholder that logs the event at INFO level
@@ -227,7 +224,7 @@ export class CacheAdminService {
   private formatSuccessMessage(
     type: 'single' | 'pattern' | 'all',
     count: number,
-    dto: Partial<CacheInvalidateDto>,
+    dto: CacheInvalidateDto,
   ): string {
     if (type === 'single') {
       return count > 0
