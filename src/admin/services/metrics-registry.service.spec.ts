@@ -11,6 +11,7 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
   let mockCacheOperationsDuration: jest.Mocked<Histogram<string>>;
   let mockMetricComputationDuration: jest.Mocked<Histogram<string>>;
   let mockLrsQueryDuration: jest.Mocked<Histogram<string>>;
+  let mockLrsErrorsTotal: jest.Mocked<Counter<string>>;
   let mockHttpRequestsTotal: jest.Mocked<Counter<string>>;
   let mockHttpRequestDuration: jest.Mocked<Histogram<string>>;
   let mockHttpErrorsTotal: jest.Mocked<Counter<string>>;
@@ -42,6 +43,10 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       observe: jest.fn(),
     } as unknown as jest.Mocked<Histogram<string>>;
 
+    mockLrsErrorsTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
     mockHttpRequestsTotal = {
       inc: jest.fn(),
     } as unknown as jest.Mocked<Counter<string>>;
@@ -71,6 +76,7 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
               mockCacheOperationsDuration,
               mockMetricComputationDuration,
               mockLrsQueryDuration,
+              mockLrsErrorsTotal,
               mockHttpRequestsTotal,
               mockHttpRequestDuration,
               mockHttpErrorsTotal,
@@ -122,6 +128,14 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       service.recordLrsQuery(0.5);
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockLrsQueryDuration.observe).toHaveBeenCalledWith(0.5);
+    });
+
+    it('should record LRS error', () => {
+      service.recordLrsError('timeout');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockLrsErrorsTotal.inc).toHaveBeenCalledWith({
+        error_type: 'timeout',
+      });
     });
   });
 
