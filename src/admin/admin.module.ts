@@ -1,21 +1,31 @@
 // Implements REQ-FN-021: Prometheus Metrics Export
+// REQ-FN-007: Cache Invalidation Admin Endpoints
 // AdminModule provides metrics export and administrative endpoints
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import {
   makeCounterProvider,
   makeHistogramProvider,
   makeGaugeProvider,
 } from '@willsoto/nestjs-prometheus';
 import { MetricsRegistryService } from './services/metrics-registry.service';
+import { CacheAdminService } from './services/cache.admin.service';
+import { CacheController } from './controllers/cache.controller';
+import { DataAccessModule } from '../data-access/data-access.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     // No PrometheusModule registration here; handled globally in CoreModule (REQ-FN-021)
+    forwardRef(() => DataAccessModule), // Import CacheService for cache invalidation
+    AuthModule, // Import auth guards for cache controller
   ],
-  controllers: [], // Controller is registered in CoreModule with @Public() decorator
+  controllers: [
+    CacheController, // REQ-FN-007: Cache invalidation admin endpoint
+  ],
   providers: [
     MetricsRegistryService,
+    CacheAdminService, // REQ-FN-007: Cache admin service
     // REQ-FN-021: Cache metrics - separate counters for hits and misses
     makeCounterProvider({
       name: 'cache_hits_total',
