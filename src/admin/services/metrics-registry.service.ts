@@ -22,6 +22,10 @@ export class MetricsRegistryService {
     public readonly cacheHitsTotal: Counter<string>,
     @InjectMetric('cache_misses_total')
     public readonly cacheMissesTotal: Counter<string>,
+    @InjectMetric('cache_evictions_total')
+    public readonly cacheEvictionsTotal: Counter<string>,
+    @InjectMetric('cache_operations_duration_seconds')
+    public readonly cacheOperationsDuration: Histogram<string>,
     @InjectMetric('metric_computation_duration_seconds')
     public readonly metricComputationDuration: Histogram<string>,
     @InjectMetric('lrs_query_duration_seconds')
@@ -54,6 +58,24 @@ export class MetricsRegistryService {
    */
   recordCacheMiss(metricId: string): void {
     this.cacheMissesTotal.inc({ metricId });
+  }
+
+  /**
+   * Record cache eviction/invalidation
+   * Increments the cache evictions counter
+   * @param count - Number of keys evicted (default: 1)
+   */
+  recordCacheEviction(count: number = 1): void {
+    this.cacheEvictionsTotal.inc(count);
+  }
+
+  /**
+   * Record cache operation duration
+   * @param operation - Operation type (get, set, delete, invalidatePattern)
+   * @param durationSeconds - Duration in seconds
+   */
+  recordCacheOperation(operation: string, durationSeconds: number): void {
+    this.cacheOperationsDuration.observe({ operation }, durationSeconds);
   }
 
   /**

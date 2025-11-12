@@ -27,6 +27,16 @@ import { MetricsRegistryService } from './services/metrics-registry.service';
       help: 'Total cache misses per metric ID (REQ-FN-006)',
       labelNames: ['metricId'],
     }),
+    makeCounterProvider({
+      name: 'cache_evictions_total',
+      help: 'Total cache evictions/invalidations (REQ-FN-006)',
+    }),
+    makeHistogramProvider({
+      name: 'cache_operations_duration_seconds',
+      help: 'Cache operation duration in seconds (REQ-FN-006)',
+      labelNames: ['operation'],
+      buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5], // Milliseconds to sub-second
+    }),
     // REQ-FN-021: Metric computation metrics
     makeHistogramProvider({
       name: 'metric_computation_duration_seconds',
