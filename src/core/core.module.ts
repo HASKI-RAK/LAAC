@@ -2,6 +2,7 @@
 // Implements REQ-FN-020: Structured Logging with Correlation IDs
 // Implements REQ-NF-002: Health/Readiness Endpoints
 // Implements REQ-FN-021: Prometheus metrics export
+// Implements REQ-FN-024: Rate limiting with Redis backend
 // CoreModule provides global configuration access and logging infrastructure
 
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { configFactory, configValidationSchema } from './config';
 import { LoggerService } from './logger';
 import { CorrelationIdMiddleware } from './middleware';
 import { HealthModule } from './health';
+import { ThrottlerRedisService } from './services';
 import { MetricsPrometheusController } from '../admin/controllers/metrics-prometheus.controller';
 
 @Module({
@@ -43,8 +45,10 @@ import { MetricsPrometheusController } from '../admin/controllers/metrics-promet
   providers: [
     // REQ-FN-020: Global structured logger
     LoggerService,
+    // REQ-FN-024: Redis client lifecycle service for rate limiting
+    ThrottlerRedisService,
   ],
-  exports: [ConfigModule, LoggerService, HealthModule],
+  exports: [ConfigModule, LoggerService, HealthModule, ThrottlerRedisService],
 })
 export class CoreModule implements NestModule {
   /**
