@@ -68,7 +68,7 @@ export class LearningEngagementProvider implements IMetricComputation {
    *   2. Sums duration from result.duration fields (ISO 8601 format)
    *   3. Calculates score based on activity frequency and time investment
    * - Engagement verbs: viewed, opened, interacted, attempted, experienced
-   * - Score formula: min(100, (activityCount * 2 + avgTimeMinutes / 5))
+   * - Score formula: min(100, (activityCount * 2 + avgTimeMinutes * 0.2))
    * - Returns 0 if no relevant statements found
    */
   compute(
