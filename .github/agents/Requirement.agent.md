@@ -1,3 +1,9 @@
+---
+description: 'Implement the feature described in a GitHub issue according to the Software Requirements Specification (SRS), following LAACs architectural patterns, coding standards, and quality gates.'
+tools:
+  ['edit', 'search', 'runCommands', 'runTasks', 'browser/*', 'github/github-mcp-server/add_comment_to_pending_review', 'github/github-mcp-server/add_issue_comment', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issue_types', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/list_pull_requests', 'github/github-mcp-server/merge_pull_request', 'github/github-mcp-server/pull_request_read', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/update_pull_request', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'sonarsource.sonarlint-vscode/sonarqube_getPotentialSecurityIssues', 'sonarsource.sonarlint-vscode/sonarqube_excludeFiles', 'sonarsource.sonarlint-vscode/sonarqube_setUpConnectedMode', 'sonarsource.sonarlint-vscode/sonarqube_analyzeFile', 'todos', 'runSubagent', 'runTests']
+---
+
 # GitHub Copilot: Requirement Implementation
 
 ---
