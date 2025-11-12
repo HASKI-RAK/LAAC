@@ -7,6 +7,8 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
   let service: MetricsRegistryService;
   let mockCacheHitsTotal: jest.Mocked<Counter<string>>;
   let mockCacheMissesTotal: jest.Mocked<Counter<string>>;
+  let mockCacheEvictionsTotal: jest.Mocked<Counter<string>>;
+  let mockCacheOperationsDuration: jest.Mocked<Histogram<string>>;
   let mockMetricComputationDuration: jest.Mocked<Histogram<string>>;
   let mockLrsQueryDuration: jest.Mocked<Histogram<string>>;
   let mockHttpRequestsTotal: jest.Mocked<Counter<string>>;
@@ -23,6 +25,14 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
     mockCacheMissesTotal = {
       inc: jest.fn(),
     } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCacheEvictionsTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCacheOperationsDuration = {
+      observe: jest.fn(),
+    } as unknown as jest.Mocked<Histogram<string>>;
 
     mockMetricComputationDuration = {
       observe: jest.fn(),
@@ -57,6 +67,8 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
             return new MetricsRegistryService(
               mockCacheHitsTotal,
               mockCacheMissesTotal,
+              mockCacheEvictionsTotal,
+              mockCacheOperationsDuration,
               mockMetricComputationDuration,
               mockLrsQueryDuration,
               mockHttpRequestsTotal,
