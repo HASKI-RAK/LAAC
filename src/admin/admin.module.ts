@@ -60,6 +60,11 @@ import { AuthModule } from '../auth/auth.module';
       help: 'LRS query duration in seconds (REQ-FN-002)',
       buckets: [0.1, 0.5, 1, 2, 5, 10], // Seconds
     }),
+    makeCounterProvider({
+      name: 'lrs_errors_total',
+      help: 'Total LRS errors by error type (REQ-FN-002)',
+      labelNames: ['error_type'],
+    }),
     // REQ-FN-021: HTTP metrics
     // NOTE: The 'endpoint' label should use route patterns (e.g., '/api/v1/metrics/:id')
     // rather than actual paths with parameter values to prevent high cardinality issues.

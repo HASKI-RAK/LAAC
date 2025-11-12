@@ -30,6 +30,8 @@ export class MetricsRegistryService {
     public readonly metricComputationDuration: Histogram<string>,
     @InjectMetric('lrs_query_duration_seconds')
     public readonly lrsQueryDuration: Histogram<string>,
+    @InjectMetric('lrs_errors_total')
+    public readonly lrsErrorsTotal: Counter<string>,
     @InjectMetric('http_requests_total')
     public readonly httpRequestsTotal: Counter<string>,
     @InjectMetric('http_request_duration_seconds')
@@ -93,6 +95,14 @@ export class MetricsRegistryService {
    */
   recordLrsQuery(durationSeconds: number): void {
     this.lrsQueryDuration.observe(durationSeconds);
+  }
+
+  /**
+   * Record LRS error
+   * @param errorType - Error type (timeout, auth, connection, server, unknown)
+   */
+  recordLrsError(errorType: string): void {
+    this.lrsErrorsTotal.inc({ error_type: errorType });
   }
 
   /**
