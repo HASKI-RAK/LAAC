@@ -1,7 +1,7 @@
 // Implements REQ-FN-002: LRS Client Implementation
 // xAPI-compliant HTTP client for querying Learning Record Store
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, catchError } from 'rxjs';
@@ -46,6 +46,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<Configuration>,
     private readonly logger: LoggerService,
+    @Inject(forwardRef(() => MetricsRegistryService))
     private readonly metricsRegistry: MetricsRegistryService,
   ) {
     // For now, use single LRS configuration from env
