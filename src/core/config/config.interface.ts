@@ -30,6 +30,10 @@ export interface RedisConfig {
   port: number;
   password?: string;
   ttl: number;
+  poolSize: number;
+  ttlMetrics: number;
+  ttlResults: number;
+  ttlHealth: number;
 }
 
 /**

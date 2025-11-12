@@ -60,6 +60,35 @@ export const configValidationSchema = Joi.object({
     .default(3600)
     .description('Default cache TTL in seconds'),
 
+  // Cache-specific TTL configuration (REQ-FN-006)
+  CACHE_TTL_METRICS: Joi.number()
+    .integer()
+    .min(0)
+    .default(3600)
+    .description('Cache TTL for metrics catalog in seconds (default: 1 hour)'),
+
+  CACHE_TTL_RESULTS: Joi.number()
+    .integer()
+    .min(0)
+    .default(300)
+    .description(
+      'Cache TTL for metric results in seconds (default: 5 minutes)',
+    ),
+
+  CACHE_TTL_HEALTH: Joi.number()
+    .integer()
+    .min(0)
+    .default(60)
+    .description(
+      'Cache TTL for health check data in seconds (default: 1 minute)',
+    ),
+
+  REDIS_POOL_SIZE: Joi.number()
+    .integer()
+    .min(1)
+    .default(10)
+    .description('Maximum Redis connection pool size'),
+
   // LRS Configuration (REQ-FN-002)
   LRS_URL: Joi.string()
     .uri()
@@ -121,6 +150,10 @@ export const configFactory = () => ({
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD,
     ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
+    poolSize: parseInt(process.env.REDIS_POOL_SIZE || '10', 10),
+    ttlMetrics: parseInt(process.env.CACHE_TTL_METRICS || '3600', 10),
+    ttlResults: parseInt(process.env.CACHE_TTL_RESULTS || '300', 10),
+    ttlHealth: parseInt(process.env.CACHE_TTL_HEALTH || '60', 10),
   },
   lrs: {
     url: process.env.LRS_URL as string,
