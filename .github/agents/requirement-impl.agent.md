@@ -213,6 +213,42 @@ this.logger.log('Action completed', {
 - Add comment summarizing implementation and test coverage
 - Reference commit SHA(s)
 
+### 11. Lean Refactor (Post-Green Tests)
+
+After the feature is implemented and both unit and E2E tests are green, perform a focused refactor to keep the code as lean as possible while fully meeting the requirement and preserving tests.
+
+Goals:
+
+- Remove dead code, unused exports, and redundant branches
+- Eliminate duplication; extract or inline to the simplest form
+- Replace over-engineered abstractions with simple, pure functions
+- Tighten types and interfaces; reduce public surface area
+- Simplify error handling and messaging while keeping observability
+- Trim dependencies; prefer existing utilities over adding new ones
+- Keep only essential logs/metrics (retain correlation, levels, labels)
+
+Checklist:
+
+- [ ] No unused imports/variables (ESLint clean)
+- [ ] No duplicate logic across module boundaries
+- [ ] DTOs and services expose only what is necessary
+- [ ] Complexity reduced (smaller functions, early returns)
+- [ ] Dependencies audited; unnecessary ones removed
+- [ ] Comments clarify why, not what; noisy comments removed
+
+Command Hints:
+
+- `yarn run lint` — verify unused code removal and simplifications
+- `yarn run test` and `yarn run test:e2e` — ensure behavior unchanged
+- `yarn run test:cov` — ensure coverage does not regress
+
+### 12. Re-run Tests & Finalize
+
+- Re-run the full test suite (unit, E2E, coverage) after refactor
+- Re-verify acceptance criteria and API behavior (Swagger UI)
+- Update docs if public API changed during refactor
+- Add a brief commit note: "Refactor: lean implementation for {REQ-ID}; behavior preserved"
+
 ## Architecture Reference
 
 ### Module Overview
