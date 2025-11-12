@@ -60,6 +60,10 @@ export class CacheService
       lazyConnect: true, // Don't connect until explicitly called
       enableReadyCheck: true,
       enableOfflineQueue: false, // Fail fast when disconnected
+      // Note: ioredis uses a single connection by default for standalone Redis instances.
+      // REDIS_POOL_SIZE is defined in configuration for potential future use with Redis Cluster
+      // or for documentation purposes, but is not used in the current implementation.
+      // Connection pooling would require using ioredis Cluster mode or a separate pool library.
     };
 
     this.redis = new Redis(options);
@@ -147,15 +151,47 @@ export class CacheService
   }
 
   /**
+   * Get TTL for a specific cache category
+   * @param category - Cache category (metrics, results, health)
+   * @returns TTL in seconds for the category, or default TTL if category not specified
+   * @private
+   */
+  private getTtlForCategory(category?: string): number {
+    const config = this.configService.get('redis', { infer: true });
+    if (!config) {
+      return 3600; // Default 1 hour
+    }
+
+    switch (category) {
+      case 'metrics':
+        return config.ttlMetrics ?? config.ttl ?? 3600;
+      case 'results':
+        return config.ttlResults ?? config.ttl ?? 300;
+      case 'health':
+        return config.ttlHealth ?? config.ttl ?? 60;
+      default:
+        return config.ttl ?? 3600;
+    }
+  }
+
+  /**
    * Store a value in cache with TTL
    * Implements REQ-FN-006: Cache-aside pattern - set operation
+   * @param key - Cache key
+   * @param value - Value to cache
+   * @param ttl - Optional TTL in seconds (if not provided, uses category-specific TTL based on key prefix)
+   * @param category - Optional cache category for TTL selection ('metrics', 'results', 'health')
    */
-  async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+  async set<T>(
+    key: string,
+    value: T,
+    ttl?: number,
+    category?: 'metrics' | 'results' | 'health',
+  ): Promise<boolean> {
     const startTime = Date.now();
     try {
       const serialized = JSON.stringify(value);
-      const effectiveTtl =
-        ttl ?? this.configService.get('redis.ttl', { infer: true }) ?? 3600;
+      const effectiveTtl = ttl ?? this.getTtlForCategory(category);
 
       await this.redis.setex(key, effectiveTtl, serialized);
 

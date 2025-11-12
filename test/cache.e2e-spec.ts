@@ -110,8 +110,8 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
       let value = await cacheService.get(key);
       expect(value).not.toBeNull();
 
-      // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+      // Wait for expiration (add buffer for CI timing variations)
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       // Should be expired
       value = await cacheService.get(key);
@@ -270,6 +270,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
         filters: {
           email: 'test@example.com',
           name: 'John Doe',
+          url: 'http://example.com:8080', // Test colon handling
         },
       });
 

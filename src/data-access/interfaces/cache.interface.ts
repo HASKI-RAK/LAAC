@@ -25,11 +25,17 @@ export interface ICacheService {
    * Store a value in cache with TTL
    * @param key - Cache key to store
    * @param value - Value to cache (will be JSON serialized)
-   * @param ttl - Time to live in seconds (optional, uses default if not provided)
+   * @param ttl - Time to live in seconds (optional, uses category-specific TTL if not provided)
+   * @param category - Cache category for TTL selection ('metrics', 'results', 'health')
    * @returns True if stored successfully, false otherwise
    * @remarks Does not throw on Redis failure, returns false for graceful degradation
    */
-  set<T>(key: string, value: T, ttl?: number): Promise<boolean>;
+  set<T>(
+    key: string,
+    value: T,
+    ttl?: number,
+    category?: 'metrics' | 'results' | 'health',
+  ): Promise<boolean>;
 
   /**
    * Delete a specific cache key

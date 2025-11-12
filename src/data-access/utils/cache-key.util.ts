@@ -27,6 +27,8 @@ export interface CacheKeyParams {
  * Generate a deterministic cache key from parameters
  * @param params - Cache key parameters
  * @returns Formatted cache key string
+ * @remarks
+ * Filter values containing colons (:) are URL-encoded to prevent ambiguity with key delimiters
  * @example
  * ```typescript
  * generateCacheKey({
@@ -46,7 +48,14 @@ export function generateCacheKey(params: CacheKeyParams): string {
   if (filters && Object.keys(filters).length > 0) {
     const sortedFilters = Object.keys(filters)
       .sort()
-      .map((key) => `${key}=${String(filters[key])}`)
+      .map((key) => {
+        const value = String(filters[key]);
+        // URL-encode filter values containing colons to prevent parsing ambiguity
+        const encodedValue = value.includes(':')
+          ? encodeURIComponent(value)
+          : value;
+        return `${key}=${encodedValue}`;
+      })
       .join(',');
     filterSegment = sortedFilters;
   }
@@ -65,33 +74,33 @@ export function generateCacheKey(params: CacheKeyParams): string {
  * Generate a cache key pattern for bulk operations
  * @param params - Partial cache key parameters (use wildcards in fields)
  * @returns Cache key pattern with wildcards
+ * @remarks
+ * All patterns follow the full cache key structure: cache:metricId:scope:filters:version
+ * Any unspecified segment becomes a wildcard (*)
  * @example
  * ```typescript
  * generateCacheKeyPattern({ metricId: 'course-completion', scope: '*' })
- * // Returns: "cache:course-completion:*"
+ * // Returns: "cache:course-completion:*:*:*"
  *
  * generateCacheKeyPattern({ metricId: '*' })
- * // Returns: "cache:*"
+ * // Returns: "cache:*:*:*:*"
+ *
+ * generateCacheKeyPattern({})
+ * // Returns: "cache:*:*:*:*"
  * ```
  */
 export function generateCacheKeyPattern(
   params: Partial<CacheKeyParams>,
 ): string {
-  const segments = ['cache'];
-
-  if (params.metricId) {
-    segments.push(params.metricId);
-
-    if (params.scope) {
-      segments.push(params.scope);
-    } else {
-      segments.push('*');
-    }
-  } else {
-    segments.push('*');
-  }
-
-  return segments.join(':') + (params.metricId ? ':*' : '');
+  // Always produce 5 segments: cache:metricId:scope:filters:version
+  const segments = [
+    'cache',
+    params.metricId ?? '*',
+    params.scope ?? '*',
+    '*', // filters wildcard
+    '*', // version wildcard
+  ];
+  return segments.join(':');
 }
 
 /**
@@ -129,15 +138,19 @@ export function parseCacheKey(key: string): CacheKeyParams | null {
     for (const pair of filterPairs) {
       const [key, value] = pair.split('=');
       if (key && value !== undefined) {
+        // Decode URL-encoded values (handles colons and other special characters)
+        const decodedValue = decodeURIComponent(value);
+
         // Try to parse as number or boolean
-        if (value === 'true') {
+        if (decodedValue === 'true') {
           filters[key] = true;
-        } else if (value === 'false') {
+        } else if (decodedValue === 'false') {
           filters[key] = false;
-        } else if (!isNaN(Number(value))) {
-          filters[key] = Number(value);
+        } else if (/^\d+(\.\d+)?$/.test(decodedValue)) {
+          // Only parse as number if it matches numeric pattern (integers or decimals)
+          filters[key] = Number(decodedValue);
         } else {
-          filters[key] = value;
+          filters[key] = decodedValue;
         }
       }
     }

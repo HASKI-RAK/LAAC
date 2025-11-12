@@ -113,13 +113,48 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
 
       expect(key).toBe('cache:test-metric:course:v1');
     });
+
+    it('should URL-encode filter values containing colons', () => {
+      const params: CacheKeyParams = {
+        metricId: 'test-metric',
+        scope: 'course',
+        filters: {
+          url: 'http://example.com:8080',
+          timestamp: '2025-01-01T12:00:00',
+        },
+      };
+
+      const key = generateCacheKey(params);
+
+      // Colon in URL should be encoded as %3A
+      expect(key).toContain('url=http%3A%2F%2Fexample.com%3A8080');
+      expect(key).toContain('timestamp=2025-01-01T12%3A00%3A00');
+    });
+
+    it('should not encode filter values without special characters', () => {
+      const params: CacheKeyParams = {
+        metricId: 'test-metric',
+        scope: 'course',
+        filters: {
+          simple: 'value123',
+          date: '2025-01-01',
+        },
+      };
+
+      const key = generateCacheKey(params);
+
+      // No encoding needed for these values
+      expect(key).toBe(
+        'cache:test-metric:course:date=2025-01-01,simple=value123:v1',
+      );
+    });
   });
 
   describe('generateCacheKeyPattern', () => {
     it('should generate pattern with all wildcards', () => {
       const pattern = generateCacheKeyPattern({});
 
-      expect(pattern).toBe('cache:*');
+      expect(pattern).toBe('cache:*:*:*:*');
     });
 
     it('should generate pattern with specific metricId', () => {
@@ -127,7 +162,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
         metricId: 'course-completion',
       });
 
-      expect(pattern).toBe('cache:course-completion:*:*');
+      expect(pattern).toBe('cache:course-completion:*:*:*');
     });
 
     it('should generate pattern with metricId and scope', () => {
@@ -136,7 +171,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
         scope: 'course',
       });
 
-      expect(pattern).toBe('cache:course-completion:course:*');
+      expect(pattern).toBe('cache:course-completion:course:*:*');
     });
 
     it('should generate pattern with wildcard scope', () => {
@@ -145,7 +180,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
         scope: '*',
       });
 
-      expect(pattern).toBe('cache:engagement-score:*:*');
+      expect(pattern).toBe('cache:engagement-score:*:*:*');
     });
   });
 
@@ -235,6 +270,35 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
         version: 'v1',
       });
     });
+
+    it('should decode URL-encoded filter values with colons', () => {
+      const key =
+        'cache:test-metric:course:url=http%3A%2F%2Fexample.com%3A8080:v1';
+      const parsed = parseCacheKey(key);
+
+      expect(parsed).toEqual({
+        metricId: 'test-metric',
+        scope: 'course',
+        filters: {
+          url: 'http://example.com:8080',
+        },
+        version: 'v1',
+      });
+    });
+
+    it('should not parse empty strings as numbers', () => {
+      const key = 'cache:test-metric:course:empty=:v1';
+      const parsed = parseCacheKey(key);
+
+      expect(parsed).toEqual({
+        metricId: 'test-metric',
+        scope: 'course',
+        filters: {
+          empty: '',
+        },
+        version: 'v1',
+      });
+    });
   });
 
   describe('Round-trip key generation and parsing', () => {
@@ -262,6 +326,24 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
           courseId: 101, // Use number to match parser behavior
           active: true,
           limit: 50,
+        },
+        version: 'v2',
+      };
+
+      const key = generateCacheKey(params);
+      const parsed = parseCacheKey(key);
+
+      expect(parsed).toEqual(params);
+    });
+
+    it('should successfully round-trip keys with URL-encoded special characters', () => {
+      const params: CacheKeyParams = {
+        metricId: 'test-metric',
+        scope: 'course',
+        filters: {
+          url: 'http://example.com:8080',
+          timestamp: '2025-01-01T12:00:00',
+          id: 101,
         },
         version: 'v2',
       };

@@ -62,6 +62,9 @@ describe('REQ-FN-006: CacheService', () => {
             port: 6379,
             ttl: 3600,
             poolSize: 10,
+            ttlMetrics: 3600,
+            ttlResults: 300,
+            ttlHealth: 60,
           };
         }
         if (key === 'redis.ttl') {
@@ -236,6 +239,35 @@ describe('REQ-FN-006: CacheService', () => {
         key: 'test-key',
         ttl: 300,
       });
+    });
+
+    it('should use category-specific TTL when category is provided', async () => {
+      const testData = { foo: 'bar' };
+      mockRedisInstance.setex.mockResolvedValue('OK');
+
+      // Test metrics category (should use ttlMetrics)
+      await service.set('test-key', testData, undefined, 'metrics');
+      expect(mockRedisInstance.setex).toHaveBeenCalledWith(
+        'test-key',
+        3600, // ttlMetrics from config
+        JSON.stringify(testData),
+      );
+
+      // Test results category (should use ttlResults)
+      await service.set('test-key2', testData, undefined, 'results');
+      expect(mockRedisInstance.setex).toHaveBeenCalledWith(
+        'test-key2',
+        300, // ttlResults from config (mocked in configService)
+        JSON.stringify(testData),
+      );
+
+      // Test health category (should use ttlHealth)
+      await service.set('test-key3', testData, undefined, 'health');
+      expect(mockRedisInstance.setex).toHaveBeenCalledWith(
+        'test-key3',
+        60, // ttlHealth from config (mocked in configService)
+        JSON.stringify(testData),
+      );
     });
 
     it('should return false and log warning on Redis error', async () => {
