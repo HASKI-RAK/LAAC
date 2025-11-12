@@ -37,6 +37,9 @@
 3. Create data access layer abstraction (REQ-FN-005)
 4. Implement metric computation framework (REQ-FN-004)
 5. Add circuit breaker pattern for resilience (REQ-FN-017, ADR-007)
+6. Finalize multi-LRS configuration parsing/validation per REQ-FN-026
+7. Implement results endpoints and normalized MetricResult DTO per REQ-FN-004/005, including `instanceId` filtering
+8. Align health checks to `/xapi/about` and 401/403 reachability semantics per REQ-FN-025
 
 ### Success Criteria
 
@@ -65,7 +68,7 @@
 **Ready for Use in Sprint 2**:
 
 - Redis connection already configured in rate limiting
-- LRS endpoint reference in `.env.example`
+- LRS instances configuration in `.env` example (REQ-FN-026)
 - Metrics API endpoints skeleton ready for population
 - Admin cache invalidation endpoint waiting for implementation
 - Prometheus metrics registry ready for metric computation tracking
@@ -332,6 +335,61 @@ Implement circuit breaker pattern and graceful degradation.
 
 ---
 
+### Epic 9: Multi-LRS Config & Results API (New)
+
+**Priority**: Critical | **Story Points**: 12
+
+Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DTO), and REQ-FN-025 (health checks).
+
+#### Story 9.1: Implement REQ-FN-026 Multi-LRS Config Parsing & Validation (3 pts) — [#58]
+
+**Description**: Parse `LRS_INSTANCES` JSON and/or prefixed env vars, validate uniqueness and required fields, expose normalized config to DataAccess.
+
+**Acceptance Criteria**:
+
+- [ ] `ConfigService` loads and validates instances on startup; fails fast on invalid config
+- [ ] Supports both JSON array and prefixed env patterns
+- [ ] Logs configured instance IDs (redacted) on startup; no credentials logged
+
+**Implementation Scope**:
+
+- `src/core/config/config.schema.ts` — Add `LRS_INSTANCES` schema and parser
+- `src/core/config/config.interface.ts` — Add multi-instance types
+- `src/data-access/data-access.module.ts` — Provide `LRSClientFactory` with injected instances
+
+#### Story 9.2: Results Endpoints + MetricResult DTO (5 pts) — [#59]
+
+**Description**: Implement `GET /api/v1/metrics/:id/results` and `POST /api/v1/metrics/results` returning normalized `MetricResult`. Add `instanceId` support (single, list, wildcard).
+
+**Acceptance Criteria**:
+
+- [ ] New endpoints documented in Swagger; protected by `analytics:read`
+- [ ] `MetricQueryDto` extended with `instanceId`
+- [ ] Response includes `generatedAt`, `filters`, `includedInstances`, `excludedInstances`, `aggregated`
+
+**Implementation Scope**:
+
+- `src/metrics/dto/metric-query.dto.ts` — Add `instanceId`
+- `src/metrics/dto/metric-result.dto.ts` — New DTO (normalized shape)
+- `src/metrics/controllers/metrics.controller.ts` — Add results routes
+- `src/metrics/services/metrics.service.ts` — Orchestration stub
+
+#### Story 9.3: Health Check Alignment to REQ-FN-025 (4 pts) — [#60]
+
+**Description**: Use `/xapi/about` endpoint with same auth as analytics; treat 2xx, 401, and 403 as reachable. Add latency metrics.
+
+**Acceptance Criteria**:
+
+- [ ] Health indicator targets `/xapi/about` (configurable fallback)
+- [ ] Uses per-instance auth from config
+- [ ] 2xx/401/403 considered up; others down
+- [ ] Duration recorded in Prometheus with instance label
+
+**Implementation Scope**:
+
+- `src/core/health/indicators/lrs.health.ts` — Update target URL and auth handling
+- `src/admin/services/metrics-registry.service.ts` — Add per-instance label for LRS metrics
+
 ## Estimated Velocity & Sprint Capacity
 
 Based on Sprint 1 calibration:
@@ -339,7 +397,7 @@ Based on Sprint 1 calibration:
 - **Estimated Velocity**: 20-25 pts/week
 - **Sprint Duration**: 2 weeks
 - **Available Capacity**: 40-50 pts
-- **Committed Scope**: 31 pts (6 stories across 3 epics)
+- **Committed Scope**: 43 pts (9 stories across 4 epics)
 - **Stretch Goal**: 40+ pts (if additional stories are ready)
 
 ---
@@ -356,7 +414,7 @@ Based on Sprint 1 calibration:
 
 ### External Dependencies
 
-- 🔗 LRS Instance (Yetanalytics) — Assumed available at `LRS_URL` from `.env`
+- 🔗 LRS Instances (Yetanalytics) — Assumed configured via `LRS_INSTANCES` in `.env`
 - 🔗 Redis Instance — Already configured in Sprint 1 for rate limiting
 - 🔗 Test xAPI Statements — Seed test data in LRS for E2E tests
 
