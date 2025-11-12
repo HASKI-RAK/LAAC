@@ -52,6 +52,10 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     // TODO: REQ-FN-026 will add multi-LRS support
     const lrsConfig = this.configService.get('lrs', { infer: true });
 
+    if (!lrsConfig) {
+      throw new Error('LRS configuration is required');
+    }
+
     this.config = {
       id: 'default',
       name: 'Default LRS',
@@ -89,7 +93,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     maxStatements: number = 10000,
   ): Promise<xAPIStatement[]> {
     const startTime = Date.now();
-    const correlationId = getCorrelationId();
+    const correlationId = getCorrelationId() || 'unknown';
 
     this.logger.debug('LRS query started', {
       context: 'LRSClient',
@@ -157,11 +161,15 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       const err = error as Error;
       const sanitizedFilters = this.sanitizeFiltersForLogging(filters);
 
-      this.logger.error('LRS query failed', {
+      this.logger.error(
+        `LRS query failed: ${err.message}`,
+        undefined,
+        'LRSClient',
+      );
+      this.logger.debug('LRS query error details', {
         context: 'LRSClient',
         instanceId: this.instanceId,
         correlationId,
-        error: err.message,
         errorType,
         filters: sanitizedFilters,
       });
@@ -176,7 +184,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
    */
   async aggregate(filters: xAPIQueryFilters): Promise<number> {
     const startTime = Date.now();
-    const correlationId = getCorrelationId();
+    const correlationId = getCorrelationId() || 'unknown';
 
     this.logger.debug('LRS aggregate query started', {
       context: 'LRSClient',
@@ -219,11 +227,15 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       const errorType = this.categorizeError(error);
       this.metricsRegistry.recordLrsError(errorType);
 
-      this.logger.error('LRS aggregate query failed', {
+      this.logger.error(
+        `LRS aggregate query failed: ${(error as Error).message}`,
+        undefined,
+        'LRSClient',
+      );
+      this.logger.debug('LRS aggregate error details', {
         context: 'LRSClient',
         instanceId: this.instanceId,
         correlationId,
-        error: (error as Error).message,
         errorType,
       });
 
@@ -237,7 +249,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
    */
   async getInstanceHealth(): Promise<LRSHealthStatus> {
     const startTime = Date.now();
-    const correlationId = getCorrelationId();
+    const correlationId = getCorrelationId() || 'unknown';
 
     try {
       const url = `${this.config.endpoint}/about`;
@@ -371,14 +383,16 @@ export class LRSClient implements ILRSClient, OnModuleInit {
    * Includes auth, headers, and timeout
    */
   private buildRequestConfig(correlationId: string): AxiosRequestConfig {
+    const headers: Record<string, string> = {
+      'X-Experience-API-Version': this.xapiVersion,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Correlation-ID': correlationId,
+    };
+
     const config: AxiosRequestConfig = {
       timeout: this.config.timeoutMs,
-      headers: {
-        'X-Experience-API-Version': this.xapiVersion,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Correlation-ID': correlationId,
-      },
+      headers,
     };
 
     // Add authentication
@@ -390,12 +404,12 @@ export class LRSClient implements ILRSClient, OnModuleInit {
         const authString = Buffer.from(`${username}:${password}`).toString(
           'base64',
         );
-        config.headers['Authorization'] = `Basic ${authString}`;
+        headers.Authorization = `Basic ${authString}`;
       }
     } else if (this.config.auth.type === 'bearer' && this.config.auth.token) {
-      config.headers['Authorization'] = `Bearer ${this.config.auth.token}`;
+      headers.Authorization = `Bearer ${this.config.auth.token}`;
     } else if (this.config.auth.type === 'custom' && this.config.auth.headers) {
-      Object.assign(config.headers, this.config.auth.headers);
+      Object.assign(headers, this.config.auth.headers);
     }
 
     return config;
