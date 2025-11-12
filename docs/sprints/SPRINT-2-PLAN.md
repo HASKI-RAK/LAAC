@@ -196,7 +196,9 @@ Implement Redis cache service, data access abstractions, and cache invalidation 
 - `src/data-access/clients/lrs.client.spec.ts` — Unit tests
 - `test/lrs-client.e2e-spec.ts` — E2E tests (mock LRS)
 
-**Story Points**: 5 | **Assigned To**: [#51](https://github.com/HASKI-RAK/LAAC/issues/51)
+**Story Points**: 5 | **Assigned To**: [#51](https://github.com/HASKI-RAK/LAAC/issues/51) | **PR**: [#65](https://github.com/HASKI-RAK/LAAC/pull/65)
+
+**Status**: ✅ COMPLETED — Implemented and merged (PR [#65](https://github.com/HASKI-RAK/LAAC/pull/65))
 
 ---
 
