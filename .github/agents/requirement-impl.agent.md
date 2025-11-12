@@ -1,6 +1,6 @@
 ---
-description: 'Implement the feature described in a GitHub issue.'
 name: 'ReqImpl'
+description: 'Implement the feature described in a GitHub issue.'
 tools:
   [
     'edit',
@@ -25,7 +25,7 @@ tools:
     'sonarsource.sonarlint-vscode/sonarqube_analyzeFile',
     'todos',
     'runSubagent',
-    'runTests',
+    'runTests'
   ]
 ---
 
@@ -238,42 +238,6 @@ this.logger.log('Action completed', {
 - Add comment summarizing implementation and test coverage
 - Reference commit SHA(s)
 
-### 11. Commit and PR
-
-**Commit Message Format**:
-
-```
-<type>: <short description> ({REQ-ID})
-
-<optional body with details>
-
-Implements {REQ-ID}
-Closes #{ISSUE_NUMBER}
-```
-
-**Types**: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-
-**Example**:
-
-```
-feat: implement metrics catalog endpoint (REQ-FN-003)
-
-Add GET /api/v1/metrics endpoint that returns the full metrics catalog
-with metadata for each registered metric. Includes unit and E2E tests.
-
-Implements REQ-FN-003
-Closes #25
-```
-
-**Pull Request**:
-
-- Reference issue number in PR title and description
-- Link to SRS requirement file
-- Summarize changes and test coverage
-- Request review from team
-
----
-
 ## Architecture Reference
 
 ### Module Overview
@@ -287,31 +251,6 @@ src/
 ├── data-access/  # Cache, LRS client (REQ-FN-002, 006, 007)
 ├── admin/        # Cache invalidation, Prometheus (REQ-FN-007, 021)
 └── common/       # Shared utilities
-```
-
-### Key Interfaces
-
-```typescript
-// Metric Computation (REQ-FN-010)
-export interface IMetricComputation {
-  id: string;
-  dashboardLevel: 'course' | 'topic' | 'element';
-  description: string;
-  version?: string;
-  compute(
-    params: MetricParams,
-    lrsData: xAPIStatement[],
-  ): Promise<MetricResult>;
-  validateParams?(params: MetricParams): void;
-}
-
-// Cache Service (REQ-FN-006)
-export interface ICacheService {
-  get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, value: T, ttl?: number): Promise<void>;
-  invalidate(key: string): Promise<void>;
-  invalidatePattern(pattern: string): Promise<void>;
-}
 ```
 
 ### REST API Conventions
