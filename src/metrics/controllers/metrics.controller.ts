@@ -12,6 +12,7 @@ import {
   BadRequestException,
   ServiceUnavailableException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -205,23 +206,30 @@ export class MetricsController {
       // Call computation service
       return await this.computationService.computeMetric(id, params);
     } catch (error) {
-      // Handle specific error types
+      // Re-throw NotFoundException as-is (404)
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      // Handle other error types
       if (error instanceof Error) {
+        const { message } = error;
+
         // Parameter validation errors → 400 Bad Request
         if (
-          error.message.includes('required') ||
-          error.message.includes('invalid') ||
-          error.message.includes('must be')
+          message.includes('required') ||
+          message.includes('invalid') ||
+          message.includes('must be')
         ) {
-          throw new BadRequestException(error.message);
+          throw new BadRequestException(message);
         }
 
         // LRS connection errors → 503 Service Unavailable
         if (
-          error.message.includes('LRS') &&
-          (error.message.includes('unavailable') ||
-            error.message.includes('connection') ||
-            error.message.includes('timeout'))
+          message.includes('LRS') &&
+          (message.includes('unavailable') ||
+            message.includes('connection') ||
+            message.includes('timeout'))
         ) {
           throw new ServiceUnavailableException(
             'Learning Record Store is currently unavailable',
@@ -229,17 +237,12 @@ export class MetricsController {
         }
 
         // Computation errors → 500 Internal Server Error
-        if (
-          error.message.includes('computation') ||
-          error.message.includes('failed')
-        ) {
-          throw new InternalServerErrorException(
-            `Failed to compute metric: ${error.message}`,
-          );
-        }
+        throw new InternalServerErrorException(
+          `Failed to compute metric: ${message}`,
+        );
       }
 
-      // Re-throw NotFoundException as-is (404)
+      // Unknown error type
       throw error;
     }
   }
