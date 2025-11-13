@@ -1,7 +1,12 @@
 // Implements REQ-FN-014: Environment variable validation schema
+// Implements REQ-FN-026: Multi-LRS Configuration Schema
 // Uses Joi for declarative validation with fail-fast behavior at application startup
 
 import * as Joi from 'joi';
+import {
+  parseLRSInstances,
+  redactLRSInstancesForLogging,
+} from './lrs-config.schema';
 
 /**
  * Joi validation schema for environment variables
@@ -89,21 +94,33 @@ export const configValidationSchema = Joi.object({
     .default(10)
     .description('Maximum Redis connection pool size'),
 
-  // LRS Configuration (REQ-FN-002)
+  // LRS Configuration (REQ-FN-002, REQ-FN-026)
+  // Legacy single-instance config (backward compatible)
   LRS_URL: Joi.string()
     .uri()
-    .required()
-    .description('Learning Record Store xAPI endpoint URL'),
+    .optional()
+    .description(
+      'Learning Record Store xAPI endpoint URL (legacy single-instance)',
+    ),
 
   LRS_API_KEY: Joi.string()
-    .required()
-    .description('LRS API authentication key'),
+    .optional()
+    .description('LRS API authentication key (legacy single-instance)'),
 
   LRS_TIMEOUT: Joi.number()
     .integer()
     .min(1000)
     .default(10000)
     .description('LRS request timeout in milliseconds'),
+
+  // REQ-FN-026: Multi-LRS configuration
+  // Primary method: JSON array
+  LRS_INSTANCES: Joi.string()
+    .optional()
+    .description('JSON array of LRS instance configurations (REQ-FN-026)'),
+
+  // Secondary method: Prefixed env vars (detected automatically, no explicit validation here)
+  // Pattern: LRS_<ID>_ENDPOINT, LRS_<ID>_AUTH_TYPE, LRS_<ID>_USERNAME, etc.
 
   // Logging Configuration (REQ-FN-020)
   LOG_LEVEL: Joi.string()
@@ -130,44 +147,93 @@ export const configValidationSchema = Joi.object({
  * Transforms validated environment variables into typed configuration object
  * @returns Configuration object with type-safe access
  */
-export const configFactory = () => ({
-  app: {
-    nodeEnv: process.env.NODE_ENV as
-      | 'development'
-      | 'production'
-      | 'test'
-      | undefined,
-    port: parseInt(process.env.PORT || '3000', 10),
-    apiPrefix: process.env.API_PREFIX || 'api/v1',
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET as string,
-    expirationTime: process.env.JWT_EXPIRATION || '1h',
-    authEnabled: process.env.AUTH_ENABLED === 'false' ? false : true,
-  },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-    ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
-    poolSize: parseInt(process.env.REDIS_POOL_SIZE || '10', 10),
-    ttlMetrics: parseInt(process.env.CACHE_TTL_METRICS || '3600', 10),
-    ttlResults: parseInt(process.env.CACHE_TTL_RESULTS || '300', 10),
-    ttlHealth: parseInt(process.env.CACHE_TTL_HEALTH || '60', 10),
-  },
-  lrs: {
-    url: process.env.LRS_URL as string,
-    apiKey: process.env.LRS_API_KEY as string,
-    timeout: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
-  },
-  log: {
-    level: (process.env.LOG_LEVEL || 'log') as Configuration['log']['level'],
-  },
-  rateLimit: {
-    ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
-    limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-  },
-});
+export const configFactory = () => {
+  // REQ-FN-026: Parse and validate multi-LRS configuration
+  let lrsInstances;
+  try {
+    lrsInstances = parseLRSInstances(
+      process.env as Record<string, string | undefined>,
+    );
+
+    // REQ-FN-026: Log configured instances (redacted, no credentials)
+    const redactedInstances = redactLRSInstancesForLogging(lrsInstances);
+    console.log(
+      '[ConfigService] Loaded LRS instances:',
+      JSON.stringify(redactedInstances, null, 2),
+    );
+  } catch (error) {
+    // Backward compatibility: Fall back to legacy single-instance config if available
+    if (process.env.LRS_URL && process.env.LRS_API_KEY) {
+      console.log(
+        '[ConfigService] Using legacy single-instance LRS configuration',
+      );
+      lrsInstances = [
+        {
+          id: 'default',
+          name: 'Default LRS',
+          endpoint: process.env.LRS_URL,
+          timeoutMs: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
+          auth: {
+            type: 'basic',
+            username: process.env.LRS_API_KEY,
+            password: process.env.LRS_API_KEY, // Legacy uses same value for both
+          },
+        },
+      ];
+    } else {
+      // REQ-FN-026: Log validation errors with clear guidance
+      console.error(
+        '[ConfigService] ERROR: Failed to load LRS instances:',
+        (error as Error).message,
+      );
+      throw error;
+    }
+  }
+
+  return {
+    app: {
+      nodeEnv: process.env.NODE_ENV as
+        | 'development'
+        | 'production'
+        | 'test'
+        | undefined,
+      port: parseInt(process.env.PORT || '3000', 10),
+      apiPrefix: process.env.API_PREFIX || 'api/v1',
+    },
+    jwt: {
+      secret: process.env.JWT_SECRET as string,
+      expirationTime: process.env.JWT_EXPIRATION || '1h',
+      authEnabled: process.env.AUTH_ENABLED === 'false' ? false : true,
+    },
+    redis: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      password: process.env.REDIS_PASSWORD,
+      ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
+      poolSize: parseInt(process.env.REDIS_POOL_SIZE || '10', 10),
+      ttlMetrics: parseInt(process.env.CACHE_TTL_METRICS || '3600', 10),
+      ttlResults: parseInt(process.env.CACHE_TTL_RESULTS || '300', 10),
+      ttlHealth: parseInt(process.env.CACHE_TTL_HEALTH || '60', 10),
+    },
+    lrs: {
+      // Legacy single-instance support (backward compatible)
+      url:
+        process.env.LRS_URL ||
+        (lrsInstances.length > 0 ? lrsInstances[0].endpoint : ''),
+      apiKey: process.env.LRS_API_KEY || '',
+      timeout: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
+      // REQ-FN-026: Multi-LRS instances
+      instances: lrsInstances,
+    },
+    log: {
+      level: (process.env.LOG_LEVEL || 'log') as Configuration['log']['level'],
+    },
+    rateLimit: {
+      ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
+      limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+    },
+  };
+};
 
 // Import Configuration type for use in configFactory
 import type { Configuration } from './config.interface';

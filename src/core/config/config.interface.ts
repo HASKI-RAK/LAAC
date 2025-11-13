@@ -1,5 +1,8 @@
 // Implements REQ-FN-014: Type-safe configuration interfaces
+// Implements REQ-FN-026: Multi-LRS Configuration Schema
 // Provides compile-time type safety for configuration access across the application
+
+import { LRSInstance } from './lrs-config.interface';
 
 /**
  * Application configuration interface
@@ -39,11 +42,17 @@ export interface RedisConfig {
 /**
  * LRS (Learning Record Store) configuration interface
  * Implements REQ-FN-002: xAPI LRS Integration
+ * Implements REQ-FN-026: Multi-LRS Configuration Schema
+ *
+ * Supports both legacy single-instance and multi-instance configurations:
+ * - Single instance: url, apiKey, timeout (backward compatible)
+ * - Multi-instance: instances array (REQ-FN-026)
  */
 export interface LrsConfig {
   url: string;
   apiKey: string;
   timeout: number;
+  instances: LRSInstance[]; // REQ-FN-026: Multi-LRS support
 }
 
 /**
