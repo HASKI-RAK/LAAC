@@ -57,6 +57,8 @@ export class LrsHealthIndicator extends HealthIndicator {
       message: 'All LRS instances are unhealthy',
       instanceCount: allInstances.size,
     });
-    throw new HealthCheckError('LRS health check failed', result);
+    return Promise.reject(
+      new HealthCheckError('LRS health check failed', result),
+    );
   }
 }
