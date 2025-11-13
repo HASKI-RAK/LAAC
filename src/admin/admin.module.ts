@@ -13,12 +13,14 @@ import { CacheAdminService } from './services/cache.admin.service';
 import { CacheController } from './controllers/cache.controller';
 import { DataAccessModule } from '../data-access/data-access.module';
 import { AuthModule } from '../auth/auth.module';
+import { CoreModule } from '../core/core.module';
 
 @Module({
   imports: [
     // No PrometheusModule registration here; handled globally in CoreModule (REQ-FN-021)
     forwardRef(() => DataAccessModule), // Import CacheService for cache invalidation
     AuthModule, // Import auth guards for cache controller
+    CoreModule, // Import CoreModule for LoggerService
   ],
   controllers: [
     CacheController, // REQ-FN-007: Cache invalidation admin endpoint
