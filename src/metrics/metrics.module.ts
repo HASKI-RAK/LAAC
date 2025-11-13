@@ -1,6 +1,7 @@
 // Implements REQ-FN-003: Metrics Module
 // Implements REQ-FN-005: Metrics Computation Module
 // Implements REQ-FN-017: Instance Metadata Module
+// Implements REQ-NF-003: Graceful Degradation
 // Provides metrics catalog and computation functionality
 
 import { Module } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { DataAccessModule } from '../data-access';
 import { ComputationModule } from '../computation';
 import { AdminModule } from '../admin';
 import { LoggerService } from '../core/logger';
+import { FallbackHandler } from '../core/resilience';
 import { MetricsController } from './controllers/metrics.controller';
 import { InstancesController } from './controllers/instances.controller';
 import { MetricsService } from './services/metrics.service';
@@ -28,6 +30,7 @@ import { InstancesService } from './services/instances.service';
     ComputationService,
     InstancesService,
     LoggerService,
+    FallbackHandler, // REQ-NF-003: Graceful degradation handler
   ],
   exports: [MetricsService, ComputationService, InstancesService],
 })
