@@ -123,7 +123,12 @@ export class LRSClient implements ILRSClient, OnModuleInit {
           correlationId,
         );
 
-        statements.push(...result.statements);
+        // REQ-FN-017: Tag each statement with instanceId from LRS configuration (ADR-008)
+        const taggedStatements = result.statements.map((stmt) =>
+          this.tagStatementWithInstance(stmt),
+        );
+
+        statements.push(...taggedStatements);
 
         // Check for more results
         if (!result.more || statements.length >= maxStatements) {
@@ -551,6 +556,94 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     }
 
     return result;
+  }
+
+  /**
+   * Tag xAPI statement with instanceId from LRS configuration
+   * Implements REQ-FN-017: Instance tagging during ingestion (ADR-008)
+   *
+   * @param statement - xAPI statement from LRS
+   * @returns Statement with instanceId field set
+   *
+   * @remarks
+   * - LRS configuration is THE authoritative source for instanceId (ADR-008)
+   * - Optional: Validates statement context for consistency checking
+   * - If context mismatch detected: logs WARNING but trusts LRS config
+   */
+  private tagStatementWithInstance(statement: xAPIStatement): xAPIStatement {
+    const taggedStatement = {
+      ...statement,
+      instanceId: this.instanceId,
+    };
+
+    // REQ-FN-017: Optional context validation for consistency checking
+    // This is NOT mandatory and does not affect operation
+    this.validateInstanceContext(statement);
+
+    return taggedStatement;
+  }
+
+  /**
+   * Validate statement context against LRS instanceId (optional consistency check)
+   * Implements REQ-FN-017: Optional context validation
+   *
+   * @param statement - xAPI statement to validate
+   *
+   * @remarks
+   * - Checks context.extensions, context.contextActivities, context.platform
+   * - Logs WARNING on mismatch, but ALWAYS trusts LRS configuration
+   * - Validation sources (in order of preference):
+   *   1. context.extensions["https://wiki.haski.app/"].domain
+   *   2. context.contextActivities.parent[].definition.name.en
+   *   3. context.platform
+   */
+  private validateInstanceContext(statement: xAPIStatement): void {
+    if (!statement.context) {
+      return; // No context to validate
+    }
+
+    let contextInstanceId: string | undefined;
+
+    // Check extensions first
+    if (statement.context.extensions) {
+      const haskiExtension = statement.context.extensions[
+        'https://wiki.haski.app/'
+      ] as { domain?: string } | undefined;
+      if (haskiExtension?.domain) {
+        contextInstanceId = haskiExtension.domain.toLowerCase();
+      }
+    }
+
+    // Check contextActivities.parent if no extension found
+    if (
+      !contextInstanceId &&
+      statement.context.contextActivities?.parent?.length
+    ) {
+      const parentActivity = statement.context.contextActivities.parent[0];
+      if (parentActivity.definition?.name?.en) {
+        // Extract ID from names like "HS-KE" -> "hs-ke"
+        const match = parentActivity.definition.name.en.match(/HS-([A-Z]+)/i);
+        if (match) {
+          contextInstanceId = `hs-${match[1].toLowerCase()}`;
+        }
+      }
+    }
+
+    // Check platform if no other source found
+    if (!contextInstanceId && statement.context.platform) {
+      contextInstanceId = statement.context.platform.toLowerCase();
+    }
+
+    // Log warning if mismatch detected (but trust LRS config)
+    if (contextInstanceId && contextInstanceId !== this.instanceId) {
+      this.logger.warn('Instance ID mismatch in statement context', {
+        context: 'LRSClient',
+        lrsInstanceId: this.instanceId,
+        contextInstanceId,
+        statementId: statement.id,
+        note: 'Trusting LRS configuration per ADR-008',
+      });
+    }
   }
 
   /**

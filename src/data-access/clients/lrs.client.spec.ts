@@ -112,27 +112,28 @@ describe('REQ-FN-002: LRSClient', () => {
   });
 
   describe('queryStatements', () => {
-    const mockStatements: xAPIStatement[] = [
-      {
-        actor: {
-          account: {
-            homePage: 'https://ke.moodle.haski.app',
-            name: '123',
+    it('should query statements successfully', async () => {
+      // REQ-FN-017: Mock LRS response (without instanceId - it gets tagged by client)
+      const mockLRSStatements: xAPIStatement[] = [
+        {
+          actor: {
+            account: {
+              homePage: 'https://ke.moodle.haski.app',
+              name: '123',
+            },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/completed',
+            display: { en: 'completed' },
+          },
+          object: {
+            id: 'https://course.example.com/course/101',
           },
         },
-        verb: {
-          id: 'http://adlnet.gov/expapi/verbs/completed',
-          display: { en: 'completed' },
-        },
-        object: {
-          id: 'https://course.example.com/course/101',
-        },
-      },
-    ];
+      ];
 
-    it('should query statements successfully', async () => {
       const mockResult: xAPIStatementResult = {
-        statements: mockStatements,
+        statements: mockLRSStatements,
       };
 
       const mockResponse: AxiosResponse<xAPIStatementResult> = {
@@ -150,7 +151,9 @@ describe('REQ-FN-002: LRSClient', () => {
         limit: 100,
       });
 
-      expect(result).toEqual(mockStatements);
+      // REQ-FN-017: Verify statements are tagged with instanceId
+      expect(result).toHaveLength(1);
+      expect(result[0].instanceId).toBe('default');
       expect(mockHttpService.get).toHaveBeenCalled();
       expect(mockMetricsRegistry.recordLrsQuery).toHaveBeenCalled();
       expect(mockLogger.debug).toHaveBeenCalledWith(
@@ -164,13 +167,29 @@ describe('REQ-FN-002: LRSClient', () => {
     });
 
     it('should handle pagination with more link', async () => {
+      const mockStatement: xAPIStatement = {
+        actor: {
+          account: {
+            homePage: 'https://ke.moodle.haski.app',
+            name: '123',
+          },
+        },
+        verb: {
+          id: 'http://adlnet.gov/expapi/verbs/completed',
+          display: { en: 'completed' },
+        },
+        object: {
+          id: 'https://course.example.com/course/101',
+        },
+      };
+
       const page1: xAPIStatementResult = {
-        statements: [mockStatements[0]],
+        statements: [mockStatement],
         more: '/xapi/statements?cursor=abc123',
       };
 
       const page2: xAPIStatementResult = {
-        statements: [mockStatements[0]],
+        statements: [mockStatement],
       };
 
       const response1: AxiosResponse<xAPIStatementResult> = {
@@ -195,12 +214,31 @@ describe('REQ-FN-002: LRSClient', () => {
 
       const result = await client.queryStatements({ limit: 100 });
 
+      // REQ-FN-017: Verify pagination and instance tagging
       expect(result).toHaveLength(2);
+      expect(result[0].instanceId).toBe('default');
+      expect(result[1].instanceId).toBe('default');
       expect(mockHttpService.get).toHaveBeenCalledTimes(2);
     });
 
     it('should limit total statements returned', async () => {
-      const statements = Array(5).fill(mockStatements[0]);
+      const mockStatement: xAPIStatement = {
+        actor: {
+          account: {
+            homePage: 'https://ke.moodle.haski.app',
+            name: '123',
+          },
+        },
+        verb: {
+          id: 'http://adlnet.gov/expapi/verbs/completed',
+          display: { en: 'completed' },
+        },
+        object: {
+          id: 'https://course.example.com/course/101',
+        },
+      };
+
+      const statements = Array(5).fill(mockStatement);
       const mockResult: xAPIStatementResult = {
         statements,
       };
@@ -354,8 +392,27 @@ describe('REQ-FN-002: LRSClient', () => {
         isAxiosError: true,
       };
 
+      // REQ-FN-017: Mock LRS response without instanceId
+      const mockLRSStatements: xAPIStatement[] = [
+        {
+          actor: {
+            account: {
+              homePage: 'https://ke.moodle.haski.app',
+              name: '123',
+            },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/completed',
+            display: { en: 'completed' },
+          },
+          object: {
+            id: 'https://course.example.com/course/101',
+          },
+        },
+      ];
+
       const mockResult: xAPIStatementResult = {
-        statements: mockStatements,
+        statements: mockLRSStatements,
       };
 
       const mockResponse: AxiosResponse<xAPIStatementResult> = {
@@ -372,7 +429,9 @@ describe('REQ-FN-002: LRSClient', () => {
 
       const result = await client.queryStatements({ limit: 100 });
 
-      expect(result).toEqual(mockStatements);
+      // REQ-FN-017: Verify statements are tagged with instanceId
+      expect(result).toHaveLength(1);
+      expect(result[0].instanceId).toBe('default');
       expect(mockHttpService.get).toHaveBeenCalledTimes(2);
       expect(mockLogger.debug).toHaveBeenCalledWith(
         'Retrying LRS request',
@@ -404,8 +463,24 @@ describe('REQ-FN-002: LRSClient', () => {
     });
 
     it('should include required xAPI headers', async () => {
+      const mockStatement: xAPIStatement = {
+        actor: {
+          account: {
+            homePage: 'https://ke.moodle.haski.app',
+            name: '123',
+          },
+        },
+        verb: {
+          id: 'http://adlnet.gov/expapi/verbs/completed',
+          display: { en: 'completed' },
+        },
+        object: {
+          id: 'https://course.example.com/course/101',
+        },
+      };
+
       const mockResult: xAPIStatementResult = {
-        statements: mockStatements,
+        statements: [mockStatement],
       };
 
       const mockResponse: AxiosResponse<xAPIStatementResult> = {

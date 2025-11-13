@@ -4,6 +4,8 @@
 /**
  * xAPI Statement structure (simplified for common fields)
  * Full spec: https://github.com/adlnet/xAPI-Spec
+ *
+ * REQ-FN-017: instanceId field added for multi-instance support
  */
 export interface xAPIStatement {
   id?: string;
@@ -17,6 +19,9 @@ export interface xAPIStatement {
   authority?: xAPIAgent;
   version?: string;
   attachments?: xAPIAttachment[];
+  // REQ-FN-017: Instance identifier for multi-instance support
+  // Set from LRS configuration during ingestion (ADR-008)
+  instanceId?: string;
 }
 
 /**
