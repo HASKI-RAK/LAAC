@@ -78,6 +78,16 @@ export class MetricResultsQueryDto {
   @IsOptional()
   @IsISO8601({}, { message: 'until must be a valid ISO 8601 timestamp' })
   until?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Instance identifier(s) for filtering: single ID (hs-ke), comma-separated (hs-ke,hs-rv), wildcard (*), or omit for all instances aggregated. REQ-FN-017',
+    example: 'hs-ke',
+  })
+  @IsOptional()
+  @IsString()
+  instanceId?: string;
 }
 
 /**
@@ -141,4 +151,30 @@ export class MetricResultResponseDto {
     },
   })
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Instance ID for single-instance results (REQ-FN-017). Omitted for aggregated results.',
+    example: 'hs-ke',
+  })
+  instanceId?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Array of instance IDs included in aggregated results (REQ-FN-017)',
+    example: ['hs-ke', 'hs-rv'],
+    type: [String],
+  })
+  includedInstances?: string[];
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Array of instance IDs excluded from aggregated results due to unavailability (REQ-FN-017)',
+    example: ['hs-ab'],
+    type: [String],
+  })
+  excludedInstances?: string[];
 }

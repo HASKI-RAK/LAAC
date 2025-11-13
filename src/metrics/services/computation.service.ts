@@ -1,4 +1,5 @@
 // Implements REQ-FN-005: Metric Computation Service with Cache-Aside Pattern
+// Implements REQ-FN-017: Multi-instance support with instance-aware caching
 // Orchestrates metric computation pipeline: cache check → provider load → LRS query → compute → cache store
 
 import {
@@ -17,6 +18,7 @@ import { IMetricComputation } from '../../computation/interfaces/metric.interfac
 import { MetricParams } from '../../computation/interfaces/metric-params.interface';
 import { MetricResultResponseDto } from '../dto/metric-results.dto';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
+import { generateCacheKey } from '../../data-access/utils/cache-key.util';
 
 /**
  * Computation Service
@@ -184,6 +186,8 @@ export class ComputationService {
       });
 
       // Step 7: Store result in cache (REQ-FN-006: Cache-aside pattern)
+      // REQ-FN-017: Include instance metadata in response
+      const instanceId = params.instanceId || this.lrsClient.instanceId;
       const response: MetricResultResponseDto = {
         metricId: result.metricId,
         value: result.value,
@@ -191,6 +195,7 @@ export class ComputationService {
         computationTime: Date.now() - startTime,
         fromCache: false,
         metadata: result.metadata,
+        instanceId, // REQ-FN-017: Single instance identifier
       };
 
       await this.cacheService.set(cacheKey, response, undefined, 'results');
@@ -312,8 +317,7 @@ export class ComputationService {
 
   /**
    * Generate cache key from metric ID and parameters
-   * Format: cache:metricId:scope:filters
-   * Implements REQ-FN-006: Cache key structure
+   * Implements REQ-FN-006 + REQ-FN-017: Instance-aware cache key structure
    *
    * @param metricId - Unique identifier of the metric
    * @param params - Metric computation parameters
@@ -322,53 +326,52 @@ export class ComputationService {
    *
    * @example
    * ```
-   * cache:course-completion:course:123:2025-01-01:2025-12-31
-   * cache:course-completion:course:123:user:456:activityType:quiz
+   * cache:course-completion:hs-ke:course:courseId=123,since=2025-01-01:v1
    * ```
    *
    * @remarks
-   * - userId and groupId can coexist for user-within-group context
-   * - Filters are sorted alphabetically for consistent key generation
+   * - Uses centralized cache key utility for consistency
+   * - Includes instanceId for multi-instance isolation (REQ-FN-017)
+   * - Defaults to LRS client's instanceId if not specified in params
    */
   private generateCacheKey(metricId: string, params: MetricParams): string {
-    const parts = ['cache', metricId];
+    // REQ-FN-017: Use instanceId from params or default to LRS client instance
+    const instanceId = params.instanceId || this.lrsClient.instanceId;
 
-    // Add scope identifiers (mutually exclusive: course OR topic OR element)
+    // Determine scope from params
+    let scope = 'global';
     if (params.courseId) {
-      parts.push('course', params.courseId);
+      scope = 'course';
     } else if (params.topicId) {
-      parts.push('topic', params.topicId);
+      scope = 'topic';
     } else if (params.elementId) {
-      parts.push('element', params.elementId);
+      scope = 'element';
     }
 
-    // Add time range to key for cache invalidation
-    if (params.since) {
-      parts.push(params.since);
+    // Build filters object for cache key
+    const filters: Record<string, string | number | boolean> = {};
+
+    if (params.courseId) filters.courseId = params.courseId;
+    if (params.topicId) filters.topicId = params.topicId;
+    if (params.elementId) filters.elementId = params.elementId;
+    if (params.userId) filters.userId = params.userId;
+    if (params.groupId) filters.groupId = params.groupId;
+    if (params.since) filters.since = params.since;
+    if (params.until) filters.until = params.until;
+
+    // Add custom filters
+    if (params.filters) {
+      Object.assign(filters, params.filters);
     }
 
-    if (params.until) {
-      parts.push(params.until);
-    }
-
-    // Add other identifiers (can coexist for user-within-group context)
-    if (params.userId) {
-      parts.push('user', params.userId);
-    }
-
-    if (params.groupId) {
-      parts.push('group', params.groupId);
-    }
-
-    // Add filters to cache key for metric-specific filtering (REQ-FN-006)
-    if (params.filters && Object.keys(params.filters).length > 0) {
-      const filterKeys = Object.keys(params.filters).sort();
-      for (const key of filterKeys) {
-        parts.push(key, String(params.filters[key]));
-      }
-    }
-
-    return parts.join(':');
+    // Use centralized cache key utility
+    return generateCacheKey({
+      metricId,
+      instanceId,
+      scope,
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
+      version: 'v1',
+    });
   }
 
   /**
