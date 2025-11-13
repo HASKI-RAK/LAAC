@@ -150,30 +150,42 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       expect(error?.message).toContain('required');
     });
 
-    it('should reject missing LRS_URL', () => {
+    // REQ-FN-026: LRS_URL and LRS_API_KEY are now optional (backward compatible)
+    // Multi-LRS config takes precedence via LRS_INSTANCES
+    it('should accept missing LRS_URL when using multi-LRS config', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_INSTANCES: JSON.stringify([
+          {
+            id: 'hs-ke',
+            name: 'HS Kempten',
+            endpoint: 'https://ke.lrs.haski.app/xapi',
+            auth: { type: 'basic', username: 'key', password: 'secret' },
+          },
+        ]),
       };
 
       const { error } = configValidationSchema.validate(config);
 
-      expect(error).toBeDefined();
-      expect(error?.message).toContain('LRS_URL');
-      expect(error?.message).toContain('required');
+      expect(error).toBeUndefined();
     });
 
-    it('should reject missing LRS_API_KEY', () => {
+    it('should accept missing LRS_API_KEY when using multi-LRS config', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
+        LRS_INSTANCES: JSON.stringify([
+          {
+            id: 'hs-ke',
+            name: 'HS Kempten',
+            endpoint: 'https://ke.lrs.haski.app/xapi',
+            auth: { type: 'basic', username: 'key', password: 'secret' },
+          },
+        ]),
       };
 
       const { error } = configValidationSchema.validate(config);
 
-      expect(error).toBeDefined();
-      expect(error?.message).toContain('LRS_API_KEY');
-      expect(error?.message).toContain('required');
+      expect(error).toBeUndefined();
     });
   });
 
