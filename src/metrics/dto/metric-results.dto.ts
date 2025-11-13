@@ -2,7 +2,7 @@
 // Defines the structure for metric computation requests and responses
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsISO8601 } from 'class-validator';
+import { IsOptional, IsString, IsISO8601, Matches } from 'class-validator';
 
 /**
  * Metric Results Query DTO
@@ -78,6 +78,20 @@ export class MetricResultsQueryDto {
   @IsOptional()
   @IsISO8601({}, { message: 'until must be a valid ISO 8601 timestamp' })
   until?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Instance identifier(s) for filtering: single ID (hs-ke), comma-separated (hs-ke,hs-rv), wildcard (*), or omit for all instances aggregated. REQ-FN-017',
+    example: 'hs-ke',
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^(\*|[a-z0-9_-]+(,[a-z0-9_-]+)*)$/, {
+    message:
+      'instanceId must be a single ID (hs-ke), comma-separated IDs (hs-ke,hs-rv), or wildcard (*)',
+  })
+  instanceId?: string;
 }
 
 /**
@@ -141,4 +155,30 @@ export class MetricResultResponseDto {
     },
   })
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Instance ID for single-instance results (REQ-FN-017). Omitted for aggregated results.',
+    example: 'hs-ke',
+  })
+  instanceId?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Array of instance IDs included in aggregated results (REQ-FN-017)',
+    example: ['hs-ke', 'hs-rv'],
+    type: [String],
+  })
+  includedInstances?: string[];
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Array of instance IDs excluded from aggregated results due to unavailability (REQ-FN-017)',
+    example: ['hs-ab'],
+    type: [String],
+  })
+  excludedInstances?: string[];
 }

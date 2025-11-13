@@ -65,6 +65,13 @@ export interface MetricParams {
   until?: string;
 
   /**
+   * Instance identifier for multi-instance filtering (REQ-FN-017)
+   * Can be: single ID, comma-separated IDs, wildcard (*), or omitted for all
+   * @example 'hs-ke' or 'hs-ke,hs-rv' or '*'
+   */
+  instanceId?: string;
+
+  /**
    * Additional custom filters as key-value pairs
    * Enables metric-specific filtering logic
    * @example { 'activityType': 'quiz', 'minScore': '80' }

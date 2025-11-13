@@ -2,11 +2,11 @@
 id: REQ-FN-017
 title: Multi-Instance Support and Cross-Instance Analytics
 type: Functional
-status: Draft
+status: Partially Implemented
 priority: High
 stakeholder_trace: SG-4-012
 owner: TODO
-version: 0.3
+version: 0.4
 ---
 
 ## Description
@@ -128,6 +128,67 @@ HASKI serves multiple universities with independent LRS deployments. Analytics m
 - Clarify aggregation semantics for metrics that don't naturally aggregate (e.g., "last three elements" across instances).
 - **Assumption**: LRS instances never share authentication realms or return cross-instance statements (each LRS is single-tenant for its university).
 
+## Implementation Status
+
+**Status**: Partially Implemented (Sprint 2, Story 9.2)  
+**Pull Request**: [#60](https://github.com/HASKI-RAK/LAAC/pull/60)
+
+### Implemented Features
+
+#### Phase 1: Statement Tagging ✅
+- xAPI statements automatically tagged with `instanceId` from LRS configuration
+- Implementation in `src/data-access/clients/lrs.client.ts`
+- Optional context validation logs warnings on mismatch (trusts LRS config per ADR-008)
+- Unit tests: 20 passed
+
+#### Phase 2: Instance-Aware Cache Keys ✅
+- Cache key format: `cache:{metricId}:{instanceId}:{scope}:{filters}:{version}`
+- Implementation in `src/data-access/utils/cache-key.util.ts`
+- Unit tests: 28 passed
+
+#### Phase 3: Instance Metadata API ✅
+- Endpoint: `GET /api/v1/instances`
+- Returns configured instances with health status
+- Implementation:
+  - Controller: `src/metrics/controllers/instances.controller.ts`
+  - Service: `src/metrics/services/instances.service.ts`
+  - DTOs: `src/metrics/dto/instance.dto.ts`
+- Unit tests: 11 passed
+
+#### Phase 4: instanceId Parameter in Metrics API ✅ (Partial)
+- Added `instanceId` query parameter to metrics results endpoint
+- Implementation in `src/metrics/dto/metric-results.dto.ts`
+- Basic parameter acceptance working
+- **Pending**: Full multi-instance filtering/aggregation requires REQ-FN-026
+
+#### Phase 5: E2E Tests ✅
+- Comprehensive test suite in `test/multi-instance.e2e-spec.ts`
+- 9 E2E tests passing
+- 10 tests documented as todo (require REQ-FN-026)
+
+### Pending Implementation
+
+The following features require REQ-FN-026 (multi-LRS configuration) to be completed:
+- Multiple instance filtering (comma-separated IDs)
+- Wildcard (*) for all instances
+- Cross-instance aggregation
+- Partial results handling when LRS unavailable
+- Student ID isolation across instances
+
+### Files Modified
+
+- `src/data-access/interfaces/lrs.interface.ts` - Added instanceId to xAPIStatement
+- `src/data-access/clients/lrs.client.ts` - Statement tagging and validation
+- `src/data-access/utils/cache-key.util.ts` - Instance-aware cache keys
+- `src/metrics/controllers/instances.controller.ts` - New instances endpoint
+- `src/metrics/services/instances.service.ts` - Instance metadata service
+- `src/metrics/dto/instance.dto.ts` - Instance DTOs
+- `src/metrics/dto/metric-results.dto.ts` - Added instanceId parameter
+- `src/metrics/controllers/metrics.controller.ts` - Updated to pass instanceId
+- `src/metrics/services/computation.service.ts` - Instance-aware cache key generation
+- `src/admin/admin.module.ts` - Fixed CoreModule import
+- `test/multi-instance.e2e-spec.ts` - E2E test suite
+
 ## References
 
 - Stakeholder Need(s): [SG-4-012](../strs-needs/SG-4-012.md)
@@ -137,6 +198,7 @@ HASKI serves multiple universities with independent LRS deployments. Analytics m
 
 ## Change History
 
+- v0.4 — Added implementation status and notes (Sprint 2, Story 9.2)
 - v0.3 — Consolidated instance identification strategy: LRS configuration is THE authoritative source; fallback context validation is optional consistency check only (references ADR-008)
 - v0.2 — Clarified LRS-based instance tagging as primary strategy (references REQ-FN-002)
 - v0.1 — Initial draft

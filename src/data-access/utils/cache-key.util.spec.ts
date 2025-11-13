@@ -1,4 +1,5 @@
 // REQ-FN-006: Unit tests for cache key utilities
+// REQ-FN-017: Tests for instance-aware cache keys
 // Tests deterministic cache key generation and pattern matching
 
 import {
@@ -8,22 +9,24 @@ import {
   CacheKeyParams,
 } from './cache-key.util';
 
-describe('REQ-FN-006: Cache Key Utilities', () => {
+describe('REQ-FN-006 + REQ-FN-017: Cache Key Utilities', () => {
   describe('generateCacheKey', () => {
     it('should generate basic cache key without filters', () => {
       const params: CacheKeyParams = {
         metricId: 'course-completion',
+        instanceId: 'hs-ke',
         scope: 'course',
       };
 
       const key = generateCacheKey(params);
 
-      expect(key).toBe('cache:course-completion:course:v1');
+      expect(key).toBe('cache:course-completion:hs-ke:course:v1');
     });
 
     it('should generate cache key with filters', () => {
       const params: CacheKeyParams = {
         metricId: 'course-completion',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           courseId: '101',
@@ -34,31 +37,34 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
       const key = generateCacheKey(params);
 
       expect(key).toBe(
-        'cache:course-completion:course:courseId=101,start=2025-01-01:v1',
+        'cache:course-completion:hs-ke:course:courseId=101,start=2025-01-01:v1',
       );
     });
 
     it('should generate cache key with custom version', () => {
       const params: CacheKeyParams = {
         metricId: 'engagement-score',
+        instanceId: 'hs-rv',
         scope: 'topic',
         version: 'v2',
       };
 
       const key = generateCacheKey(params);
 
-      expect(key).toBe('cache:engagement-score:topic:v2');
+      expect(key).toBe('cache:engagement-score:hs-rv:topic:v2');
     });
 
     it('should generate deterministic keys with sorted filters', () => {
       const params1: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'element',
         filters: { z: 'last', a: 'first', m: 'middle' },
       };
 
       const params2: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'element',
         filters: { a: 'first', m: 'middle', z: 'last' },
       };
@@ -67,12 +73,15 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
       const key2 = generateCacheKey(params2);
 
       expect(key1).toBe(key2);
-      expect(key1).toBe('cache:test-metric:element:a=first,m=middle,z=last:v1');
+      expect(key1).toBe(
+        'cache:test-metric:hs-ke:element:a=first,m=middle,z=last:v1',
+      );
     });
 
     it('should handle numeric filter values', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           courseId: 123,
@@ -82,12 +91,15 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
 
       const key = generateCacheKey(params);
 
-      expect(key).toBe('cache:test-metric:course:courseId=123,limit=50:v1');
+      expect(key).toBe(
+        'cache:test-metric:hs-ke:course:courseId=123,limit=50:v1',
+      );
     });
 
     it('should handle boolean filter values', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           includeInactive: true,
@@ -98,25 +110,27 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
       const key = generateCacheKey(params);
 
       expect(key).toBe(
-        'cache:test-metric:course:includeInactive=true,showDetails=false:v1',
+        'cache:test-metric:hs-ke:course:includeInactive=true,showDetails=false:v1',
       );
     });
 
     it('should handle empty filters object', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {},
       };
 
       const key = generateCacheKey(params);
 
-      expect(key).toBe('cache:test-metric:course:v1');
+      expect(key).toBe('cache:test-metric:hs-ke:course:v1');
     });
 
     it('should URL-encode filter values containing colons', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           url: 'http://example.com:8080',
@@ -134,6 +148,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     it('should not encode filter values without special characters', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           simple: 'value123',
@@ -145,8 +160,32 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
 
       // No encoding needed for these values
       expect(key).toBe(
-        'cache:test-metric:course:date=2025-01-01,simple=value123:v1',
+        'cache:test-metric:hs-ke:course:date=2025-01-01,simple=value123:v1',
       );
+    });
+
+    it('should handle different instance IDs', () => {
+      const params1: CacheKeyParams = {
+        metricId: 'course-completion',
+        instanceId: 'hs-ke',
+        scope: 'course',
+        filters: { courseId: '101' },
+      };
+
+      const params2: CacheKeyParams = {
+        metricId: 'course-completion',
+        instanceId: 'hs-rv',
+        scope: 'course',
+        filters: { courseId: '101' },
+      };
+
+      const key1 = generateCacheKey(params1);
+      const key2 = generateCacheKey(params2);
+
+      // Same metric and filters but different instances should have different keys
+      expect(key1).not.toBe(key2);
+      expect(key1).toBe('cache:course-completion:hs-ke:course:courseId=101:v1');
+      expect(key2).toBe('cache:course-completion:hs-rv:course:courseId=101:v1');
     });
   });
 
@@ -154,7 +193,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     it('should generate pattern with all wildcards', () => {
       const pattern = generateCacheKeyPattern({});
 
-      expect(pattern).toBe('cache:*:*:*:*');
+      expect(pattern).toBe('cache:*:*:*:*:*');
     });
 
     it('should generate pattern with specific metricId', () => {
@@ -162,35 +201,56 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
         metricId: 'course-completion',
       });
 
-      expect(pattern).toBe('cache:course-completion:*:*:*');
+      expect(pattern).toBe('cache:course-completion:*:*:*:*');
     });
 
-    it('should generate pattern with metricId and scope', () => {
+    it('should generate pattern with metricId and instanceId', () => {
       const pattern = generateCacheKeyPattern({
         metricId: 'course-completion',
+        instanceId: 'hs-ke',
+      });
+
+      expect(pattern).toBe('cache:course-completion:hs-ke:*:*:*');
+    });
+
+    it('should generate pattern with metricId, instanceId and scope', () => {
+      const pattern = generateCacheKeyPattern({
+        metricId: 'course-completion',
+        instanceId: 'hs-ke',
         scope: 'course',
       });
 
-      expect(pattern).toBe('cache:course-completion:course:*:*');
+      expect(pattern).toBe('cache:course-completion:hs-ke:course:*:*');
     });
 
     it('should generate pattern with wildcard scope', () => {
       const pattern = generateCacheKeyPattern({
         metricId: 'engagement-score',
+        instanceId: 'hs-ke',
         scope: '*',
       });
 
-      expect(pattern).toBe('cache:engagement-score:*:*:*');
+      expect(pattern).toBe('cache:engagement-score:hs-ke:*:*:*');
+    });
+
+    it('should generate pattern for all instances of a metric', () => {
+      const pattern = generateCacheKeyPattern({
+        metricId: 'course-completion',
+        instanceId: '*',
+      });
+
+      expect(pattern).toBe('cache:course-completion:*:*:*:*');
     });
   });
 
   describe('parseCacheKey', () => {
     it('should parse basic cache key', () => {
-      const key = 'cache:course-completion:course:v1';
+      const key = 'cache:course-completion:hs-ke:course:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'course-completion',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: undefined,
         version: 'v1',
@@ -199,11 +259,12 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
 
     it('should parse cache key with filters', () => {
       const key =
-        'cache:course-completion:course:courseId=101,start=2025-01-01:v1';
+        'cache:course-completion:hs-ke:course:courseId=101,start=2025-01-01:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'course-completion',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           courseId: 101, // Parsed as number
@@ -214,11 +275,12 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     });
 
     it('should parse numeric filter values', () => {
-      const key = 'cache:test-metric:course:courseId=123,limit=50:v1';
+      const key = 'cache:test-metric:hs-ke:course:courseId=123,limit=50:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           courseId: 123,
@@ -229,11 +291,12 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     });
 
     it('should parse boolean filter values', () => {
-      const key = 'cache:test-metric:course:active=true,hidden=false:v1';
+      const key = 'cache:test-metric:hs-ke:course:active=true,hidden=false:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           active: true,
@@ -244,7 +307,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     });
 
     it('should return null for invalid cache key prefix', () => {
-      const key = 'invalid:test-metric:course:v1';
+      const key = 'invalid:test-metric:hs-ke:course:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toBeNull();
@@ -258,11 +321,13 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     });
 
     it('should handle complex filter values with colons', () => {
-      const key = 'cache:test-metric:course:timestamp=2025-01-01T12:00:00:v1';
+      const key =
+        'cache:test-metric:hs-ke:course:timestamp=2025-01-01T12:00:00:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           timestamp: '2025-01-01T12:00:00',
@@ -273,11 +338,12 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
 
     it('should decode URL-encoded filter values with colons', () => {
       const key =
-        'cache:test-metric:course:url=http%3A%2F%2Fexample.com%3A8080:v1';
+        'cache:test-metric:hs-ke:course:url=http%3A%2F%2Fexample.com%3A8080:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           url: 'http://example.com:8080',
@@ -287,11 +353,12 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     });
 
     it('should not parse empty strings as numbers', () => {
-      const key = 'cache:test-metric:course:empty=:v1';
+      const key = 'cache:test-metric:hs-ke:course:empty=:v1';
       const parsed = parseCacheKey(key);
 
       expect(parsed).toEqual({
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           empty: '',
@@ -305,6 +372,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     it('should successfully round-trip basic keys', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         version: 'v1',
       };
@@ -321,6 +389,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     it('should successfully round-trip keys with filters', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           courseId: 101, // Use number to match parser behavior
@@ -339,6 +408,7 @@ describe('REQ-FN-006: Cache Key Utilities', () => {
     it('should successfully round-trip keys with URL-encoded special characters', () => {
       const params: CacheKeyParams = {
         metricId: 'test-metric',
+        instanceId: 'hs-ke',
         scope: 'course',
         filters: {
           url: 'http://example.com:8080',

@@ -48,6 +48,7 @@ describe('REQ-FN-005: ComputationService', () => {
         {
           provide: LRSClient,
           useValue: {
+            instanceId: 'default', // REQ-FN-017: Mock instance ID
             queryStatements: jest.fn(),
           },
         },
@@ -97,7 +98,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
   describe('computeMetric - Cache Hit', () => {
     it('should return cached result when cache hit', async () => {
-      // REQ-FN-006: Cache-aside pattern - cache hit
+      // REQ-FN-006 + REQ-FN-017: Cache-aside pattern - cache hit with instance-aware key
       const params: MetricParams = { courseId: 'course-123' };
       const cachedResult = {
         metricId: 'test-metric',
@@ -112,8 +113,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
       const result = await service.computeMetric('test-metric', params);
 
+      // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:course:course-123',
+        'cache:test-metric:default:course:courseId=course-123:v1',
       );
       expect(result).toEqual({
         ...cachedResult,
@@ -165,18 +167,21 @@ describe('REQ-FN-005: ComputationService', () => {
       expect(mockProvider.validateParams).toHaveBeenCalledWith(params);
       expect(lrsClient.queryStatements).toHaveBeenCalledWith({});
       expect(mockProvider.compute).toHaveBeenCalledWith(params, statements);
+      // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.set).toHaveBeenCalledWith(
-        'cache:test-metric:course:course-123',
+        'cache:test-metric:default:course:courseId=course-123:v1',
         expect.objectContaining({
           metricId: 'test-metric',
           value: 85.5,
           fromCache: false,
+          instanceId: 'default', // REQ-FN-017: Instance metadata
         }),
         undefined,
         'results',
       );
       expect(result.fromCache).toBe(false);
       expect(result.value).toBe(85.5);
+      expect(result.instanceId).toBe('default'); // REQ-FN-017
     });
 
     it('should build LRS filters with time range', async () => {
@@ -319,8 +324,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
       await service.computeMetric('test-metric', params);
 
+      // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:course:course-123',
+        'cache:test-metric:default:course:courseId=course-123:v1',
       );
     });
 
@@ -343,8 +349,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
       await service.computeMetric('test-metric', params);
 
+      // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:topic:topic-456',
+        'cache:test-metric:default:topic:topicId=topic-456:v1',
       );
     });
 
@@ -371,8 +378,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
       await service.computeMetric('test-metric', params);
 
+      // REQ-FN-017: Expected cache key format with instanceId and URL-encoded timestamps
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:course:course-123:2025-01-01T00:00:00Z:2025-12-31T23:59:59Z',
+        'cache:test-metric:default:course:courseId=course-123,since=2025-01-01T00%3A00%3A00Z,until=2025-12-31T23%3A59%3A59Z:v1',
       );
     });
   });

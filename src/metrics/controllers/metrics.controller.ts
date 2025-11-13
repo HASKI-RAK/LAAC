@@ -191,7 +191,7 @@ export class MetricsController {
     @Param('id') id: string,
     @Query() query: MetricResultsQueryDto,
   ): Promise<MetricResultResponseDto> {
-    // Map DTO to MetricParams
+    // Map DTO to MetricParams - REQ-FN-017: include instanceId
     const params: MetricParams = {
       courseId: query.courseId,
       topicId: query.topicId,
@@ -200,6 +200,7 @@ export class MetricsController {
       groupId: query.groupId,
       since: query.since,
       until: query.until,
+      instanceId: query.instanceId,
     };
 
     // Call computation service - it throws proper NestJS exceptions

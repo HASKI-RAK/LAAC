@@ -1,5 +1,6 @@
 // Implements REQ-FN-003: Metrics Module
 // Implements REQ-FN-005: Metrics Computation Module
+// Implements REQ-FN-017: Instance Metadata Module
 // Provides metrics catalog and computation functionality
 
 import { Module } from '@nestjs/common';
@@ -9,8 +10,10 @@ import { ComputationModule } from '../computation';
 import { AdminModule } from '../admin';
 import { LoggerService } from '../core/logger';
 import { MetricsController } from './controllers/metrics.controller';
+import { InstancesController } from './controllers/instances.controller';
 import { MetricsService } from './services/metrics.service';
 import { ComputationService } from './services/computation.service';
+import { InstancesService } from './services/instances.service';
 
 @Module({
   imports: [
@@ -19,8 +22,13 @@ import { ComputationService } from './services/computation.service';
     ComputationModule, // Import ComputationModule for metric providers
     AdminModule, // Import AdminModule for metrics registry
   ],
-  controllers: [MetricsController],
-  providers: [MetricsService, ComputationService, LoggerService],
-  exports: [MetricsService, ComputationService],
+  controllers: [MetricsController, InstancesController],
+  providers: [
+    MetricsService,
+    ComputationService,
+    InstancesService,
+    LoggerService,
+  ],
+  exports: [MetricsService, ComputationService, InstancesService],
 })
 export class MetricsModule {}
