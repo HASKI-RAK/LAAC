@@ -8,12 +8,14 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 /**
  * Metrics Registry Service
  * Implements REQ-FN-021: Custom metrics for caching, computation, and LRS queries
+ * Implements REQ-FN-017: Circuit breaker metrics
  *
  * This service provides centralized access to custom Prometheus metrics:
  * - Cache hit/miss counters per metric ID (use for calculating hit ratio)
  * - Metric computation duration per metric ID
  * - LRS query duration
  * - HTTP request metrics (requests, duration, errors, active requests)
+ * - Circuit breaker metrics (state, transitions, failures, successes)
  */
 @Injectable()
 export class MetricsRegistryService {
@@ -40,6 +42,16 @@ export class MetricsRegistryService {
     public readonly httpErrorsTotal: Counter<string>,
     @InjectMetric('http_active_requests')
     public readonly httpActiveRequests: Gauge<string>,
+    @InjectMetric('circuit_breaker_opens_total')
+    public readonly circuitBreakerOpensTotal: Counter<string>,
+    @InjectMetric('circuit_breaker_state_transitions_total')
+    public readonly circuitBreakerStateTransitionsTotal: Counter<string>,
+    @InjectMetric('circuit_breaker_current_state')
+    public readonly circuitBreakerCurrentState: Gauge<string>,
+    @InjectMetric('circuit_breaker_failures_total')
+    public readonly circuitBreakerFailuresTotal: Counter<string>,
+    @InjectMetric('circuit_breaker_successes_total')
+    public readonly circuitBreakerSuccessesTotal: Counter<string>,
   ) {}
 
   /**
@@ -170,5 +182,56 @@ export class MetricsRegistryService {
    */
   decrementActiveRequests(): void {
     this.httpActiveRequests.dec();
+  }
+
+  /**
+   * Record circuit breaker opening
+   * @param serviceName - Service name (e.g., 'lrs', 'redis')
+   */
+  recordCircuitBreakerOpen(serviceName: string): void {
+    this.circuitBreakerOpensTotal.inc({ service: serviceName });
+  }
+
+  /**
+   * Record circuit breaker state transition
+   * @param serviceName - Service name
+   * @param fromState - Previous state (CLOSED, OPEN, HALF_OPEN)
+   * @param toState - New state (CLOSED, OPEN, HALF_OPEN)
+   */
+  recordCircuitBreakerStateTransition(
+    serviceName: string,
+    fromState: string,
+    toState: string,
+  ): void {
+    this.circuitBreakerStateTransitionsTotal.inc({
+      service: serviceName,
+      from: fromState,
+      to: toState,
+    });
+  }
+
+  /**
+   * Set circuit breaker current state
+   * @param serviceName - Service name
+   * @param state - Current state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
+   */
+  setCircuitBreakerState(serviceName: string, state: number): void {
+    this.circuitBreakerCurrentState.set({ service: serviceName }, state);
+  }
+
+  /**
+   * Record circuit breaker failure
+   * @param serviceName - Service name
+   */
+  recordCircuitBreakerFailure(serviceName: string): void {
+    this.circuitBreakerFailuresTotal.inc({ service: serviceName });
+  }
+
+  /**
+   * Record circuit breaker success
+   * @param serviceName - Service name
+   */
+  recordCircuitBreakerSuccess(serviceName: string): void {
+    this.circuitBreakerSuccessesTotal.inc({ service: serviceName });
   }
 }

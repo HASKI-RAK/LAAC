@@ -91,6 +91,32 @@ import { CoreModule } from '../core/core.module';
       name: 'http_active_requests',
       help: 'Number of active HTTP requests',
     }),
+    // REQ-FN-017: Circuit breaker metrics
+    makeCounterProvider({
+      name: 'circuit_breaker_opens_total',
+      help: 'Total number of times circuit breaker opened',
+      labelNames: ['service'],
+    }),
+    makeCounterProvider({
+      name: 'circuit_breaker_state_transitions_total',
+      help: 'Total number of state transitions',
+      labelNames: ['service', 'from', 'to'],
+    }),
+    makeGaugeProvider({
+      name: 'circuit_breaker_current_state',
+      help: 'Current circuit breaker state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)',
+      labelNames: ['service'],
+    }),
+    makeCounterProvider({
+      name: 'circuit_breaker_failures_total',
+      help: 'Total number of failures tracked by circuit breaker',
+      labelNames: ['service'],
+    }),
+    makeCounterProvider({
+      name: 'circuit_breaker_successes_total',
+      help: 'Total number of successes tracked by circuit breaker',
+      labelNames: ['service'],
+    }),
   ],
   exports: [MetricsRegistryService], // Export for use in other modules
 })

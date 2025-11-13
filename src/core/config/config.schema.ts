@@ -142,6 +142,31 @@ export const configValidationSchema = Joi.object({
     .min(1)
     .default(100)
     .description('Maximum requests per time window (default: 100)'),
+
+  // Circuit Breaker Configuration (REQ-FN-017)
+  CIRCUIT_BREAKER_THRESHOLD: Joi.number()
+    .integer()
+    .min(1)
+    .default(5)
+    .description(
+      'Number of consecutive failures before opening circuit (default: 5)',
+    ),
+
+  CIRCUIT_BREAKER_TIMEOUT: Joi.number()
+    .integer()
+    .min(1000)
+    .default(30000)
+    .description(
+      'Timeout in milliseconds before attempting recovery (default: 30000)',
+    ),
+
+  CIRCUIT_BREAKER_HALF_OPEN_REQUESTS: Joi.number()
+    .integer()
+    .min(1)
+    .default(1)
+    .description(
+      'Number of successful test requests required to close circuit (default: 1)',
+    ),
 });
 
 /**
@@ -254,6 +279,14 @@ export const configFactory = () => {
     rateLimit: {
       ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
       limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+    },
+    circuitBreaker: {
+      threshold: parseInt(process.env.CIRCUIT_BREAKER_THRESHOLD || '5', 10),
+      timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT || '30000', 10),
+      halfOpenRequests: parseInt(
+        process.env.CIRCUIT_BREAKER_HALF_OPEN_REQUESTS || '1',
+        10,
+      ),
     },
   };
 };

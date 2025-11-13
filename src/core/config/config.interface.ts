@@ -73,6 +73,16 @@ export interface RateLimitConfig {
 }
 
 /**
+ * Circuit breaker configuration interface
+ * Implements REQ-FN-017: Resilience & Fault Tolerance
+ */
+export interface CircuitBreakerConfig {
+  threshold: number; // Number of failures before opening circuit
+  timeout: number; // Timeout in ms before attempting recovery
+  halfOpenRequests: number; // Number of test requests in half-open state
+}
+
+/**
  * Complete application configuration interface
  * Aggregates all configuration sections
  */
@@ -83,4 +93,5 @@ export interface Configuration {
   lrs: LrsConfig;
   log: LogConfig;
   rateLimit: RateLimitConfig;
+  circuitBreaker: CircuitBreakerConfig;
 }

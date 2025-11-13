@@ -16,6 +16,11 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
   let mockHttpRequestDuration: jest.Mocked<Histogram<string>>;
   let mockHttpErrorsTotal: jest.Mocked<Counter<string>>;
   let mockHttpActiveRequests: jest.Mocked<Gauge<string>>;
+  let mockCircuitBreakerOpensTotal: jest.Mocked<Counter<string>>;
+  let mockCircuitBreakerStateTransitionsTotal: jest.Mocked<Counter<string>>;
+  let mockCircuitBreakerCurrentState: jest.Mocked<Gauge<string>>;
+  let mockCircuitBreakerFailuresTotal: jest.Mocked<Counter<string>>;
+  let mockCircuitBreakerSuccessesTotal: jest.Mocked<Counter<string>>;
 
   beforeEach(async () => {
     // Create mock metrics
@@ -64,6 +69,26 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       dec: jest.fn(),
     } as unknown as jest.Mocked<Gauge<string>>;
 
+    mockCircuitBreakerOpensTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCircuitBreakerStateTransitionsTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCircuitBreakerCurrentState = {
+      set: jest.fn(),
+    } as unknown as jest.Mocked<Gauge<string>>;
+
+    mockCircuitBreakerFailuresTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
+    mockCircuitBreakerSuccessesTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -81,6 +106,11 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
               mockHttpRequestDuration,
               mockHttpErrorsTotal,
               mockHttpActiveRequests,
+              mockCircuitBreakerOpensTotal,
+              mockCircuitBreakerStateTransitionsTotal,
+              mockCircuitBreakerCurrentState,
+              mockCircuitBreakerFailuresTotal,
+              mockCircuitBreakerSuccessesTotal,
             );
           },
         },
@@ -175,6 +205,51 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       service.decrementActiveRequests();
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockHttpActiveRequests.dec).toHaveBeenCalled();
+    });
+  });
+
+  describe('Circuit breaker metrics (REQ-FN-017)', () => {
+    it('should record circuit breaker opening', () => {
+      service.recordCircuitBreakerOpen('lrs');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockCircuitBreakerOpensTotal.inc).toHaveBeenCalledWith({
+        service: 'lrs',
+      });
+    });
+
+    it('should record circuit breaker state transition', () => {
+      service.recordCircuitBreakerStateTransition('lrs', 'CLOSED', 'OPEN');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockCircuitBreakerStateTransitionsTotal.inc).toHaveBeenCalledWith({
+        service: 'lrs',
+        from: 'CLOSED',
+        to: 'OPEN',
+      });
+    });
+
+    it('should set circuit breaker current state', () => {
+      service.setCircuitBreakerState('lrs', 1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockCircuitBreakerCurrentState.set).toHaveBeenCalledWith(
+        { service: 'lrs' },
+        1,
+      );
+    });
+
+    it('should record circuit breaker failure', () => {
+      service.recordCircuitBreakerFailure('redis');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockCircuitBreakerFailuresTotal.inc).toHaveBeenCalledWith({
+        service: 'redis',
+      });
+    });
+
+    it('should record circuit breaker success', () => {
+      service.recordCircuitBreakerSuccess('redis');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockCircuitBreakerSuccessesTotal.inc).toHaveBeenCalledWith({
+        service: 'redis',
+      });
     });
   });
 });
