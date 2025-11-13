@@ -89,6 +89,10 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       inc: jest.fn(),
     } as unknown as jest.Mocked<Counter<string>>;
 
+    const mockGracefulDegradationTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -111,6 +115,7 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
               mockCircuitBreakerCurrentState,
               mockCircuitBreakerFailuresTotal,
               mockCircuitBreakerSuccessesTotal,
+              mockGracefulDegradationTotal,
             );
           },
         },

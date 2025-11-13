@@ -114,17 +114,25 @@ export class MetricResultResponseDto {
 
   @ApiProperty({
     description:
-      'Computed metric value (primarily numeric; complex results in metadata)',
+      'Computed metric value (primarily numeric; complex results in metadata). Null when data unavailable (REQ-NF-003)',
     example: 85.5,
+    nullable: true,
     oneOf: [
       { type: 'number' },
       { type: 'string' },
       { type: 'boolean' },
       { type: 'object' },
       { type: 'array' },
+      { type: 'null' },
     ],
   })
-  value!: number | string | boolean | Record<string, unknown> | unknown[];
+  value!:
+    | number
+    | string
+    | boolean
+    | Record<string, unknown>
+    | unknown[]
+    | null;
 
   @ApiProperty({
     description: 'Timestamp when the metric was computed (ISO 8601)',
