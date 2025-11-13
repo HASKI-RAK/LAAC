@@ -5,7 +5,7 @@
 **Sprint Duration**: 2 weeks  
 **Sprint Goal**: Implement Redis cache service, LRS client integration, and data access layer foundation  
 **Team Capacity**: [Copilot: Developer, theUpsider: Architect & Team Lead]  
-**Status**: 🚀 Ready to Start  
+**Status**: 🚀 In Progress
 **Planned Start**: November 13, 2025  
 **Planned End**: November 27, 2025
 
@@ -45,8 +45,8 @@
 
 - [x] Redis CacheService fully functional with cache invalidation
 - [x] Cache invalidation endpoint implemented and wired (PR #64)
-- [ ] LRS client can execute xAPI queries with proper error handling
-- [ ] IMetricComputation interface implemented with examples
+- [x] LRS client can execute xAPI queries with proper error handling
+- [x] IMetricComputation interface implemented with examples
 - [ ] Circuit breaker protects against LRS failures
 - [ ] All data access abstracted through interfaces
 - [ ] Comprehensive unit & E2E tests for all new components
@@ -112,6 +112,29 @@ DataAccessModule
 ---
 
 ## Sprint Backlog
+
+### Execution Plan (Corrections Applied)
+
+- Remaining stories: 6 (7.3; 8.1–8.2; 9.1–9.3)
+- Remaining points: 23 (3 + 4 + 4 + 3 + 5 + 4)
+- Current completion: ~46% (20/43 pts) based on completed stories (6.1, 6.2, 6.3, 7.1, 7.2)
+
+Implementation order
+
+- Phase 1 — Core API Completion
+  - Story 7.3: Metric Results Endpoint (GET /api/v1/metrics/:id/results) — cache-aside, validation, error handling
+- Phase 2 — Multi‑LRS Support
+  - Story 9.1: Multi‑LRS config parsing/validation (supports JSON array and prefixed env vars; fail‑fast on invalid config)
+  - Story 9.2: Results endpoints + MetricResult DTO (extends 7.3 with instanceId filtering; also adds POST /api/v1/metrics/results for bulk)
+  - Story 9.3: Health check alignment to /xapi/about with 2xx/401/403 considered reachable; add latency metrics
+- Phase 3 — Resilience (parallel with Phase 2 where feasible)
+  - Story 8.1: Circuit breaker around LRS client (e.g., opossum; 5 failures → OPEN, ~30s recovery)
+  - Story 8.2: Graceful degradation/fallbacks (cache‑only mode when LRS down; degraded health states)
+
+Notes
+
+- 9.2 builds on 7.3; implement 7.3 first to minimize rework.
+- 8.1–8.2 can run in parallel with Epic 9; prioritize 9.1 before 9.2/9.3.
 
 ### Epic 6: Data Access & Caching Layer ([#49](https://github.com/HASKI-RAK/LAAC/issues/49))
 
@@ -212,6 +235,8 @@ Implement metric computation layer with extensible provider pattern.
 
 **Description**: Implement `IMetricComputation` interface and base provider (REQ-FN-004, REQ-FN-010)
 
+**Status**: ✅ COMPLETED — Implemented and merged (PR #66)
+
 **Acceptance Criteria**:
 
 - [ ] `IMetricComputation` interface finalized per SRS (id, dashboardLevel, compute, validateParams)
@@ -239,17 +264,19 @@ Implement metric computation layer with extensible provider pattern.
 
 **Description**: Implement 2-3 example metric providers for Sprint 2 (REQ-FN-004)
 
+**Status**: ✅ COMPLETED — Implemented and merged (PR #67)
+
 **Acceptance Criteria**:
 
-- [ ] CourseCompletionMetric: % of learners who completed course
-- [ ] AverageScoreMetric: Average score/grade per course
-- [ ] EngagementMetric: Engagement level (simple: based on statement count)
-- [ ] Each provider validates parameters (courseId, dateRange, etc.)
-- [ ] Each provider calls LRS client for data
-- [ ] Results cached via CacheService (cache-aside)
-- [ ] Metrics published to Prometheus
-- [ ] Unit tests with mocked LRS client
-- [ ] E2E tests end-to-end
+- [x] CourseCompletionMetric: % of learners who completed course
+- [x] LearningEngagementMetric: Engagement level based on learning activities
+- [x] TopicMasteryMetric: Average score/performance on topic assessments
+- [x] Each provider validates parameters (courseId, dateRange, etc.)
+- [x] Each provider calls LRS client for data
+- [x] Results cached via CacheService (cache-aside)
+- [x] Metrics published to Prometheus
+- [x] Unit tests with mocked LRS client
+- [x] E2E tests end-to-end
 
 **Implementation Scope**:
 
