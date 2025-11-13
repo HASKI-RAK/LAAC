@@ -71,4 +71,16 @@ export interface ICacheService {
    * @remarks Used by health checks to verify cache availability
    */
   isHealthy(): Promise<boolean>;
+
+  /**
+   * Retrieve a value from cache ignoring expiry (for fallback strategies)
+   * Implements REQ-NF-003: Cache fallback strategy
+   * @param key - Cache key to retrieve
+   * @returns Cached value or null if not found or error occurred
+   * @remarks
+   * - Used for graceful degradation when primary services fail
+   * - Returns expired cached data for fallback scenarios
+   * - Does not throw on Redis failure, returns null
+   */
+  getIgnoringExpiry<T>(key: string): Promise<T | null>;
 }

@@ -167,6 +167,31 @@ export const configValidationSchema = Joi.object({
     .description(
       'Number of successful test requests required to close circuit (default: 1)',
     ),
+
+  // Graceful Degradation Configuration (REQ-NF-003)
+  GRACEFUL_DEGRADATION_ENABLED: Joi.boolean()
+    .default(true)
+    .description('Enable graceful degradation strategies (default: true)'),
+
+  CACHE_FALLBACK_ENABLED: Joi.boolean()
+    .default(true)
+    .description(
+      'Enable cache fallback with stale data when LRS unavailable (default: true)',
+    ),
+
+  STALE_DATA_TTL: Joi.number()
+    .integer()
+    .min(0)
+    .default(86400)
+    .description(
+      'Maximum age for stale cache data in seconds (default: 86400, 24 hours)',
+    ),
+
+  DEFAULT_VALUE_ON_UNAVAILABLE: Joi.any()
+    .default(null)
+    .description(
+      'Default value to return when data unavailable (default: null)',
+    ),
 });
 
 /**
@@ -287,6 +312,14 @@ export const configFactory = () => {
         process.env.CIRCUIT_BREAKER_HALF_OPEN_REQUESTS || '1',
         10,
       ),
+    },
+    gracefulDegradation: {
+      enabled:
+        process.env.GRACEFUL_DEGRADATION_ENABLED === 'false' ? false : true,
+      cacheFallback:
+        process.env.CACHE_FALLBACK_ENABLED === 'false' ? false : true,
+      staleDataTtl: parseInt(process.env.STALE_DATA_TTL || '86400', 10),
+      defaultValue: process.env.DEFAULT_VALUE_ON_UNAVAILABLE ?? null,
     },
   };
 };

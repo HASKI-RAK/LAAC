@@ -117,6 +117,12 @@ import { CoreModule } from '../core/core.module';
       help: 'Total number of successes tracked by circuit breaker',
       labelNames: ['service'],
     }),
+    // REQ-NF-003: Graceful degradation metrics
+    makeCounterProvider({
+      name: 'metric_graceful_degradation_total',
+      help: 'Total graceful degradation events by metric and reason',
+      labelNames: ['metricId', 'reason'],
+    }),
   ],
   exports: [MetricsRegistryService], // Export for use in other modules
 })
