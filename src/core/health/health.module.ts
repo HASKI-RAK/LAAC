@@ -11,6 +11,7 @@ import { RedisHealthIndicator } from './indicators/redis.health';
 import { LrsHealthIndicator } from './indicators/lrs.health';
 import { LRSHealthSchedulerService } from './services/lrs-health-scheduler.service';
 import { AdminModule } from '../../admin/admin.module';
+import { LoggerService } from '../logger/logger.service';
 
 /**
  * Health module
@@ -42,6 +43,7 @@ import { AdminModule } from '../../admin/admin.module';
     RedisHealthIndicator,
     LrsHealthIndicator,
     LRSHealthSchedulerService,
+    LoggerService, // Provide LoggerService directly to avoid circular dependency
   ],
   exports: [
     RedisHealthIndicator,
