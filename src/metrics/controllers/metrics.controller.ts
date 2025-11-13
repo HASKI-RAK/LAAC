@@ -1,28 +1,51 @@
 // Implements REQ-FN-003: Metrics Catalog Controller
-// REST endpoints for metrics catalog and discovery
+// Implements REQ-FN-005: Metrics Results Controller
+// REST endpoints for metrics catalog, discovery, and computation
 
-import { Controller, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+  BadRequestException,
+  ServiceUnavailableException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 import { RequireScopes } from '../../auth/decorators';
 import { MetricsService } from '../services/metrics.service';
-import { MetricsCatalogResponseDto, MetricDetailResponseDto } from '../dto';
+import { ComputationService } from '../services/computation.service';
+import {
+  MetricsCatalogResponseDto,
+  MetricDetailResponseDto,
+  MetricResultsQueryDto,
+  MetricResultResponseDto,
+} from '../dto';
+import { MetricParams } from '../../computation/interfaces/metric-params.interface';
 
 /**
  * Metrics Controller
- * Provides REST endpoints for metrics catalog and discovery
+ * Provides REST endpoints for metrics catalog, discovery, and computation
  * Implements REQ-FN-003: Metrics Catalog and Discovery
+ * Implements REQ-FN-005: Metrics Results Retrieval and Computation
  * Implements REQ-FN-023: Scope-based authorization (analytics:read)
  */
 @ApiTags('Metrics')
 @ApiBearerAuth('JWT-auth')
 @Controller('metrics')
 export class MetricsController {
-  constructor(private readonly metricsService: MetricsService) {}
+  constructor(
+    private readonly metricsService: MetricsService,
+    private readonly computationService: ComputationService,
+  ) {}
 
   /**
    * Get the complete metrics catalog
@@ -71,6 +94,11 @@ export class MetricsController {
   @Get(':id')
   @RequireScopes('analytics:read')
   @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'Unique metric identifier',
+    example: 'course-completion',
+  })
   @ApiOperation({
     summary: 'Get metric details by ID',
     description:
@@ -98,5 +126,121 @@ export class MetricsController {
   })
   getMetricById(@Param('id') id: string): MetricDetailResponseDto {
     return this.metricsService.getMetricById(id);
+  }
+
+  /**
+   * Compute and retrieve metric results
+   * Implements cache-aside pattern: check cache → compute if miss → store → return
+   *
+   * Implements REQ-FN-005: GET /api/v1/metrics/:id/results endpoint
+   *
+   * @param id - Metric identifier
+   * @param query - Query parameters (courseId, topicId, since, until, etc.)
+   * @returns Computed metric result with value, timestamp, and metadata
+   */
+  @Get(':id/results')
+  @RequireScopes('analytics:read')
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'Unique metric identifier',
+    example: 'course-completion',
+  })
+  @ApiOperation({
+    summary: 'Compute and retrieve metric results',
+    description:
+      'Computes a metric using the cache-aside pattern: checks cache first, ' +
+      'computes if cache miss, stores result, and returns. ' +
+      'Query parameters vary by metric (courseId, topicId, since, until). ' +
+      'Returns 404 if metric not found, 400 if parameters invalid, ' +
+      '503 if LRS unavailable, 500 if computation fails. ' +
+      'Requires analytics:read scope. ' +
+      'Implements REQ-FN-005: Metric Results Retrieval and Computation',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Metric computed successfully',
+    type: MetricResultResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid parameters',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Missing or invalid JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Missing required scope: analytics:read',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Metric ID not found in catalog',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Computation failed',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Service Unavailable - LRS unavailable',
+  })
+  async getMetricResults(
+    @Param('id') id: string,
+    @Query() query: MetricResultsQueryDto,
+  ): Promise<MetricResultResponseDto> {
+    try {
+      // Map DTO to MetricParams
+      const params: MetricParams = {
+        courseId: query.courseId,
+        topicId: query.topicId,
+        elementId: query.elementId,
+        userId: query.userId,
+        groupId: query.groupId,
+        since: query.since,
+        until: query.until,
+      };
+
+      // Call computation service
+      return await this.computationService.computeMetric(id, params);
+    } catch (error) {
+      // Handle specific error types
+      if (error instanceof Error) {
+        // Parameter validation errors → 400 Bad Request
+        if (
+          error.message.includes('required') ||
+          error.message.includes('invalid') ||
+          error.message.includes('must be')
+        ) {
+          throw new BadRequestException(error.message);
+        }
+
+        // LRS connection errors → 503 Service Unavailable
+        if (
+          error.message.includes('LRS') &&
+          (error.message.includes('unavailable') ||
+            error.message.includes('connection') ||
+            error.message.includes('timeout'))
+        ) {
+          throw new ServiceUnavailableException(
+            'Learning Record Store is currently unavailable',
+          );
+        }
+
+        // Computation errors → 500 Internal Server Error
+        if (
+          error.message.includes('computation') ||
+          error.message.includes('failed')
+        ) {
+          throw new InternalServerErrorException(
+            `Failed to compute metric: ${error.message}`,
+          );
+        }
+      }
+
+      // Re-throw NotFoundException as-is (404)
+      throw error;
+    }
   }
 }

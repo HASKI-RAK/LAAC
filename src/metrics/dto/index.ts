@@ -4,3 +4,5 @@ export * from './metric-query.dto';
 export * from './metric-catalog-item.dto';
 export * from './metrics-catalog-response.dto';
 export * from './metric-detail-response.dto';
+// REQ-FN-005: Metrics Results DTO exports
+export * from './metric-results.dto';
