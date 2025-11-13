@@ -5,8 +5,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from '../services/metrics.service';
+import { ComputationService } from '../services/computation.service';
 import { MetricsCatalogResponseDto, MetricDetailResponseDto } from '../dto';
 import { DashboardLevel } from '../dto/metric-query.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { ScopesGuard } from '../../auth/guards/scopes.guard';
 
 describe('REQ-FN-003: MetricsController', () => {
   let controller: MetricsController;
@@ -23,8 +26,19 @@ describe('REQ-FN-003: MetricsController', () => {
             getMetricById: jest.fn(),
           },
         },
+        {
+          provide: ComputationService,
+          useValue: {
+            computeMetric: jest.fn(),
+          },
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(ScopesGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<MetricsController>(MetricsController);
     service = module.get<MetricsService>(MetricsService);

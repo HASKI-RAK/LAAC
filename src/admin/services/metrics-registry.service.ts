@@ -63,6 +63,17 @@ export class MetricsRegistryService {
   }
 
   /**
+   * Record metric computation error (REQ-FN-005)
+   * Increments the HTTP errors counter with status 500.
+   * Note: metricId parameter kept for API consistency but not used as
+   * httpErrorsTotal only has 'status' label.
+   */
+  recordMetricComputationError(): void {
+    // Use HTTP errors total with standard status code
+    this.httpErrorsTotal.inc({ status: '500' });
+  }
+
+  /**
    * Record cache eviction/invalidation
    * Increments the cache evictions counter
    * @param count - Number of keys evicted (default: 1)
