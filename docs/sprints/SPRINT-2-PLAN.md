@@ -115,17 +115,19 @@ DataAccessModule
 
 ### Execution Plan (Corrections Applied)
 
-- Remaining stories: 6 (7.3; 8.1–8.2; 9.1–9.3)
-- Remaining points: 23 (3 + 4 + 4 + 3 + 5 + 4)
-- Current completion: ~46% (20/43 pts) based on completed stories (6.1, 6.2, 6.3, 7.1, 7.2)
+- Remaining stories: 4 (8.1–8.2; 9.2-remaining; 9.3)
+- Remaining points: 14 (4 + 4 + 2 + 4)
+- Current completion: ~67% (29/43 pts) based on completed stories (6.1, 6.2, 6.3, 7.1, 7.2, 7.3, 9.1, 9.2-partial)
+- Note: Story 9.2 split into foundation (3 pts, completed) and remaining work (2 pts, deferred)
 
 Implementation order
 
-- Phase 1 — Core API Completion
-  - Story 7.3: Metric Results Endpoint (GET /api/v1/metrics/:id/results) — cache-aside, validation, error handling
+- ~~Phase 1 — Core API Completion~~ ✅ COMPLETED
+  - ~~Story 7.3: Metric Results Endpoint (GET /api/v1/metrics/:id/results) — cache-aside, validation, error handling~~ ✅
 - Phase 2 — Multi‑LRS Support
-  - Story 9.1: Multi‑LRS config parsing/validation (supports JSON array and prefixed env vars; fail‑fast on invalid config)
-  - Story 9.2: Results endpoints + MetricResult DTO (extends 7.3 with instanceId filtering; also adds POST /api/v1/metrics/results for bulk)
+  - ~~Story 9.1: Multi‑LRS config parsing/validation (supports JSON array and prefixed env vars; fail‑fast on invalid config)~~ ✅
+  - ~~Story 9.2 (Foundation): Statement tagging, instance-aware caching, /api/v1/instances endpoint, instanceId parameter validation~~ ✅ **PARTIAL**
+  - Story 9.2 (Remaining): Multi-instance filtering (comma-separated, wildcard), aggregation, partial results (deferred - needs actual multi-LRS deployment)
   - Story 9.3: Health check alignment to /xapi/about with 2xx/401/403 considered reachable; add latency metrics
 - Phase 3 — Resilience (parallel with Phase 2 where feasible)
   - Story 8.1: Circuit breaker around LRS client (e.g., opossum; 5 failures → OPEN, ~30s recovery)
@@ -135,6 +137,7 @@ Notes
 
 - 9.2 builds on 7.3; implement 7.3 first to minimize rework.
 - 8.1–8.2 can run in parallel with Epic 9; prioritize 9.1 before 9.2/9.3.
+- **Story 9.2 Split Decision (Nov 13)**: Foundation completed (3 pts) with statement tagging, instance-aware caching, and instances API. Advanced filtering features (2 pts) deferred until actual multi-LRS deployment is available for testing. System architecture supports multi-LRS but only single instance currently deployed.
 
 ### Epic 6: Data Access & Caching Layer ([#49](https://github.com/HASKI-RAK/LAAC/issues/49))
 
@@ -294,15 +297,17 @@ Implement metric computation layer with extensible provider pattern.
 
 **Description**: Wire metrics results endpoint to compute & cache (REQ-FN-005)
 
+**Status**: ✅ COMPLETED — Implemented and merged (PR [#68](https://github.com/HASKI-RAK/LAAC/pull/68), merged Nov 13, 2025)
+
 **Acceptance Criteria**:
 
-- [ ] `GET /api/v1/metrics/:id/results` accepts query params (courseId, start, end, scope)
-- [ ] Scope enforcement: `analytics:read`
-- [ ] Cache-aside logic: check cache, compute if miss, store result
-- [ ] Response schema: { metricId, value, unit, timestamp, computedAt }
-- [ ] Error handling: invalid metricId (404), missing courseId (400), computation failure (500)
-- [ ] Metrics tracked: metric_computation_duration_seconds, cache_hit_ratio
-- [ ] E2E tests for cache behavior, auth, error cases
+- [x] `GET /api/v1/metrics/:id/results` accepts query params (courseId, start, end, scope)
+- [x] Scope enforcement: `analytics:read`
+- [x] Cache-aside logic: check cache, compute if miss, store result
+- [x] Response schema: { metricId, value, unit, timestamp, computedAt }
+- [x] Error handling: invalid metricId (404), missing courseId (400), computation failure (500)
+- [x] Metrics tracked: metric_computation_duration_seconds, cache_hit_ratio
+- [x] E2E tests for cache behavior, auth, error cases
 
 **Implementation Scope**:
 
@@ -310,7 +315,7 @@ Implement metric computation layer with extensible provider pattern.
 - `src/metrics/services/metrics.service.ts` — Computation orchestration
 - `test/metrics-results.e2e-spec.ts` — E2E tests
 
-**Story Points**: 3 | **Assigned To**: [#53](https://github.com/HASKI-RAK/LAAC/issues/53)
+**Story Points**: 3 | **Assigned To**: [#53](https://github.com/HASKI-RAK/LAAC/issues/53) | **PR**: [#68](https://github.com/HASKI-RAK/LAAC/pull/68)
 
 ---
 
@@ -381,11 +386,13 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 
 **Description**: Parse `LRS_INSTANCES` JSON and/or prefixed env vars, validate uniqueness and required fields, expose normalized config to DataAccess.
 
+**Status**: ✅ COMPLETED — Implemented and merged (PR [#69](https://github.com/HASKI-RAK/LAAC/pull/69), merged Nov 13, 2025)
+
 **Acceptance Criteria**:
 
-- [ ] `ConfigService` loads and validates instances on startup; fails fast on invalid config
-- [ ] Supports both JSON array and prefixed env patterns
-- [ ] Logs configured instance IDs (redacted) on startup; no credentials logged
+- [x] `ConfigService` loads and validates instances on startup; fails fast on invalid config
+- [x] Supports both JSON array and prefixed env patterns
+- [x] Logs configured instance IDs (redacted) on startup; no credentials logged
 
 **Implementation Scope**:
 
@@ -393,22 +400,43 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 - `src/core/config/config.interface.ts` — Add multi-instance types
 - `src/data-access/data-access.module.ts` — Provide `LRSClientFactory` with injected instances
 
-#### Story 9.2: Results Endpoints + MetricResult DTO (5 pts) — [#60]
+**Story Points**: 3 | **Assigned To**: [#61](https://github.com/HASKI-RAK/LAAC/issues/61) | **PR**: [#69](https://github.com/HASKI-RAK/LAAC/pull/69)
 
-**Description**: Implement `GET /api/v1/metrics/:id/results` and `POST /api/v1/metrics/results` returning normalized `MetricResult`. Add `instanceId` support (single, list, wildcard).
+#### Story 9.2: Multi-Instance Support Foundation (3 pts completed, 2 pts remaining) — [#60]
 
-**Acceptance Criteria**:
+**Description**: Implement multi-instance support foundation with statement tagging, instance-aware caching, and instances metadata API.
 
-- [ ] New endpoints documented in Swagger; protected by `analytics:read`
-- [ ] `MetricQueryDto` extended with `instanceId`
-- [ ] Response includes `generatedAt`, `filters`, `includedInstances`, `excludedInstances`, `aggregated`
+**Status**: ✅ **FOUNDATION COMPLETED** (PR [#70](https://github.com/HASKI-RAK/LAAC/pull/70), merged Nov 13, 2025) | ⚠️ **REMAINING WORK DEFERRED**
 
-**Implementation Scope**:
+**Completed (3 pts):**
 
-- `src/metrics/dto/metric-query.dto.ts` — Add `instanceId`
-- `src/metrics/dto/metric-result.dto.ts` — New DTO (normalized shape)
-- `src/metrics/controllers/metrics.controller.ts` — Add results routes
-- `src/metrics/services/metrics.service.ts` — Orchestration stub
+- [x] Statement tagging with `instanceId` from LRS config (ADR-008)
+- [x] Instance-aware cache keys: `cache:{metricId}:{instanceId}:{scope}:{filters}`
+- [x] `GET /api/v1/instances` endpoint returning instance metadata
+- [x] `instanceId` parameter added to metrics results with validation (`@Matches` decorator)
+- [x] Optional context validation (logs warnings on mismatch)
+- [x] 9 E2E tests passing for foundation features
+
+**Deferred (2 pts) - Requires Actual Multi-LRS Deployment:**
+
+- [ ] Multi-instance filtering: comma-separated IDs (`?instanceId=hs-ke,hs-rv`)
+- [ ] Wildcard filtering for all instances (`?instanceId=*`)
+- [ ] Cross-instance aggregation with metadata (`includedInstances`, `excludedInstances`)
+- [ ] Partial results handling when one LRS unavailable
+- [ ] Student ID isolation verification across multiple instances
+- [ ] 10 E2E tests documented as TODO (require multi-LRS environment)
+
+**Implementation Note**: Foundation provides complete architecture for multi-instance support with single-LRS validation. Remaining features require actual multi-LRS deployment configuration (multiple entries in `LRS_INSTANCES`), which is operational but not yet deployed.
+
+**Implementation Scope (Completed)**:
+
+- `src/data-access/clients/lrs.client.ts` — Statement tagging
+- `src/data-access/utils/cache-key.util.ts` — Instance-aware keys
+- `src/metrics/controllers/instances.controller.ts` — New endpoint
+- `src/metrics/services/instances.service.ts` — Instance metadata service
+- `src/metrics/dto/instance.dto.ts` — Instance response DTOs
+- `src/metrics/dto/metric-results.dto.ts` — Added `instanceId` parameter
+- `test/multi-instance.e2e-spec.ts` — E2E tests (9 passing, 10 todo)
 
 #### Story 9.3: Health Check Alignment to REQ-FN-025 (4 pts) — [#62]
 

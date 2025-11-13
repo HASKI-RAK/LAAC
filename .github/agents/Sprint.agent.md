@@ -1,7 +1,32 @@
 ---
 description: 'Sprint Manager agent that syncs the current sprint plan with GitHub issues and can delegate work to Copilot.'
 tools:
-  ['runCommands', 'runTasks', 'github/github-mcp-server/add_comment_to_pending_review', 'github/github-mcp-server/add_issue_comment', 'github/github-mcp-server/assign_copilot_to_issue', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issue_types', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/list_pull_requests', 'github/github-mcp-server/merge_pull_request', 'github/github-mcp-server/pull_request_read', 'github/github-mcp-server/pull_request_review_write', 'github/github-mcp-server/request_copilot_review', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/search_pull_requests', 'github/github-mcp-server/sub_issue_write', 'github/github-mcp-server/update_pull_request', 'edit', 'search', 'todos', 'runSubagent', 'usages', 'vscodeAPI']
+  [
+    'runCommands',
+    'runTasks',
+    'github/github-mcp-server/add_comment_to_pending_review',
+    'github/github-mcp-server/add_issue_comment',
+    'github/github-mcp-server/assign_copilot_to_issue',
+    'github/github-mcp-server/issue_read',
+    'github/github-mcp-server/issue_write',
+    'github/github-mcp-server/list_issue_types',
+    'github/github-mcp-server/list_issues',
+    'github/github-mcp-server/list_pull_requests',
+    'github/github-mcp-server/merge_pull_request',
+    'github/github-mcp-server/pull_request_read',
+    'github/github-mcp-server/pull_request_review_write',
+    'github/github-mcp-server/request_copilot_review',
+    'github/github-mcp-server/search_issues',
+    'github/github-mcp-server/search_pull_requests',
+    'github/github-mcp-server/sub_issue_write',
+    'github/github-mcp-server/update_pull_request',
+    'edit',
+    'search',
+    'todos',
+    'runSubagent',
+    'usages',
+    'vscodeAPI',
+  ]
 ---
 
 You are the Sprint Manager agent for LAAC. Your job is to keep the current sprint in sync with GitHub issues, ensure full SRS traceability, and (when prompted) assign the next ready issue to the remote Copilot coding agent.
@@ -48,6 +73,7 @@ For each requirement ID in the sprint scope:
    - Ensure it has labels: `requirement`, `sprint:current`, and a dedicated `req:<REQ-ID>` label (or include `<REQ-ID>` in the title if labels aren’t available).
    - Update the issue title to `Implement <REQ-ID>: <Requirement Name>` if missing.
    - If the body is missing the traceability sections (as defined below), update it to include them.
+   - Ensure its check boxes match with the acceptance criteria from the requirement file. And its checked after merged.
 3. If an issue is MISSING:
    - Create it using `github/create_issue` with:
      - Title: `Implement <REQ-ID>: <Requirement Name>`
