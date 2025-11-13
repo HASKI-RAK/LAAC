@@ -6,3 +6,5 @@ export * from './metrics-catalog-response.dto';
 export * from './metric-detail-response.dto';
 // REQ-FN-005: Metrics Results DTO exports
 export * from './metric-results.dto';
+// REQ-FN-017: Instance Metadata DTO exports
+export * from './instance.dto';
