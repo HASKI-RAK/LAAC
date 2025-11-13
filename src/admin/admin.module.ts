@@ -123,6 +123,23 @@ import { CoreModule } from '../core/core.module';
       help: 'Total graceful degradation events by metric and reason',
       labelNames: ['metricId', 'reason'],
     }),
+    // REQ-FN-025: LRS health monitoring metrics
+    makeGaugeProvider({
+      name: 'lrs_health_status',
+      help: 'LRS instance health status (1=healthy, 0=unhealthy)',
+      labelNames: ['instance_id'],
+    }),
+    makeHistogramProvider({
+      name: 'lrs_health_check_duration_seconds',
+      help: 'LRS health check duration in seconds',
+      labelNames: ['instance_id'],
+      buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5], // 10ms to 5s
+    }),
+    makeCounterProvider({
+      name: 'lrs_health_check_failures_total',
+      help: 'Total LRS health check failures by instance',
+      labelNames: ['instance_id'],
+    }),
   ],
   exports: [MetricsRegistryService], // Export for use in other modules
 })

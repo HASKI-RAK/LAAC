@@ -7,7 +7,7 @@ import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
-    CoreModule,
+    forwardRef(() => CoreModule), // Import CoreModule for LoggerService and LRSHealthSchedulerService
     forwardRef(() => AdminModule),
     HttpModule.register({
       maxRedirects: 5,

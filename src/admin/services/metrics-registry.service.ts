@@ -56,6 +56,12 @@ export class MetricsRegistryService {
     public readonly circuitBreakerSuccessesTotal: Counter<string>,
     @InjectMetric('metric_graceful_degradation_total')
     public readonly metricGracefulDegradationTotal: Counter<string>,
+    @InjectMetric('lrs_health_status')
+    public readonly lrsHealthStatus: Gauge<string>,
+    @InjectMetric('lrs_health_check_duration_seconds')
+    public readonly lrsHealthCheckDuration: Histogram<string>,
+    @InjectMetric('lrs_health_check_failures_total')
+    public readonly lrsHealthCheckFailuresTotal: Counter<string>,
   ) {}
 
   /**
@@ -247,5 +253,40 @@ export class MetricsRegistryService {
    */
   recordGracefulDegradation(metricId: string, reason: string): void {
     this.metricGracefulDegradationTotal.inc({ metricId, reason });
+  }
+
+  /**
+   * Record LRS instance health status
+   * Implements REQ-FN-025: LRS Instance Health Monitoring
+   * @param instanceId - LRS instance identifier
+   * @param status - Health status (1=healthy, 0=unhealthy)
+   */
+  recordLrsHealthStatus(instanceId: string, status: number): void {
+    this.lrsHealthStatus.set({ instance_id: instanceId }, status);
+  }
+
+  /**
+   * Record LRS health check duration
+   * Implements REQ-FN-025: LRS Instance Health Monitoring
+   * @param instanceId - LRS instance identifier
+   * @param durationSeconds - Duration in seconds
+   */
+  recordLrsHealthCheckDuration(
+    instanceId: string,
+    durationSeconds: number,
+  ): void {
+    this.lrsHealthCheckDuration.observe(
+      { instance_id: instanceId },
+      durationSeconds,
+    );
+  }
+
+  /**
+   * Record LRS health check failure
+   * Implements REQ-FN-025: LRS Instance Health Monitoring
+   * @param instanceId - LRS instance identifier
+   */
+  recordLrsHealthCheckFailure(instanceId: string): void {
+    this.lrsHealthCheckFailuresTotal.inc({ instance_id: instanceId });
   }
 }
