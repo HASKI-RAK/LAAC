@@ -138,8 +138,9 @@ export class HealthController {
   /**
    * Enhance health check result with per-instance LRS details
    * Implements REQ-FN-025: Per-instance LRS status breakdown
+   * Creates a new result object to avoid mutation side effects
    * @param result - Health check result from Terminus
-   * @returns Enhanced result with LRS instance details
+   * @returns New enhanced result with LRS instance details
    */
   private enhanceWithLrsDetails(result: HealthCheckResult): HealthCheckResult {
     const instancesHealth = this.lrsHealthScheduler.getAllInstancesHealth();
@@ -157,7 +158,15 @@ export class HealthController {
       };
     }
 
-    // Enhance the LRS component in the result
+    // Create a shallow copy of the result to avoid deep mutation
+    const enhancedResult: HealthCheckResult = {
+      status: result.status,
+      info: { ...result.info },
+      error: { ...result.error },
+      details: { ...result.details },
+    };
+
+    // Enhance the LRS component in the result copy
     const lrsComponent =
       result.details?.lrs || result.info?.lrs || result.error?.lrs;
 
@@ -168,18 +177,27 @@ export class HealthController {
         instances,
       };
 
-      // Update the result with enhanced LRS details
+      // Update the result copy with enhanced LRS details
       if (result.details?.lrs) {
-        result.details.lrs = enhancedLrs;
+        enhancedResult.details = {
+          ...enhancedResult.details,
+          lrs: enhancedLrs,
+        };
       }
       if (result.info?.lrs) {
-        result.info.lrs = enhancedLrs;
+        enhancedResult.info = {
+          ...enhancedResult.info,
+          lrs: enhancedLrs,
+        };
       }
       if (result.error?.lrs) {
-        result.error.lrs = enhancedLrs;
+        enhancedResult.error = {
+          ...enhancedResult.error,
+          lrs: enhancedLrs,
+        };
       }
     }
 
-    return result;
+    return enhancedResult;
   }
 }

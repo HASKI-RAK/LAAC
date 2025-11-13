@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  OnModuleInit,
-  Inject,
-  forwardRef,
-  Optional,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, catchError } from 'rxjs';
@@ -22,7 +16,6 @@ import { LoggerService } from '../../core/logger/logger.service';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
 import { Configuration } from '../../core/config/config.interface';
 import { getCorrelationId } from '../../core/logger/cls-context';
-import { LRSHealthSchedulerService } from '../../core/health/services/lrs-health-scheduler.service';
 
 /**
  * LRS Client
@@ -32,7 +25,7 @@ import { LRSHealthSchedulerService } from '../../core/health/services/lrs-health
  *
  * @remarks
  * - REQ-FN-002: xAPI Learning Record Store Integration
- * - REQ-FN-025: Registers with health scheduler for monitoring
+ * - REQ-FN-025: Provides health check interface via getInstanceHealth()
  * - Supports HTTP Basic Authentication (username:password or key:secret)
  * - Implements retry logic with exponential backoff (3 retries, 100-500ms)
  * - Propagates correlation IDs via X-Correlation-ID header
@@ -53,9 +46,6 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     private readonly logger: LoggerService,
     @Inject(forwardRef(() => MetricsRegistryService))
     private readonly metricsRegistry: MetricsRegistryService,
-    @Optional()
-    @Inject(forwardRef(() => LRSHealthSchedulerService))
-    private readonly healthScheduler?: LRSHealthSchedulerService,
   ) {
     // For now, use single LRS configuration from env
     // TODO: REQ-FN-026 will add multi-LRS support
@@ -87,15 +77,6 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       instanceId: this.instanceId,
       endpoint: this.config.endpoint,
     });
-
-    // REQ-FN-025: Register with health scheduler if available
-    if (this.healthScheduler) {
-      this.healthScheduler.registerLRSClient(this);
-      this.logger.log('LRS Client registered with health scheduler', {
-        context: 'LRSClient',
-        instanceId: this.instanceId,
-      });
-    }
   }
 
   get instanceId(): string {

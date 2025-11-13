@@ -11,6 +11,7 @@ import {
   LRSHealthStatus,
 } from '../../../data-access/interfaces/lrs.interface';
 import { Configuration } from '../../config/config.interface';
+import { LRSClient } from '../../../data-access/clients/lrs.client';
 
 /**
  * Per-instance health status tracking
@@ -34,7 +35,7 @@ export interface LRSInstanceHealthInfo {
  * - Per-instance status tracking with latency metrics
  * - Prometheus metrics export
  * - Structured logging (DEBUG for success, WARN for failures, INFO for transitions)
- * - Circuit breaker integration via health status
+ * - Uses dependency injection to discover LRS clients
  *
  * @remarks
  * - Uses GET /xapi/about endpoint for health checks (lightweight)
@@ -50,17 +51,21 @@ export class LRSHealthSchedulerService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly configService: ConfigService<Configuration>,
     private readonly metricsRegistry: MetricsRegistryService,
+    private readonly lrsClient: LRSClient,
   ) {
     this.logger.setContext('LRSHealthScheduler');
   }
 
   onModuleInit() {
     this.logger.log('LRS Health Scheduler initialized');
+
+    // Register the injected LRS client
+    // REQ-FN-025: Discover LRS clients via dependency injection
+    this.registerLRSClient(this.lrsClient);
   }
 
   /**
    * Register LRS client for health monitoring
-   * Called by DataAccessModule when LRS clients are created
    * @param client - LRS client instance to monitor
    */
   registerLRSClient(client: ILRSClient): void {
@@ -97,7 +102,30 @@ export class LRSHealthSchedulerService implements OnModuleInit {
       this.checkInstanceHealth(client),
     );
 
-    await Promise.allSettled(healthChecks);
+    const results = await Promise.allSettled(healthChecks);
+
+    // REQ-FN-025: Log summary of batch results for operational visibility
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
+    if (failed > 0) {
+      const failedDetails = results
+        .map((r, idx) =>
+          r.status === 'rejected'
+            ? {
+                instanceId: this.lrsClients[idx].instanceId,
+                reason: r.reason as string,
+              }
+            : null,
+        )
+        .filter(Boolean);
+      this.logger.warn(
+        `LRS health check batch: ${succeeded} succeeded, ${failed} failed`,
+        { failedDetails },
+      );
+    } else {
+      this.logger.debug(`LRS health check batch: all ${succeeded} succeeded`);
+    }
   }
 
   /**

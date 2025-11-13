@@ -19,7 +19,6 @@ import { AuthModule } from '../auth/auth.module';
     // No PrometheusModule registration here; handled globally in CoreModule (REQ-FN-021)
     forwardRef(() => DataAccessModule), // Import CacheService for cache invalidation
     AuthModule, // Import auth guards for cache controller
-    // CoreModule is already imported globally - no need to import again
   ],
   controllers: [
     CacheController, // REQ-FN-007: Cache invalidation admin endpoint

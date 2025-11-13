@@ -11,7 +11,7 @@ import { RedisHealthIndicator } from './indicators/redis.health';
 import { LrsHealthIndicator } from './indicators/lrs.health';
 import { LRSHealthSchedulerService } from './services/lrs-health-scheduler.service';
 import { AdminModule } from '../../admin/admin.module';
-import { LoggerService } from '../logger/logger.service';
+import { DataAccessModule } from '../../data-access/data-access.module';
 
 /**
  * Health module
@@ -37,13 +37,14 @@ import { LoggerService } from '../logger/logger.service';
     ScheduleModule.forRoot(),
     // AdminModule for MetricsRegistryService
     forwardRef(() => AdminModule),
+    // DataAccessModule for LRSClient
+    forwardRef(() => DataAccessModule),
   ],
   controllers: [HealthController],
   providers: [
     RedisHealthIndicator,
     LrsHealthIndicator,
     LRSHealthSchedulerService,
-    LoggerService, // Provide LoggerService directly to avoid circular dependency
   ],
   exports: [
     RedisHealthIndicator,
