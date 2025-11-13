@@ -90,7 +90,7 @@ export interface GracefulDegradationConfig {
   enabled: boolean; // Enable graceful degradation strategies
   cacheFallback: boolean; // Enable cache fallback (stale data)
   staleDataTtl: number; // Max age for stale cache in seconds
-  defaultValue: any; // Default value when data unavailable
+  defaultValue: unknown; // Default value when data unavailable
 }
 
 /**

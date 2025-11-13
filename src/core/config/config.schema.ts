@@ -187,7 +187,8 @@ export const configValidationSchema = Joi.object({
       'Maximum age for stale cache data in seconds (default: 86400, 24 hours)',
     ),
 
-  DEFAULT_VALUE_ON_UNAVAILABLE: Joi.any()
+  DEFAULT_VALUE_ON_UNAVAILABLE: Joi.alternatives()
+    .try(Joi.string(), Joi.number(), Joi.boolean(), Joi.valid(null))
     .default(null)
     .description(
       'Default value to return when data unavailable (default: null)',

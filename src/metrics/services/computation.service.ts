@@ -69,10 +69,10 @@ export class ComputationService {
     this.logger.setContext('ComputationService');
 
     // REQ-FN-017, REQ-NF-003: Initialize circuit breaker for LRS
+    // Circuit breaker reads configuration from configService internally
     this.circuitBreaker = new CircuitBreaker(
       {
         name: 'lrs-client',
-        // Config is injected via constructor
       },
       this.logger,
       this.configService,
@@ -197,11 +197,47 @@ export class ComputationService {
             );
 
           // Return degraded result with HTTP 200
+          // Robustly extract values from fallbackResult.value which may be:
+          // 1. A complete MetricResultResponseDto object (from cache)
+          // 2. A primitive value (number, string, etc.)
+          // 3. null/undefined
+          let degradedMetricId = metricId;
+          let degradedValue:
+            | number
+            | string
+            | boolean
+            | Record<string, unknown>
+            | unknown[]
+            | null = null;
+          let degradedTimestamp = new Date().toISOString();
+
+          if (
+            fallbackResult.value &&
+            typeof fallbackResult.value === 'object' &&
+            'value' in fallbackResult.value
+          ) {
+            // fallbackResult.value is a MetricResultResponseDto with nested value
+            const cachedDto = fallbackResult.value;
+            degradedMetricId = cachedDto.metricId ?? metricId;
+            degradedValue = cachedDto.value ?? null;
+            degradedTimestamp = cachedDto.timestamp ?? new Date().toISOString();
+          } else if (
+            fallbackResult.value !== null &&
+            fallbackResult.value !== undefined
+          ) {
+            // fallbackResult.value is a primitive or simple value
+            degradedValue = fallbackResult.value as
+              | number
+              | string
+              | boolean
+              | Record<string, unknown>
+              | unknown[];
+          }
+
           const degradedResponse: MetricResultResponseDto = {
-            metricId: fallbackResult.value?.metricId ?? metricId,
-            value: fallbackResult.value?.value ?? null,
-            timestamp:
-              fallbackResult.value?.timestamp ?? new Date().toISOString(),
+            metricId: degradedMetricId,
+            value: degradedValue,
+            timestamp: degradedTimestamp,
             computationTime: Date.now() - startTime,
             fromCache: fallbackResult.fromCache ?? false,
             status: fallbackResult.status,

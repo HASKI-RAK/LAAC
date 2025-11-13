@@ -9,6 +9,15 @@ import { ConfigService } from '@nestjs/config';
 import { Configuration } from '../config/config.interface';
 
 /**
+ * Cache entry structure for stale data retrieval
+ * REQ-NF-003: Standardized cache entry format
+ */
+interface CacheEntry<T> {
+  timestamp?: string;
+  value?: T;
+}
+
+/**
  * Fallback result with degradation metadata
  * REQ-NF-003: Graceful degradation response format
  */
@@ -133,11 +142,8 @@ export class FallbackHandler {
   ): Promise<FallbackResult<T> | null> {
     try {
       // Get cached value ignoring expiry (implemented in CacheService)
-      // Type annotation: cached could be an object with timestamp and value, or just the value
-      const cached = await this.cacheService.getIgnoringExpiry<{
-        timestamp?: string;
-        value?: T;
-      }>(cacheKey);
+      const cached =
+        await this.cacheService.getIgnoringExpiry<CacheEntry<T>>(cacheKey);
 
       if (!cached) {
         this.logger.debug('No stale cache found', { cacheKey });
@@ -155,8 +161,19 @@ export class FallbackHandler {
         ageSeconds,
       });
 
-      // Extract value - could be nested or direct
-      const resultValue: T | null = cached.value ?? (cached as T);
+      // Extract value with clear precedence: cached.value if present, otherwise treat cached as value
+      let resultValue: T | null = null;
+      if (typeof cached.value !== 'undefined') {
+        // Cached data has explicit value property
+        resultValue = cached.value;
+      } else if (
+        typeof cached === 'object' &&
+        cached !== null &&
+        !('timestamp' in cached)
+      ) {
+        // Cached data is the value itself (not wrapped in CacheEntry structure)
+        resultValue = cached as unknown as T;
+      }
 
       return {
         value: resultValue,
