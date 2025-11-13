@@ -1,6 +1,3 @@
-// Implements REQ-FN-002: LRS Client Implementation
-// xAPI-compliant HTTP client for querying Learning Record Store
-
 import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -28,6 +25,7 @@ import { getCorrelationId } from '../../core/logger/cls-context';
  *
  * @remarks
  * - REQ-FN-002: xAPI Learning Record Store Integration
+ * - REQ-FN-025: Provides health check interface via getInstanceHealth()
  * - Supports HTTP Basic Authentication (username:password or key:secret)
  * - Implements retry logic with exponential backoff (3 retries, 100-500ms)
  * - Propagates correlation IDs via X-Correlation-ID header

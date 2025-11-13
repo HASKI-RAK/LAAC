@@ -1,4 +1,5 @@
 // REQ-FN-021: Unit tests for Metrics Registry Service
+// REQ-FN-025: LRS Health Monitoring Metrics
 import { Test, TestingModule } from '@nestjs/testing';
 import { Counter, Histogram, Gauge } from 'prom-client';
 import { MetricsRegistryService } from './metrics-registry.service';
@@ -21,6 +22,9 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
   let mockCircuitBreakerCurrentState: jest.Mocked<Gauge<string>>;
   let mockCircuitBreakerFailuresTotal: jest.Mocked<Counter<string>>;
   let mockCircuitBreakerSuccessesTotal: jest.Mocked<Counter<string>>;
+  let mockLrsHealthStatus: jest.Mocked<Gauge<string>>;
+  let mockLrsHealthCheckDuration: jest.Mocked<Histogram<string>>;
+  let mockLrsHealthCheckFailuresTotal: jest.Mocked<Counter<string>>;
 
   beforeEach(async () => {
     // Create mock metrics
@@ -93,6 +97,18 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       inc: jest.fn(),
     } as unknown as jest.Mocked<Counter<string>>;
 
+    mockLrsHealthStatus = {
+      set: jest.fn(),
+    } as unknown as jest.Mocked<Gauge<string>>;
+
+    mockLrsHealthCheckDuration = {
+      observe: jest.fn(),
+    } as unknown as jest.Mocked<Histogram<string>>;
+
+    mockLrsHealthCheckFailuresTotal = {
+      inc: jest.fn(),
+    } as unknown as jest.Mocked<Counter<string>>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -116,6 +132,9 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
               mockCircuitBreakerFailuresTotal,
               mockCircuitBreakerSuccessesTotal,
               mockGracefulDegradationTotal,
+              mockLrsHealthStatus,
+              mockLrsHealthCheckDuration,
+              mockLrsHealthCheckFailuresTotal,
             );
           },
         },
@@ -254,6 +273,34 @@ describe('REQ-FN-021: MetricsRegistryService', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockCircuitBreakerSuccessesTotal.inc).toHaveBeenCalledWith({
         service: 'redis',
+      });
+    });
+  });
+
+  describe('LRS Health Monitoring Metrics (REQ-FN-025)', () => {
+    it('should record LRS health status', () => {
+      service.recordLrsHealthStatus('hs-ke', 1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockLrsHealthStatus.set).toHaveBeenCalledWith(
+        { instance_id: 'hs-ke' },
+        1,
+      );
+    });
+
+    it('should record LRS health check duration', () => {
+      service.recordLrsHealthCheckDuration('hs-ke', 0.045);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockLrsHealthCheckDuration.observe).toHaveBeenCalledWith(
+        { instance_id: 'hs-ke' },
+        0.045,
+      );
+    });
+
+    it('should record LRS health check failure', () => {
+      service.recordLrsHealthCheckFailure('hs-rv');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockLrsHealthCheckFailuresTotal.inc).toHaveBeenCalledWith({
+        instance_id: 'hs-rv',
       });
     });
   });

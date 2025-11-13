@@ -13,14 +13,12 @@ import { CacheAdminService } from './services/cache.admin.service';
 import { CacheController } from './controllers/cache.controller';
 import { DataAccessModule } from '../data-access/data-access.module';
 import { AuthModule } from '../auth/auth.module';
-import { CoreModule } from '../core/core.module';
 
 @Module({
   imports: [
     // No PrometheusModule registration here; handled globally in CoreModule (REQ-FN-021)
     forwardRef(() => DataAccessModule), // Import CacheService for cache invalidation
     AuthModule, // Import auth guards for cache controller
-    CoreModule, // Import CoreModule for LoggerService
   ],
   controllers: [
     CacheController, // REQ-FN-007: Cache invalidation admin endpoint
@@ -122,6 +120,23 @@ import { CoreModule } from '../core/core.module';
       name: 'metric_graceful_degradation_total',
       help: 'Total graceful degradation events by metric and reason',
       labelNames: ['metricId', 'reason'],
+    }),
+    // REQ-FN-025: LRS health monitoring metrics
+    makeGaugeProvider({
+      name: 'lrs_health_status',
+      help: 'LRS instance health status (1=healthy, 0=unhealthy)',
+      labelNames: ['instance_id'],
+    }),
+    makeHistogramProvider({
+      name: 'lrs_health_check_duration_seconds',
+      help: 'LRS health check duration in seconds',
+      labelNames: ['instance_id'],
+      buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5], // 10ms to 5s
+    }),
+    makeCounterProvider({
+      name: 'lrs_health_check_failures_total',
+      help: 'Total LRS health check failures by instance',
+      labelNames: ['instance_id'],
     }),
   ],
   exports: [MetricsRegistryService], // Export for use in other modules

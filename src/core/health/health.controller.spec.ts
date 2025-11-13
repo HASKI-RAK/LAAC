@@ -1,4 +1,5 @@
 // REQ-NF-002: Health/Readiness Endpoints - Unit Tests
+// REQ-FN-025: LRS Instance Health Monitoring - Unit Tests
 // Tests for HealthController liveness and readiness probes
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -7,18 +8,31 @@ import { HealthCheckService, HealthCheckResult } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 import { RedisHealthIndicator } from './indicators/redis.health';
 import { LrsHealthIndicator } from './indicators/lrs.health';
+import {
+  LRSHealthSchedulerService,
+  LRSInstanceHealthInfo,
+} from './services/lrs-health-scheduler.service';
 
 describe('REQ-NF-002: HealthController', () => {
   let controller: HealthController;
   let healthCheckService: HealthCheckService;
   let redisHealthIndicator: RedisHealthIndicator;
   let lrsHealthIndicator: LrsHealthIndicator;
+  let lrsHealthScheduler: LRSHealthSchedulerService;
 
   const mockHealthCheckResult: HealthCheckResult = {
     status: 'ok',
-    info: {},
+    info: {
+      lrs: {
+        status: 'up',
+      },
+    },
     error: {},
-    details: {},
+    details: {
+      lrs: {
+        status: 'up',
+      },
+    },
   };
 
   beforeEach(async () => {
@@ -44,6 +58,15 @@ describe('REQ-NF-002: HealthController', () => {
           },
         },
         {
+          provide: LRSHealthSchedulerService,
+          useValue: {
+            getAllInstancesHealth: jest
+              .fn()
+              .mockReturnValue(new Map<string, LRSInstanceHealthInfo>()),
+            getOverallStatus: jest.fn().mockReturnValue('healthy'),
+          },
+        },
+        {
           provide: ConfigService,
           useValue: {
             get: jest.fn(),
@@ -57,6 +80,11 @@ describe('REQ-NF-002: HealthController', () => {
     redisHealthIndicator =
       module.get<RedisHealthIndicator>(RedisHealthIndicator);
     lrsHealthIndicator = module.get<LrsHealthIndicator>(LrsHealthIndicator);
+    lrsHealthScheduler = module.get<LRSHealthSchedulerService>(
+      LRSHealthSchedulerService,
+    );
+    // Mark as used to avoid lint errors
+    expect(lrsHealthScheduler).toBeDefined();
   });
 
   it('should be defined', () => {
