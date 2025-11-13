@@ -6,11 +6,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { ComputationService } from './computation.service';
 import { CacheService } from '../../data-access/services/cache.service';
 import { LRSClient } from '../../data-access/clients/lrs.client';
 import { LoggerService } from '../../core/logger';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
+import { FallbackHandler } from '../../core/resilience';
 import { IMetricComputation } from '../../computation/interfaces/metric.interface';
 import { MetricParams } from '../../computation/interfaces/metric-params.interface';
 import { MetricResult } from '../../computation/interfaces/metric-result.interface';
@@ -69,12 +71,35 @@ describe('REQ-FN-005: ComputationService', () => {
             recordCacheMiss: jest.fn(),
             recordMetricComputation: jest.fn(),
             recordMetricComputationError: jest.fn(),
+            recordCircuitBreakerFailure: jest.fn(),
+            recordCircuitBreakerSuccess: jest.fn(),
+            recordCircuitBreakerOpen: jest.fn(),
+            recordCircuitBreakerStateTransition: jest.fn(),
+            setCircuitBreakerState: jest.fn(),
           },
         },
         {
           provide: ModuleRef,
           useValue: {
             get: jest.fn(),
+          },
+        },
+        {
+          provide: FallbackHandler,
+          useValue: {
+            executeFallback: jest.fn(),
+            isEnabled: jest.fn().mockReturnValue(true),
+            isCacheFallbackEnabled: jest.fn().mockReturnValue(true),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue({
+              threshold: 5,
+              timeout: 30000,
+              halfOpenRequests: 1,
+            }),
           },
         },
       ],

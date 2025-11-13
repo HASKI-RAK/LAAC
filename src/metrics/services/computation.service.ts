@@ -1,5 +1,6 @@
 // Implements REQ-FN-005: Metric Computation Service with Cache-Aside Pattern
 // Implements REQ-FN-017: Multi-instance support with instance-aware caching
+// Implements REQ-NF-003: Graceful Degradation with Circuit Breaker
 // Orchestrates metric computation pipeline: cache check → provider load → LRS query → compute → cache store
 
 import {
@@ -9,8 +10,15 @@ import {
   ServiceUnavailableException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ModuleRef } from '@nestjs/core';
 import { LoggerService } from '../../core/logger';
+import { Configuration } from '../../core/config/config.interface';
+import {
+  CircuitBreaker,
+  CircuitBreakerOpenError,
+  FallbackHandler,
+} from '../../core/resilience';
 import { CacheService } from '../../data-access/services/cache.service';
 import { LRSClient } from '../../data-access/clients/lrs.client';
 import { xAPIQueryFilters } from '../../data-access/interfaces/lrs.interface';
@@ -23,10 +31,12 @@ import { generateCacheKey } from '../../data-access/utils/cache-key.util';
 /**
  * Computation Service
  * Implements REQ-FN-005: Metric computation pipeline with cache-aside pattern
+ * Implements REQ-NF-003: Graceful degradation with fallback strategies
  *
  * @remarks
  * - Orchestrates full computation pipeline: cache → provider → LRS → compute → store
  * - Implements cache-aside pattern per REQ-FN-006
+ * - Implements graceful degradation per REQ-NF-003
  * - Loads metric providers dynamically via NestJS ModuleRef
  * - Records Prometheus metrics for observability
  * - Handles errors gracefully with descriptive messages
@@ -37,21 +47,37 @@ import { generateCacheKey } from '../../data-access/utils/cache-key.util';
  * 2. Check cache for existing result (cache hit → return immediately)
  * 3. Load metric provider by ID (not found → 404)
  * 4. Validate parameters via provider.validateParams() (invalid → 400)
- * 5. Query LRS with filters (unavailable → 503)
- * 6. Call provider.compute(params, lrsData) (error → 500)
- * 7. Store result in cache with TTL
- * 8. Return result with metadata
+ * 5. Query LRS with circuit breaker protection (unavailable → fallback)
+ * 6. On CircuitBreakerOpenError: Try cache fallback → default value
+ * 7. Call provider.compute(params, lrsData) (error → 500)
+ * 8. Store result in cache with TTL
+ * 9. Return result with metadata
  */
 @Injectable()
 export class ComputationService {
+  private readonly circuitBreaker: CircuitBreaker;
+
   constructor(
     private readonly moduleRef: ModuleRef,
     private readonly cacheService: CacheService,
     private readonly lrsClient: LRSClient,
     private readonly logger: LoggerService,
     private readonly metricsRegistry: MetricsRegistryService,
+    private readonly fallbackHandler: FallbackHandler,
+    private readonly configService: ConfigService<Configuration>,
   ) {
     this.logger.setContext('ComputationService');
+
+    // REQ-FN-017, REQ-NF-003: Initialize circuit breaker for LRS
+    // Circuit breaker reads configuration from configService internally
+    this.circuitBreaker = new CircuitBreaker(
+      {
+        name: 'lrs-client',
+      },
+      this.logger,
+      this.configService,
+      this.metricsRegistry,
+    );
   }
 
   /**
@@ -134,12 +160,99 @@ export class ComputationService {
         }
       }
 
-      // Step 5: Query LRS (REQ-FN-002: LRS integration)
+      // Step 5: Query LRS with circuit breaker protection (REQ-FN-017, REQ-NF-003)
       const lrsFilters = this.buildLRSFilters(params);
       let statements;
       try {
-        statements = await this.lrsClient.queryStatements(lrsFilters);
+        // REQ-NF-003: Wrap LRS query with circuit breaker
+        statements = await this.circuitBreaker.execute(() =>
+          this.lrsClient.queryStatements(lrsFilters),
+        );
       } catch (error) {
+        // REQ-NF-003: Handle circuit breaker open error with graceful degradation
+        if (error instanceof CircuitBreakerOpenError) {
+          this.logger.warn('Circuit breaker open, attempting fallback', {
+            metricId,
+            serviceName: error.serviceName,
+            timeUntilRetry: error.timeUntilRetry,
+          });
+
+          // Check if graceful degradation is enabled
+          if (!this.fallbackHandler.isEnabled()) {
+            throw new ServiceUnavailableException(
+              'Learning Record Store is currently unavailable',
+            );
+          }
+
+          // REQ-NF-003: Execute fallback strategy
+          const fallbackResult =
+            await this.fallbackHandler.executeFallback<MetricResultResponseDto>(
+              {
+                metricId,
+                cacheKey,
+                enableCacheFallback:
+                  this.fallbackHandler.isCacheFallbackEnabled(),
+                defaultValue: null,
+              },
+            );
+
+          // Return degraded result with HTTP 200
+          // Robustly extract values from fallbackResult.value which may be:
+          // 1. A complete MetricResultResponseDto object (from cache)
+          // 2. A primitive value (number, string, etc.)
+          // 3. null/undefined
+          let degradedMetricId = metricId;
+          let degradedValue:
+            | number
+            | string
+            | boolean
+            | Record<string, unknown>
+            | unknown[]
+            | null = null;
+          let degradedTimestamp = new Date().toISOString();
+
+          if (
+            fallbackResult.value &&
+            typeof fallbackResult.value === 'object' &&
+            'value' in fallbackResult.value
+          ) {
+            // fallbackResult.value is a MetricResultResponseDto with nested value
+            const cachedDto = fallbackResult.value;
+            degradedMetricId = cachedDto.metricId ?? metricId;
+            degradedValue = cachedDto.value ?? null;
+            degradedTimestamp = cachedDto.timestamp ?? new Date().toISOString();
+          } else if (
+            fallbackResult.value !== null &&
+            fallbackResult.value !== undefined
+          ) {
+            // fallbackResult.value is a primitive or simple value
+            degradedValue = fallbackResult.value as
+              | number
+              | string
+              | boolean
+              | Record<string, unknown>
+              | unknown[];
+          }
+
+          const degradedResponse: MetricResultResponseDto = {
+            metricId: degradedMetricId,
+            value: degradedValue,
+            timestamp: degradedTimestamp,
+            computationTime: Date.now() - startTime,
+            fromCache: fallbackResult.fromCache ?? false,
+            status: fallbackResult.status,
+            warning: fallbackResult.warning,
+            error: fallbackResult.error,
+            cause: fallbackResult.cause,
+            cachedAt: fallbackResult.cachedAt,
+            age: fallbackResult.age,
+            dataAvailable: fallbackResult.dataAvailable,
+          };
+
+          return degradedResponse;
+        }
+
+        // Handle other LRS errors
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         this.logger.error('LRS query failed', error as Error);

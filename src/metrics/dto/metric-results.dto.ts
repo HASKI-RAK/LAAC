@@ -114,17 +114,25 @@ export class MetricResultResponseDto {
 
   @ApiProperty({
     description:
-      'Computed metric value (primarily numeric; complex results in metadata)',
+      'Computed metric value (primarily numeric; complex results in metadata). Null when data unavailable (REQ-NF-003)',
     example: 85.5,
+    nullable: true,
     oneOf: [
       { type: 'number' },
       { type: 'string' },
       { type: 'boolean' },
       { type: 'object' },
       { type: 'array' },
+      { type: 'null' },
     ],
   })
-  value!: number | string | boolean | Record<string, unknown> | unknown[];
+  value!:
+    | number
+    | string
+    | boolean
+    | Record<string, unknown>
+    | unknown[]
+    | null;
 
   @ApiProperty({
     description: 'Timestamp when the metric was computed (ISO 8601)',
@@ -181,4 +189,58 @@ export class MetricResultResponseDto {
     type: [String],
   })
   excludedInstances?: string[];
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Metric availability status: available (normal), degraded (stale cache), unavailable (no data). REQ-NF-003',
+    example: 'available',
+    enum: ['available', 'degraded', 'unavailable'],
+  })
+  status?: 'available' | 'degraded' | 'unavailable';
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Warning message for degraded state (e.g., stale data). REQ-NF-003',
+    example: 'Data is stale; current service unavailable',
+  })
+  warning?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Error message for unavailable state (user-friendly). REQ-NF-003',
+    example: 'Data currently unavailable; please try again later',
+  })
+  error?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Cause of degradation or unavailability. REQ-NF-003',
+    example: 'LRS_UNAVAILABLE',
+  })
+  cause?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Timestamp when cached data was originally created. REQ-NF-003',
+    example: '2025-11-12T10:30:00Z',
+  })
+  cachedAt?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Age of cached data in seconds. REQ-NF-003',
+    example: 3600,
+  })
+  age?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Whether data is available. REQ-NF-003',
+    example: true,
+  })
+  dataAvailable?: boolean;
 }

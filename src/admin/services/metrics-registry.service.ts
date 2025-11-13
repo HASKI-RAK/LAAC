@@ -9,6 +9,7 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
  * Metrics Registry Service
  * Implements REQ-FN-021: Custom metrics for caching, computation, and LRS queries
  * Implements REQ-FN-017: Circuit breaker metrics
+ * Implements REQ-NF-003: Graceful degradation metrics
  *
  * This service provides centralized access to custom Prometheus metrics:
  * - Cache hit/miss counters per metric ID (use for calculating hit ratio)
@@ -16,6 +17,7 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
  * - LRS query duration
  * - HTTP request metrics (requests, duration, errors, active requests)
  * - Circuit breaker metrics (state, transitions, failures, successes)
+ * - Graceful degradation metrics (fallback events by reason)
  */
 @Injectable()
 export class MetricsRegistryService {
@@ -52,6 +54,8 @@ export class MetricsRegistryService {
     public readonly circuitBreakerFailuresTotal: Counter<string>,
     @InjectMetric('circuit_breaker_successes_total')
     public readonly circuitBreakerSuccessesTotal: Counter<string>,
+    @InjectMetric('metric_graceful_degradation_total')
+    public readonly metricGracefulDegradationTotal: Counter<string>,
   ) {}
 
   /**
@@ -233,5 +237,15 @@ export class MetricsRegistryService {
    */
   recordCircuitBreakerSuccess(serviceName: string): void {
     this.circuitBreakerSuccessesTotal.inc({ service: serviceName });
+  }
+
+  /**
+   * Record graceful degradation event
+   * Implements REQ-NF-003: Graceful degradation observability
+   * @param metricId - Metric identifier
+   * @param reason - Degradation reason (cache_fallback, default_value, lrs_unavailable)
+   */
+  recordGracefulDegradation(metricId: string, reason: string): void {
+    this.metricGracefulDegradationTotal.inc({ metricId, reason });
   }
 }

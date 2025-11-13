@@ -83,6 +83,17 @@ export interface CircuitBreakerConfig {
 }
 
 /**
+ * Graceful degradation configuration interface
+ * Implements REQ-NF-003: Graceful Degradation
+ */
+export interface GracefulDegradationConfig {
+  enabled: boolean; // Enable graceful degradation strategies
+  cacheFallback: boolean; // Enable cache fallback (stale data)
+  staleDataTtl: number; // Max age for stale cache in seconds
+  defaultValue: unknown; // Default value when data unavailable
+}
+
+/**
  * Complete application configuration interface
  * Aggregates all configuration sections
  */
@@ -94,4 +105,5 @@ export interface Configuration {
   log: LogConfig;
   rateLimit: RateLimitConfig;
   circuitBreaker: CircuitBreakerConfig;
+  gracefulDegradation: GracefulDegradationConfig;
 }

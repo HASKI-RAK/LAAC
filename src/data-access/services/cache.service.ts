@@ -328,4 +328,50 @@ export class CacheService
       return false;
     }
   }
+
+  /**
+   * Retrieve a value from cache ignoring expiry (for fallback strategies)
+   * Implements REQ-NF-003: Cache fallback strategy
+   *
+   * @param key - Cache key to retrieve
+   * @returns Cached value or null if not found or error occurred
+   *
+   * @remarks
+   * - Used for graceful degradation when primary services fail
+   * - Retrieves data even if TTL has expired
+   * - Does not throw on Redis failure, returns null
+   * - Redis automatically removes expired keys, so this may not find truly expired data
+   *   unless Redis hasn't run its eviction policy yet
+   */
+  async getIgnoringExpiry<T>(key: string): Promise<T | null> {
+    const startTime = Date.now();
+    try {
+      // In Redis, once a key expires, it's no longer accessible even with GET
+      // However, we can try to get the key - if it exists, it means either:
+      // 1. It hasn't expired yet
+      // 2. Redis hasn't evicted it yet (passive expiry)
+      const value = await this.redis.get(key);
+      const duration = (Date.now() - startTime) / 1000;
+
+      this.metricsRegistry.recordCacheOperation('get', duration);
+
+      if (value === null) {
+        this.logger.debug('Cache miss (stale attempt)', { key });
+        return null;
+      }
+
+      const parsed = JSON.parse(value) as T;
+      this.logger.debug('Cache hit (stale attempt)', { key });
+      return parsed;
+    } catch (error) {
+      const duration = (Date.now() - startTime) / 1000;
+      this.metricsRegistry.recordCacheOperation('get', duration);
+
+      this.logger.warn('Cache get operation failed (stale attempt)', {
+        key,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
 }
