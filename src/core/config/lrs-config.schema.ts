@@ -5,25 +5,21 @@ import * as Joi from 'joi';
 import { LRSInstance } from './lrs-config.interface';
 
 /**
- * Joi schema for basic authentication (username/password or key/secret)
- * REQ-FN-026: Supports both username/password and key/secret aliases
- */
-const basicAuthSchema = Joi.object({
-  type: Joi.string().valid('basic').required(),
-}).or('username', 'key'); // At least one of username or key must be present
-
-/**
  * Complete basic auth with username/password
+ * REQ-FN-026: Standard basic authentication
  */
-const basicAuthUsernamePasswordSchema = basicAuthSchema.keys({
+const basicAuthUsernamePasswordSchema = Joi.object({
+  type: Joi.string().valid('basic').required(),
   username: Joi.string().required(),
   password: Joi.string().required(),
 });
 
 /**
  * Complete basic auth with key/secret (alias for username/password)
+ * REQ-FN-026: Alternative naming, normalized to username/password internally
  */
-const basicAuthKeySecretSchema = basicAuthSchema.keys({
+const basicAuthKeySecretSchema = Joi.object({
+  type: Joi.string().valid('basic').required(),
   key: Joi.string().required(),
   secret: Joi.string().required(),
 });
@@ -62,9 +58,9 @@ export const lrsAuthSchema = Joi.alternatives().try(
 export const lrsInstanceSchema = Joi.object({
   id: Joi.string()
     .required()
-    .pattern(/^[a-z0-9-]+$/)
+    .pattern(/^[a-z0-9]+(-[a-z0-9]+)*$/)
     .description(
-      'Unique instance identifier (lowercase alphanumeric with hyphens)',
+      'Unique instance identifier (lowercase alphanumeric, hyphens allowed as separators; must start and end with alphanumeric)',
     ),
   name: Joi.string().required().description('Human-readable label'),
   endpoint: Joi.string()
@@ -159,6 +155,7 @@ export function parseLRSInstancesFromJSON(
     if (error instanceof SyntaxError) {
       throw new Error(`Failed to parse LRS_INSTANCES JSON: ${error.message}`);
     }
+    // Re-throw validation errors and other errors as-is
     throw error;
   }
 }
@@ -251,8 +248,12 @@ export function parseLRSInstancesFromPrefixedEnvVars(
       const headers: Record<string, string> = {};
       const pairs = headersStr.split(',');
       for (const pair of pairs) {
-        const parts = pair.split(':').map((s) => s.trim());
-        const [key, value] = parts;
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex === -1) {
+          continue; // Skip invalid pair without colon
+        }
+        const key = pair.substring(0, colonIndex).trim();
+        const value = pair.substring(colonIndex + 1).trim();
         if (key && value) {
           headers[key] = value;
         }

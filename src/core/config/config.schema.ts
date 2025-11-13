@@ -6,7 +6,9 @@ import * as Joi from 'joi';
 import {
   parseLRSInstances,
   redactLRSInstancesForLogging,
+  lrsInstanceSchema,
 } from './lrs-config.schema';
+import type { LRSInstance } from './lrs-config.interface';
 
 /**
  * Joi validation schema for environment variables
@@ -149,13 +151,15 @@ export const configValidationSchema = Joi.object({
  */
 export const configFactory = () => {
   // REQ-FN-026: Parse and validate multi-LRS configuration
-  let lrsInstances;
+  let lrsInstances: LRSInstance[];
   try {
     lrsInstances = parseLRSInstances(
       process.env as Record<string, string | undefined>,
     );
 
     // REQ-FN-026: Log configured instances (redacted, no credentials)
+    // Note: Using console.log here as LoggerService is not available in config factory
+    // This is acceptable for startup configuration logging before DI container is initialized
     const redactedInstances = redactLRSInstancesForLogging(lrsInstances);
     console.log(
       '[ConfigService] Loaded LRS instances:',
@@ -167,19 +171,38 @@ export const configFactory = () => {
       console.log(
         '[ConfigService] Using legacy single-instance LRS configuration',
       );
-      lrsInstances = [
-        {
-          id: 'default',
-          name: 'Default LRS',
-          endpoint: process.env.LRS_URL,
-          timeoutMs: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
-          auth: {
-            type: 'basic',
-            username: process.env.LRS_API_KEY,
-            password: process.env.LRS_API_KEY, // Legacy uses same value for both
-          },
+
+      // Construct and validate legacy instance
+      const legacyInstance = {
+        id: 'default',
+        name: 'Default LRS',
+        endpoint: process.env.LRS_URL,
+        timeoutMs: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
+        auth: {
+          type: 'basic' as const,
+          // Legacy LRS_API_KEY is used for both username and password
+          // This is a limitation of the legacy single-instance configuration
+          username: process.env.LRS_API_KEY,
+          password: process.env.LRS_API_KEY,
         },
-      ];
+      };
+
+      // Validate the legacy instance with the same schema
+      const validationResult = lrsInstanceSchema.validate(legacyInstance, {
+        abortEarly: false,
+      });
+
+      if (validationResult.error) {
+        console.error(
+          '[ConfigService] ERROR: Invalid legacy LRS configuration:',
+          validationResult.error.message,
+        );
+        throw new Error(
+          `Invalid legacy LRS configuration: ${validationResult.error.message}`,
+        );
+      }
+
+      lrsInstances = [validationResult.value as LRSInstance];
     } else {
       // REQ-FN-026: Log validation errors with clear guidance
       console.error(

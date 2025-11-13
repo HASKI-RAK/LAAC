@@ -596,6 +596,7 @@ describe('REQ-FN-026: Multi-LRS Configuration Schema', () => {
           id: 'hs-aa',
           name: 'HS Aschaffenburg',
           endpoint: 'https://aa.lrs.haski.app/xapi',
+          timeoutMs: 10000,
           auth: {
             type: 'bearer',
             token: 'secret-token-123',
@@ -620,6 +621,7 @@ describe('REQ-FN-026: Multi-LRS Configuration Schema', () => {
           id: 'hs-custom',
           name: 'HS Custom',
           endpoint: 'https://custom.lrs.haski.app/xapi',
+          timeoutMs: 10000,
           auth: {
             type: 'custom',
             headers: {
@@ -699,6 +701,48 @@ describe('REQ-FN-026: Multi-LRS Configuration Schema', () => {
       const { error } = lrsInstanceSchema.validate(instance);
 
       expect(error).toBeUndefined();
+    });
+
+    it('should reject ID starting with hyphen', () => {
+      const instance = {
+        id: '-hs-ke',
+        name: 'HS Kempten',
+        endpoint: 'https://ke.lrs.haski.app/xapi',
+        auth: { type: 'basic', username: 'key', password: 'secret' },
+      };
+
+      const { error } = lrsInstanceSchema.validate(instance);
+
+      expect(error).toBeDefined();
+      expect(error?.message).toContain('id');
+    });
+
+    it('should reject ID ending with hyphen', () => {
+      const instance = {
+        id: 'hs-ke-',
+        name: 'HS Kempten',
+        endpoint: 'https://ke.lrs.haski.app/xapi',
+        auth: { type: 'basic', username: 'key', password: 'secret' },
+      };
+
+      const { error } = lrsInstanceSchema.validate(instance);
+
+      expect(error).toBeDefined();
+      expect(error?.message).toContain('id');
+    });
+
+    it('should reject ID with only hyphens', () => {
+      const instance = {
+        id: '---',
+        name: 'HS Kempten',
+        endpoint: 'https://ke.lrs.haski.app/xapi',
+        auth: { type: 'basic', username: 'key', password: 'secret' },
+      };
+
+      const { error } = lrsInstanceSchema.validate(instance);
+
+      expect(error).toBeDefined();
+      expect(error?.message).toContain('id');
     });
 
     it('should reject timeout less than 1000ms', () => {
