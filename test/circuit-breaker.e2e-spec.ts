@@ -408,9 +408,12 @@ describe('REQ-FN-017: Circuit Breaker E2E', () => {
         configService,
       );
 
+      await expect(
+        circuitBreaker.execute(serviceWithCustomError),
+      ).rejects.toThrow(CustomError);
+
       try {
         await circuitBreaker.execute(serviceWithCustomError);
-        fail('Should have thrown error');
       } catch (error) {
         expect(error).toBeInstanceOf(CustomError);
         expect((error as CustomError).code).toBe('DB_CONN_ERR');
@@ -441,9 +444,12 @@ describe('REQ-FN-017: Circuit Breaker E2E', () => {
       }
 
       // Attempt call when OPEN
+      await expect(circuitBreaker.execute(service)).rejects.toThrow(
+        CircuitBreakerOpenError,
+      );
+
       try {
         await circuitBreaker.execute(service);
-        fail('Should have thrown CircuitBreakerOpenError');
       } catch (error) {
         expect(error).toBeInstanceOf(CircuitBreakerOpenError);
         expect((error as CircuitBreakerOpenError).serviceName).toBe(

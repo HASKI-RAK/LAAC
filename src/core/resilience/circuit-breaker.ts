@@ -1,7 +1,7 @@
 // Implements REQ-FN-017: Circuit Breaker Implementation
 // Provides circuit breaker pattern with state machine logic
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CircuitBreakerState,
@@ -12,6 +12,7 @@ import {
 import { CircuitBreakerOpenError } from './circuit-breaker.error';
 import { LoggerService } from '../logger';
 import { Configuration } from '../config/config.interface';
+import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
 
 /**
  * Circuit breaker implementation
@@ -44,6 +45,7 @@ export class CircuitBreaker implements ICircuitBreaker {
     config: Partial<CircuitBreakerOptions>,
     private readonly logger: LoggerService,
     private readonly configService: ConfigService<Configuration>,
+    @Optional() private readonly metricsRegistry?: MetricsRegistryService,
   ) {
     // Merge provided config with defaults from environment
     const envThreshold =
@@ -107,7 +109,7 @@ export class CircuitBreaker implements ICircuitBreaker {
     // In HALF_OPEN, only allow limited number of attempts
     if (
       this.state === CircuitBreakerState.HALF_OPEN &&
-      this.halfOpenAttempts >= this.config.halfOpenRequests!
+      this.halfOpenAttempts >= this.config.halfOpenRequests
     ) {
       const timeUntilRetry = this.calculateTimeUntilRetry() || 0;
       this.logger.debug(
@@ -150,6 +152,9 @@ export class CircuitBreaker implements ICircuitBreaker {
       `Request succeeded in ${CircuitBreakerState[this.state]} state`,
     );
 
+    // Record success metric
+    this.metricsRegistry?.recordCircuitBreakerSuccess(this.config.name);
+
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       this.successCount++;
       this.logger.debug(
@@ -157,7 +162,7 @@ export class CircuitBreaker implements ICircuitBreaker {
       );
 
       // Transition to CLOSED if we've met the success threshold
-      if (this.successCount >= this.config.halfOpenRequests!) {
+      if (this.successCount >= this.config.halfOpenRequests) {
         this.transitionToClosed();
       }
     } else if (this.state === CircuitBreakerState.CLOSED) {
@@ -180,6 +185,9 @@ export class CircuitBreaker implements ICircuitBreaker {
     this.logger.debug(
       `Request failed in ${CircuitBreakerState[this.state]} state: ${errorMessage}`,
     );
+
+    // Record failure metric
+    this.metricsRegistry?.recordCircuitBreakerFailure(this.config.name);
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       // Any failure in HALF_OPEN immediately reopens the circuit
@@ -212,6 +220,17 @@ export class CircuitBreaker implements ICircuitBreaker {
     this.logger.log(
       `Circuit breaker transitioned: ${CircuitBreakerState[oldState]} → CLOSED`,
     );
+
+    // Record state transition and current state
+    this.metricsRegistry?.recordCircuitBreakerStateTransition(
+      this.config.name,
+      CircuitBreakerState[oldState],
+      'CLOSED',
+    );
+    this.metricsRegistry?.setCircuitBreakerState(
+      this.config.name,
+      CircuitBreakerState.CLOSED,
+    );
   }
 
   /**
@@ -228,6 +247,18 @@ export class CircuitBreaker implements ICircuitBreaker {
     this.logger.log(
       `Circuit breaker transitioned: ${CircuitBreakerState[oldState]} → OPEN (${this.failureCount} failures). Will attempt recovery in ${this.config.timeout}ms`,
     );
+
+    // Record circuit opening and state transition
+    this.metricsRegistry?.recordCircuitBreakerOpen(this.config.name);
+    this.metricsRegistry?.recordCircuitBreakerStateTransition(
+      this.config.name,
+      CircuitBreakerState[oldState],
+      'OPEN',
+    );
+    this.metricsRegistry?.setCircuitBreakerState(
+      this.config.name,
+      CircuitBreakerState.OPEN,
+    );
   }
 
   /**
@@ -242,6 +273,17 @@ export class CircuitBreaker implements ICircuitBreaker {
 
     this.logger.log(
       `Circuit breaker transitioned: ${CircuitBreakerState[oldState]} → HALF_OPEN (testing recovery)`,
+    );
+
+    // Record state transition
+    this.metricsRegistry?.recordCircuitBreakerStateTransition(
+      this.config.name,
+      CircuitBreakerState[oldState],
+      'HALF_OPEN',
+    );
+    this.metricsRegistry?.setCircuitBreakerState(
+      this.config.name,
+      CircuitBreakerState.HALF_OPEN,
     );
   }
 

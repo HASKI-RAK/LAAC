@@ -34,7 +34,7 @@ export interface CircuitBreakerOptions {
    * Number of successful requests required in HALF_OPEN to transition to CLOSED
    * @default 1
    */
-  halfOpenRequests?: number;
+  halfOpenRequests: number;
 
   /**
    * Name/identifier for this circuit breaker (used in metrics and logging)

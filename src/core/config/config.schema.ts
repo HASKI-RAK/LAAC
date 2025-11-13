@@ -154,10 +154,10 @@ export const configValidationSchema = Joi.object({
 
   CIRCUIT_BREAKER_TIMEOUT: Joi.number()
     .integer()
-    .min(1000)
+    .min(5000)
     .default(30000)
     .description(
-      'Timeout in milliseconds before attempting recovery (default: 30000)',
+      'Timeout in milliseconds before attempting recovery (default: 30000, minimum: 5000ms recommended for production)',
     ),
 
   CIRCUIT_BREAKER_HALF_OPEN_REQUESTS: Joi.number()

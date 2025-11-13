@@ -13,6 +13,14 @@ import { CircuitBreaker } from './circuit-breaker';
 /**
  * Map to store circuit breaker instances per decorator configuration
  * Key format: `${className}.${methodName}.${configHash}`
+ *
+ * @remarks
+ * This module-level Map persists across decorator instances and test runs.
+ * When writing tests, call `clearCircuitBreakerInstances()` in beforeEach/afterEach
+ * to ensure clean state between tests.
+ *
+ * Note: For production use, prefer direct instantiation of CircuitBreaker with
+ * proper dependency injection over using the decorator pattern.
  */
 const circuitBreakerInstances = new Map<string, CircuitBreaker>();
 
@@ -34,6 +42,11 @@ export interface CircuitBreakerDecoratorConfig
  * @remarks
  * Implements REQ-FN-017: Resilience & Fault Tolerance
  *
+ * **Important**: This decorator bypasses the application's centralized logging
+ * infrastructure (LoggerService) and uses console methods directly. For production
+ * use with proper logging, Prometheus metrics, and dependency injection, use the
+ * CircuitBreaker class directly instead of this decorator.
+ *
  * Usage:
  * ```typescript
  * @Injectable()
@@ -46,7 +59,8 @@ export interface CircuitBreakerDecoratorConfig
  * ```
  *
  * Note: This decorator creates a shared circuit breaker instance per unique
- * method. For dependency injection support, use the CircuitBreaker class directly.
+ * method. For dependency injection support with proper logging and metrics,
+ * use the CircuitBreaker class directly.
  *
  * @param config - Circuit breaker configuration
  */
@@ -63,7 +77,17 @@ export function CircuitBreakerDecorator(
     const defaultName = `${className}.${propertyKey}`;
 
     // Generate a unique key for this circuit breaker instance
-    const instanceKey = `${defaultName}.${JSON.stringify(config)}`;
+    // Sort config keys to ensure deterministic key generation
+    const sortedConfig = Object.keys(config)
+      .sort()
+      .reduce(
+        (acc, key) => {
+          acc[key] = config[key as keyof CircuitBreakerDecoratorConfig];
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
+    const instanceKey = `${defaultName}.${JSON.stringify(sortedConfig)}`;
 
     descriptor.value = async function (...args: any[]) {
       // Get or create circuit breaker instance

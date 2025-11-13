@@ -182,9 +182,12 @@ describe('REQ-FN-017: CircuitBreaker', () => {
     it('should throw CircuitBreakerOpenError with correct details', async () => {
       const mockFn = jest.fn().mockResolvedValue('success');
 
+      await expect(circuitBreaker.execute(mockFn)).rejects.toThrow(
+        CircuitBreakerOpenError,
+      );
+
       try {
         await circuitBreaker.execute(mockFn);
-        fail('Should have thrown CircuitBreakerOpenError');
       } catch (error) {
         expect(error).toBeInstanceOf(CircuitBreakerOpenError);
         expect((error as CircuitBreakerOpenError).serviceName).toBe('test');
