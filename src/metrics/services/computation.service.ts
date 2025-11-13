@@ -1,7 +1,13 @@
 // Implements REQ-FN-005: Metric Computation Service with Cache-Aside Pattern
 // Orchestrates metric computation pipeline: cache check → provider load → LRS query → compute → cache store
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ServiceUnavailableException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { LoggerService } from '../../core/logger';
 import { CacheService } from '../../data-access/services/cache.service';
@@ -87,7 +93,8 @@ export class ComputationService {
           computationTime,
         });
 
-        this.metricsRegistry.recordMetricCacheHit(metricId);
+        // REQ-FN-005: Record cache hit for metric computation
+        this.metricsRegistry.recordCacheHit(metricId);
 
         return {
           ...cached,
@@ -97,7 +104,8 @@ export class ComputationService {
       }
 
       // Cache miss - proceed with computation
-      this.metricsRegistry.recordMetricCacheMiss(metricId);
+      // REQ-FN-005: Record cache miss for metric computation
+      this.metricsRegistry.recordCacheMiss(metricId);
       this.logger.debug('Cache miss - computing metric', {
         metricId,
         cacheKey,
@@ -115,13 +123,38 @@ export class ComputationService {
             metricId,
             error: error instanceof Error ? error.message : String(error),
           });
-          throw error; // Re-throw as BadRequestException in controller
+          // Throw BadRequestException for proper error handling
+          throw new BadRequestException(
+            error instanceof Error
+              ? error.message
+              : 'Parameter validation failed',
+          );
         }
       }
 
       // Step 5: Query LRS (REQ-FN-002: LRS integration)
       const lrsFilters = this.buildLRSFilters(params);
-      const statements = await this.lrsClient.queryStatements(lrsFilters);
+      let statements;
+      try {
+        statements = await this.lrsClient.queryStatements(lrsFilters);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error('LRS query failed', error as Error);
+
+        // Check if it's an LRS connection/availability error
+        if (
+          errorMessage.includes('connection') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('unavailable')
+        ) {
+          throw new ServiceUnavailableException(
+            'Learning Record Store is currently unavailable',
+          );
+        }
+        // Re-throw other errors
+        throw error;
+      }
 
       this.logger.debug('LRS query completed', {
         metricId,
@@ -130,7 +163,15 @@ export class ComputationService {
 
       // Step 6: Call provider.compute() (REQ-FN-004: Stateless computation)
       const computeStartTime = Date.now();
-      const result = await provider.compute(params, statements);
+      let result;
+      try {
+        result = await provider.compute(params, statements);
+      } catch (error) {
+        this.logger.error('Metric computation failed', error as Error);
+        throw new InternalServerErrorException(
+          `Failed to compute metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
       const computeDuration = (Date.now() - computeStartTime) / 1000;
 
       // Record computation duration metric
@@ -160,8 +201,8 @@ export class ComputationService {
     } catch (error) {
       const computationTime = Date.now() - startTime;
 
-      // Record error metric
-      this.metricsRegistry.recordMetricComputationError(metricId);
+      // Record error metric (REQ-FN-005)
+      this.metricsRegistry.recordMetricComputationError();
 
       this.logger.error(
         `Metric computation failed: ${(error as Error).message}`,
@@ -282,12 +323,17 @@ export class ComputationService {
    * @example
    * ```
    * cache:course-completion:course:123:2025-01-01:2025-12-31
+   * cache:course-completion:course:123:user:456:activityType:quiz
    * ```
+   *
+   * @remarks
+   * - userId and groupId can coexist for user-within-group context
+   * - Filters are sorted alphabetically for consistent key generation
    */
   private generateCacheKey(metricId: string, params: MetricParams): string {
     const parts = ['cache', metricId];
 
-    // Add scope identifiers
+    // Add scope identifiers (mutually exclusive: course OR topic OR element)
     if (params.courseId) {
       parts.push('course', params.courseId);
     } else if (params.topicId) {
@@ -305,13 +351,21 @@ export class ComputationService {
       parts.push(params.until);
     }
 
-    // Add other identifiers
+    // Add other identifiers (can coexist for user-within-group context)
     if (params.userId) {
       parts.push('user', params.userId);
     }
 
     if (params.groupId) {
       parts.push('group', params.groupId);
+    }
+
+    // Add filters to cache key for metric-specific filtering (REQ-FN-006)
+    if (params.filters && Object.keys(params.filters).length > 0) {
+      const filterKeys = Object.keys(params.filters).sort();
+      for (const key of filterKeys) {
+        parts.push(key, String(params.filters[key]));
+      }
     }
 
     return parts.join(':');

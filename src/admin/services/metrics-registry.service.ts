@@ -63,32 +63,14 @@ export class MetricsRegistryService {
   }
 
   /**
-   * Record metric-specific cache hit (REQ-FN-005)
-   * Increments the cache hits counter for the specified metric.
-   * @param metricId - The metric identifier
-   */
-  recordMetricCacheHit(metricId: string): void {
-    this.recordCacheHit(metricId);
-  }
-
-  /**
-   * Record metric-specific cache miss (REQ-FN-005)
-   * Increments the cache misses counter for the specified metric.
-   * @param metricId - The metric identifier
-   */
-  recordMetricCacheMiss(metricId: string): void {
-    this.recordCacheMiss(metricId);
-  }
-
-  /**
    * Record metric computation error (REQ-FN-005)
-   * Increments the computation errors counter for the specified metric.
-   * @param metricId - The metric identifier
+   * Increments the HTTP errors counter with status 500.
+   * Note: metricId parameter kept for API consistency but not used as
+   * httpErrorsTotal only has 'status' label.
    */
-  recordMetricComputationError(metricId: string): void {
+  recordMetricComputationError(): void {
     // Use HTTP errors total with standard status code
-    // Note: Consider adding a dedicated metric_computation_errors_total counter in future
-    this.httpErrorsTotal.inc({ status: '500', metric_id: metricId });
+    this.httpErrorsTotal.inc({ status: '500' });
   }
 
   /**

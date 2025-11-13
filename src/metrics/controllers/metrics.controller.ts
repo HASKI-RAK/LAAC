@@ -9,10 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  BadRequestException,
-  ServiceUnavailableException,
-  InternalServerErrorException,
-  NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +19,8 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { RequireScopes } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { ScopesGuard } from '../../auth/guards/scopes.guard';
 import { MetricsService } from '../services/metrics.service';
 import { ComputationService } from '../services/computation.service';
 import {
@@ -42,6 +41,7 @@ import { MetricParams } from '../../computation/interfaces/metric-params.interfa
 @ApiTags('Metrics')
 @ApiBearerAuth('JWT-auth')
 @Controller('metrics')
+@UseGuards(JwtAuthGuard, ScopesGuard)
 export class MetricsController {
   constructor(
     private readonly metricsService: MetricsService,
@@ -191,59 +191,18 @@ export class MetricsController {
     @Param('id') id: string,
     @Query() query: MetricResultsQueryDto,
   ): Promise<MetricResultResponseDto> {
-    try {
-      // Map DTO to MetricParams
-      const params: MetricParams = {
-        courseId: query.courseId,
-        topicId: query.topicId,
-        elementId: query.elementId,
-        userId: query.userId,
-        groupId: query.groupId,
-        since: query.since,
-        until: query.until,
-      };
+    // Map DTO to MetricParams
+    const params: MetricParams = {
+      courseId: query.courseId,
+      topicId: query.topicId,
+      elementId: query.elementId,
+      userId: query.userId,
+      groupId: query.groupId,
+      since: query.since,
+      until: query.until,
+    };
 
-      // Call computation service
-      return await this.computationService.computeMetric(id, params);
-    } catch (error) {
-      // Re-throw NotFoundException as-is (404)
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      // Handle other error types
-      if (error instanceof Error) {
-        const { message } = error;
-
-        // Parameter validation errors → 400 Bad Request
-        if (
-          message.includes('required') ||
-          message.includes('invalid') ||
-          message.includes('must be')
-        ) {
-          throw new BadRequestException(message);
-        }
-
-        // LRS connection errors → 503 Service Unavailable
-        if (
-          message.includes('LRS') &&
-          (message.includes('unavailable') ||
-            message.includes('connection') ||
-            message.includes('timeout'))
-        ) {
-          throw new ServiceUnavailableException(
-            'Learning Record Store is currently unavailable',
-          );
-        }
-
-        // Computation errors → 500 Internal Server Error
-        throw new InternalServerErrorException(
-          `Failed to compute metric: ${message}`,
-        );
-      }
-
-      // Unknown error type
-      throw error;
-    }
+    // Call computation service - it throws proper NestJS exceptions
+    return await this.computationService.computeMetric(id, params);
   }
 }

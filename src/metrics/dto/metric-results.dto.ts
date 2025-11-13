@@ -99,7 +99,8 @@ export class MetricResultResponseDto {
   metricId!: string;
 
   @ApiProperty({
-    description: 'Computed metric value (type depends on metric)',
+    description:
+      'Computed metric value (primarily numeric; complex results in metadata)',
     example: 85.5,
     oneOf: [
       { type: 'number' },
