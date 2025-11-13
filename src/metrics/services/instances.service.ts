@@ -2,8 +2,6 @@
 // Provides LRS instance metadata and health status
 
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Configuration } from '../../core/config/config.interface';
 import { LRSClient } from '../../data-access/clients/lrs.client';
 import { LoggerService } from '../../core/logger';
 import { LRSInstanceDto, InstancesResponseDto } from '../dto/instance.dto';
@@ -21,7 +19,6 @@ import { LRSInstanceDto, InstancesResponseDto } from '../dto/instance.dto';
 @Injectable()
 export class InstancesService {
   constructor(
-    private readonly configService: ConfigService<Configuration>,
     private readonly lrsClient: LRSClient,
     private readonly logger: LoggerService,
   ) {
@@ -49,7 +46,7 @@ export class InstancesService {
         id: instanceId,
         name: this.getInstanceName(instanceId),
         status: this.mapHealthStatus(health.healthy),
-        lastSync: health.healthy ? new Date().toISOString() : undefined,
+        // lastSync removed - will be added when actual sync tracking is implemented (REQ-FN-026)
       };
 
       const response: InstancesResponseDto = {

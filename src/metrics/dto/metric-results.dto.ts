@@ -2,7 +2,7 @@
 // Defines the structure for metric computation requests and responses
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsISO8601 } from 'class-validator';
+import { IsOptional, IsString, IsISO8601, Matches } from 'class-validator';
 
 /**
  * Metric Results Query DTO
@@ -87,6 +87,10 @@ export class MetricResultsQueryDto {
   })
   @IsOptional()
   @IsString()
+  @Matches(/^(\*|[a-z0-9_-]+(,[a-z0-9_-]+)*)$/, {
+    message:
+      'instanceId must be a single ID (hs-ke), comma-separated IDs (hs-ke,hs-rv), or wildcard (*)',
+  })
   instanceId?: string;
 }
 

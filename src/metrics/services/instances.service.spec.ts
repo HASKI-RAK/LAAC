@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { InstancesService } from './instances.service';
 import { LRSClient } from '../../data-access/clients/lrs.client';
 import { LoggerService } from '../../core/logger';
@@ -14,7 +13,6 @@ describe('REQ-FN-017: InstancesService', () => {
   let service: InstancesService;
   let mockLRSClient: jest.Mocked<LRSClient>;
   let mockLogger: jest.Mocked<LoggerService>;
-  let mockConfigService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     // Create mocks
@@ -31,17 +29,9 @@ describe('REQ-FN-017: InstancesService', () => {
       getInstanceHealth: jest.fn(),
     } as unknown as jest.Mocked<LRSClient>;
 
-    mockConfigService = {
-      get: jest.fn(),
-    } as unknown as jest.Mocked<ConfigService>;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InstancesService,
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
         {
           provide: LRSClient,
           useValue: mockLRSClient,
@@ -65,7 +55,7 @@ describe('REQ-FN-017: InstancesService', () => {
       expect(service).toBeDefined();
     });
 
-    it('should return healthy instance with lastSync', async () => {
+    it('should return healthy instance without lastSync field', async () => {
       const mockHealth: LRSHealthStatus = {
         instanceId: 'default',
         healthy: true,
@@ -81,7 +71,8 @@ describe('REQ-FN-017: InstancesService', () => {
       expect(result.instances[0].id).toBe('default');
       expect(result.instances[0].name).toBe('Default LRS');
       expect(result.instances[0].status).toBe('healthy');
-      expect(result.instances[0].lastSync).toBeDefined();
+      // lastSync field removed - will be added when actual sync tracking is implemented
+      expect(result.instances[0].lastSync).toBeUndefined();
       expect(mockLogger.log).toHaveBeenCalledWith(
         'Fetching LRS instances metadata',
       );
@@ -139,11 +130,7 @@ describe('REQ-FN-017: InstancesService', () => {
       mockLRSClientHsKe.getInstanceHealth.mockResolvedValue(mockHealth);
 
       // Create new service instance with different LRS client
-      const serviceHsKe = new InstancesService(
-        mockConfigService,
-        mockLRSClientHsKe,
-        mockLogger,
-      );
+      const serviceHsKe = new InstancesService(mockLRSClientHsKe, mockLogger);
 
       const result = await serviceHsKe.getInstances();
 
@@ -166,11 +153,7 @@ describe('REQ-FN-017: InstancesService', () => {
       mockLRSClientHsRv.getInstanceHealth.mockResolvedValue(mockHealth);
 
       // Create new service instance with different LRS client
-      const serviceHsRv = new InstancesService(
-        mockConfigService,
-        mockLRSClientHsRv,
-        mockLogger,
-      );
+      const serviceHsRv = new InstancesService(mockLRSClientHsRv, mockLogger);
 
       const result = await serviceHsRv.getInstances();
 
@@ -194,7 +177,6 @@ describe('REQ-FN-017: InstancesService', () => {
 
       // Create new service instance with different LRS client
       const serviceUnknown = new InstancesService(
-        mockConfigService,
         mockLRSClientUnknown,
         mockLogger,
       );

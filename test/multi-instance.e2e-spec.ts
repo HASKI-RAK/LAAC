@@ -60,6 +60,8 @@ describe('REQ-FN-017: Multi-Instance Support (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
+    // Clean up environment variable to prevent test pollution
+    delete process.env.AUTH_ENABLED;
   });
 
   describe('GET /api/v1/instances - Instance Metadata Endpoint', () => {
@@ -121,13 +123,8 @@ describe('REQ-FN-017: Multi-Instance Support (e2e)', () => {
               instance.status,
             );
 
-            // If healthy, should have lastSync
-            if (instance.status === 'healthy') {
-              expect(instance.lastSync).toBeDefined();
-              expect(typeof instance.lastSync).toBe('string');
-              // Verify ISO 8601 format
-              expect(() => new Date(instance.lastSync)).not.toThrow();
-            }
+            // lastSync field has been removed - will be added when actual sync tracking is implemented
+            // For now, instances should not include lastSync
           });
         });
     });
@@ -247,7 +244,7 @@ describe('REQ-FN-017: Multi-Instance Support (e2e)', () => {
         );
 
         if (instanceIdParam) {
-          const param = instanceIdParam as {
+          const param = instanceIdParam as unknown as {
             in: string;
             required: boolean;
             schema: { type: string };
