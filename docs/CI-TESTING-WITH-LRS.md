@@ -26,7 +26,8 @@ This ensures E2E tests validate real integrations rather than mocked responses.
 │         │                                        │          │
 │         └────────────▶┌─────────────────────────┘          │
 │                       │ Yetanalytics LRS                    │
-│                       │ :8080/xapi                          │
+│                       │ :8080 (internal, :8090 external)    │
+│                       │ /xapi endpoint                      │
 │                       │ (with seeded test data)             │
 │                       └─────────────────────────────────────┘
 └─────────────────────────────────────────────────────────────┘
@@ -97,7 +98,7 @@ docker-compose -f docker-compose.test.yml logs -f
 # 3. Seed test data
 node scripts/seed-test-lrs.js
 
-# 4. Run E2E tests
+# 4. Run E2E tests (using mapped port 8090 for local development)
 LRS_URL=http://localhost:8090/xapi \
 LRS_API_KEY=test-api-key \
 LRS_API_SECRET=test-api-secret \
@@ -150,8 +151,16 @@ These are real statements extracted from production LRS and anonymized, ensuring
 
 ### LRS Credentials (Test Only)
 
+**CI Environment:**
 ```
 URL: http://localhost:8080/xapi
+API Key: test-api-key
+API Secret: test-api-secret
+```
+
+**Local Development:**
+```
+URL: http://localhost:8090/xapi  (mapped from container's 8080)
 API Key: test-api-key
 API Secret: test-api-secret
 ```
@@ -233,4 +242,4 @@ To refresh or update test data:
 - [Yetanalytics LRSQL Docs](https://github.com/yetanalytics/lrsql)
 - [xAPI Specification 1.0.3](https://github.com/adlnet/xAPI-Spec)
 - [GitHub Actions Services](https://docs.github.com/en/actions/using-containerized-services)
-- [REQ-FN-018](../docs/srs/REQ-FN-018.md): E2E Test Infrastructure
+- [REQ-FN-018: E2E Test Infrastructure](../SRS.md#req-fn-018)

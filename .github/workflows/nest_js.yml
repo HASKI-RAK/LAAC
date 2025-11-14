@@ -58,8 +58,7 @@ jobs:
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
+          --health-retries 12
         ports:
           - 8080:8080
 
