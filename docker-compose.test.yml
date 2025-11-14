@@ -1,12 +1,12 @@
 # Docker Compose for E2E Testing
 # REQ-FN-018: E2E Test Infrastructure
 #
-# This compose file provides a Redis instance for E2E testing.
-# Most E2E tests work without Redis (using in-memory storage),
-# but this is useful for testing Redis-specific features.
+# This compose file provides Redis and LRS instances for E2E testing.
+# Used locally and in CI/CD pipelines to test against real services.
 #
 # Usage:
 #   docker-compose -f docker-compose.test.yml up -d
+#   node scripts/seed-test-lrs.js  # Seed test data
 #   yarn test:e2e
 #   docker-compose -f docker-compose.test.yml down
 
@@ -27,6 +27,63 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - laac-test
+
+  # PostgreSQL Database for test LRS
+  lrs-db-test:
+    image: postgres:16-alpine
+    container_name: laac-lrs-db-test
+    environment:
+      POSTGRES_USER: lrsql_test
+      POSTGRES_PASSWORD: lrsql_test_pass
+      POSTGRES_DB: lrsql_test_db
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lrsql_test -d lrsql_test_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - laac-test
+
+  # Yetanalytics LRSQL for E2E tests
+  lrs-test:
+    image: yetanalytics/lrsql:latest
+    container_name: laac-lrs-test
+    command: /lrsql/bin/run_postgres.sh
+    ports:
+      - "8090:8080"
+    depends_on:
+      lrs-db-test:
+        condition: service_healthy
+    environment:
+          # Admin credentials for LRS UI
+      LRSQL_ADMIN_USER_DEFAULT: admin
+      LRSQL_ADMIN_PASS_DEFAULT: admin123
+      # Test API credentials (match what's in seed-test-lrs.js)
+      LRSQL_API_KEY_DEFAULT: test-api-key
+      LRSQL_API_SECRET_DEFAULT: test-api-secret
+      
+      # Database connection
+      LRSQL_DB_HOST: lrs-db-test
+      LRSQL_DB_NAME: lrsql_test_db
+      LRSQL_DB_USER: lrsql_test
+      LRSQL_DB_PASSWORD: lrsql_test_pass
+      LRSQL_DB_PORT: 5432
+      
+      # Minimal configuration for tests
+      LRSQL_POOL_MAXIMUM_POOL_SIZE: 5
+      LRSQL_ENABLE_CLAMAV: "false"
+      LRSQL_ALLOW_ALL_ORIGINS: "true"
+      LRSQL_ENABLE_STMT_VALIDATE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - laac-test
 

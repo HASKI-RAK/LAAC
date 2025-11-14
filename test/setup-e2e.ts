@@ -3,8 +3,13 @@
 
 // Set up required environment variables before any imports
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long-for-testing';
-process.env.LRS_URL = 'https://test-lrs.example.com/xapi';
-process.env.LRS_API_KEY = 'test-lrs-api-key';
+
+// LRS configuration - use real LRS in CI, mock URL locally
+// CI will provide LRS_URL, LRS_API_KEY, and LRS_API_SECRET via environment
+process.env.LRS_URL = process.env.LRS_URL || 'http://localhost:8090/xapi';
+process.env.LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
+process.env.LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
+
 process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
 process.env.NODE_ENV = 'test';
 
@@ -13,8 +18,10 @@ process.env.RATE_LIMIT_TTL = '60'; // 60 seconds window
 process.env.RATE_LIMIT_MAX = '100'; // 100 requests per window
 
 // Redis configuration for tests (use test database 15)
-process.env.REDIS_HOST = process.env.TEST_REDIS_HOST || 'localhost';
-process.env.REDIS_PORT = process.env.TEST_REDIS_PORT || '6379';
+process.env.REDIS_HOST =
+  process.env.TEST_REDIS_HOST || process.env.REDIS_HOST || 'localhost';
+process.env.REDIS_PORT =
+  process.env.TEST_REDIS_PORT || process.env.REDIS_PORT || '6379';
 process.env.REDIS_DB = process.env.TEST_REDIS_DB || '15';
 
 // Enable authentication for E2E tests
