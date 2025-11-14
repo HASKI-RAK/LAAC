@@ -23,7 +23,7 @@ const http = require('http');
 const LRS_URL = process.env.LRS_URL || 'http://localhost:8090/xapi';
 const LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
 const LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
-const MAX_RETRIES = 9; // Wait up to 45 seconds for LRS to be ready
+const MAX_RETRIES = 9; // Wait up to 40 seconds for LRS to be ready (9 attempts with 8 delays)
 const RETRY_DELAY = 5000; // 5 seconds between retries
 
 // Load xAPI statements from fixtures
@@ -128,10 +128,11 @@ async function seedStatements(statements) {
     'base64',
   );
 
-  // LRS URL should already include /xapi, just append /statements
-  const statementsUrl = LRS_URL.endsWith('/xapi')
-    ? `${LRS_URL}/statements`
-    : `${LRS_URL}/xapi/statements`;
+  // Normalize LRS_URL to avoid double slashes when appending /statements (REQ-FN-018)
+  const normalizedLrsUrl = LRS_URL.replace(/\/+$/, '');
+  const statementsUrl = normalizedLrsUrl.endsWith('/xapi')
+    ? `${normalizedLrsUrl}/statements`
+    : `${normalizedLrsUrl}/xapi/statements`;
 
   try {
     const response = await makeRequest(

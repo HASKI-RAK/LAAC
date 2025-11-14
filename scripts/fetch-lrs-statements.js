@@ -78,7 +78,13 @@ async function fetchMultiplePages() {
 
         // Get next page URL if available
         nextUrl = response.more
-          ? `${LRS_URL}/statements?${response.more.split('?')[1]}`
+          ? (
+              response.more.startsWith('http')
+                ? response.more
+                : response.more.includes('?')
+                  ? `${LRS_URL}/statements?${response.more.split('?')[1]}`
+                  : `${LRS_URL}/statements${response.more}`
+            )
           : null;
       } else {
         console.log(`   ℹ️  No more statements available`);

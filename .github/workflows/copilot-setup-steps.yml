@@ -56,8 +56,7 @@ jobs:
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 12
-          --health-start-period 30s
+          --health-retries 15
         env:
           LRSQL_API_KEY_DEFAULT: test-api-key
           LRSQL_API_SECRET_DEFAULT: test-api-secret

@@ -30,7 +30,6 @@ const emailMap = new Map();
 const accountNameMap = new Map();
 const domainMap = new Map();
 let emailCounter = 1;
-let accountCounter = 1;
 let domainCounter = 1;
 
 /**
@@ -66,7 +65,6 @@ function anonymizeAccountName(name) {
 
   if (!accountNameMap.has(name)) {
     accountNameMap.set(name, `user-${hashValue(name)}`);
-    accountCounter++;
   }
 
   return accountNameMap.get(name);

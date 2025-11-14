@@ -92,8 +92,7 @@ jobs:
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
+          --health-retries 12
         ports:
           - 8080:8080
 
@@ -142,7 +141,7 @@ jobs:
           TEST_REDIS_PORT: 6379
         run: yarn test:e2e
 
-      # Step 7: Generate coverage report
+      # Step 8: Generate coverage report
       - name: Generate test coverage
         run: yarn test:cov
 
