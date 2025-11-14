@@ -15,6 +15,33 @@ This is the Learning Analytics Analyzing Center (LAAC) project, which is part of
 
 The project is built using [NestJS](https://nestjs.com/), a progressive Node.js framework for building efficient and scalable server-side applications.
 
+## 🚀 Quick Start with Local LRS
+
+For realistic local development with production data, you can run a complete LRS stack locally:
+
+```bash
+# 1. Start local LRS (Yetanalytics LRSQL + PostgreSQL + pgAdmin)
+docker compose -f docker-compose.lrs-local.yml up -d
+
+# 2. Restore production backup via pgAdmin (http://localhost:5050)
+# 3. Configure LAAC to use local LRS
+cp .env.local .env
+
+# 4. Install and start
+yarn install
+yarn start:dev
+```
+
+**📖 Complete Guide**: [docs/LOCAL-LRS-SETUP.md](docs/LOCAL-LRS-SETUP.md)
+
+**Access Points**:
+
+- LAAC API: http://localhost:3000/api/v1/docs
+- Local LRS: http://localhost:8090/xapi
+- pgAdmin: http://localhost:5050
+
+---
+
 ## Project setup
 
 ```bash

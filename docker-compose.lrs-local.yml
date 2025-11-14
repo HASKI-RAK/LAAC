@@ -1,0 +1,120 @@
+# ===================================================================
+# Local LRS Development Environment
+# ===================================================================
+# Spins up Yetanalytics LRSQL with PostgreSQL and pgAdmin for local testing
+# Use this to restore production backup and test LAAC against real data
+#
+# Usage:
+#   1. Start: docker compose -f docker-compose.lrs-local.yml up -d
+#   2. Restore backup via pgAdmin (localhost:5050)
+#   3. Update .env.local with LRS credentials
+#   4. Run LAAC tests: yarn test:e2e
+#   5. Stop: docker compose -f docker-compose.lrs-local.yml down
+#
+# ===================================================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database for LRS
+  lrs-db:
+    image: postgres:15-alpine
+    container_name: laac-lrs-db
+    restart: unless-stopped
+    volumes:
+      - lrs-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: lrsql_user
+      POSTGRES_PASSWORD: lrsql_password
+      POSTGRES_DB: lrsql_db
+    ports:
+      # Expose for pgAdmin access and backup restore
+      - "5433:5432"
+    networks:
+      - lrs-local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lrsql_user -d lrsql_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Yetanalytics LRSQL
+  lrs:
+    image: yetanalytics/lrsql:latest
+    container_name: laac-lrs
+    restart: unless-stopped
+    command:
+      - /lrsql/bin/run_postgres.sh
+    ports:
+      # HTTP endpoint for LAAC access
+      - "8090:8080"
+      # HTTPS endpoint (optional, self-signed cert)
+      - "8093:8443"
+    depends_on:
+      lrs-db:
+        condition: service_healthy
+    environment:
+      # Default API credentials for LAAC
+      # IMPORTANT: Change these for production!
+      LRSQL_API_KEY_DEFAULT: dev-api-key-change-me
+      LRSQL_API_SECRET_DEFAULT: dev-api-secret-change-me
+      
+      # Admin credentials for LRS UI
+      LRSQL_ADMIN_USER_DEFAULT: admin
+      LRSQL_ADMIN_PASS_DEFAULT: admin123
+      
+      # Database connection
+      LRSQL_DB_HOST: lrs-db
+      LRSQL_DB_NAME: lrsql_db
+      LRSQL_DB_USER: lrsql_user
+      LRSQL_DB_PASSWORD: lrsql_password
+      LRSQL_DB_PORT: 5432
+      
+      # Connection pool settings
+      LRSQL_POOL_INITIALIZATION_FAIL_TIMEOUT: 10000
+      LRSQL_POOL_MAXIMUM_POOL_SIZE: 10
+      
+      # Security settings (permissive for local dev)
+      LRSQL_ENABLE_CLAMAV: "false"
+      LRSQL_ALLOW_ALL_ORIGINS: "true"
+      
+      # Optional: Enable statement validation
+      LRSQL_ENABLE_STMT_VALIDATE: "true"
+    networks:
+      - lrs-local
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # pgAdmin for database management and backup restore
+  lrs-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: laac-lrs-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - lrs-db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@laac.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - lrs-local
+
+networks:
+  lrs-local:
+    name: laac-lrs-local
+    driver: bridge
+
+volumes:
+  lrs-db-data:
+    name: laac-lrs-db-data
+  pgadmin-data:
+    name: laac-lrs-pgadmin-data
