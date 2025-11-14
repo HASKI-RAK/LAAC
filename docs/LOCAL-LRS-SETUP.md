@@ -37,7 +37,7 @@ docker compose -f docker-compose.lrs-local.yml logs -f
 #### Option A: Via pgAdmin (Recommended)
 
 1. **Open pgAdmin**: http://localhost:5050
-   - Email: `dev@laac.local`
+   - Email: `dev@laac.de`
    - Password: `admin123`
 
 2. **Add Server Connection**:
@@ -137,7 +137,7 @@ open http://localhost:3000/api/v1/docs
 | ---------- | ----------------------- | -------------------------- |
 | LRS API    | `dev-api-key-change-me` | `dev-api-secret-change-me` |
 | LRS Admin  | `admin`                 | `admin123`                 |
-| pgAdmin    | `dev@laac.local`        | `admin123`                 |
+| pgAdmin    | `dev@laac.de`        | `admin123`                 |
 | PostgreSQL | `lrsql_user`            | `lrsql_password`           |
 
 ### Port Mapping

@@ -12,6 +12,7 @@ import { LrsHealthIndicator } from './indicators/lrs.health';
 import { LRSHealthSchedulerService } from './services/lrs-health-scheduler.service';
 import { AdminModule } from '../../admin/admin.module';
 import { DataAccessModule } from '../../data-access/data-access.module';
+import { LoggerService } from '../logger/logger.service';
 
 /**
  * Health module
@@ -42,6 +43,7 @@ import { DataAccessModule } from '../../data-access/data-access.module';
   ],
   controllers: [HealthController],
   providers: [
+    LoggerService,
     RedisHealthIndicator,
     LrsHealthIndicator,
     LRSHealthSchedulerService,

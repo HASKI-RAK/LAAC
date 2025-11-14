@@ -13,6 +13,7 @@ import { CacheAdminService } from './services/cache.admin.service';
 import { CacheController } from './controllers/cache.controller';
 import { DataAccessModule } from '../data-access/data-access.module';
 import { AuthModule } from '../auth/auth.module';
+import { LoggerService } from '../core/logger/logger.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from '../auth/auth.module';
     CacheController, // REQ-FN-007: Cache invalidation admin endpoint
   ],
   providers: [
+    LoggerService,
     MetricsRegistryService,
     CacheAdminService, // REQ-FN-007: Cache admin service
     // REQ-FN-021: Cache metrics - separate counters for hits and misses

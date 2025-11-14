@@ -18,7 +18,7 @@ version: '3.8'
 services:
   # PostgreSQL Database for LRS
   lrs-db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: laac-lrs-db
     restart: unless-stopped
     volumes:
@@ -97,7 +97,7 @@ services:
     depends_on:
       - lrs-db
     environment:
-      PGADMIN_DEFAULT_EMAIL: dev@laac.local
+      PGADMIN_DEFAULT_EMAIL: dev@laac.de
       PGADMIN_DEFAULT_PASSWORD: admin123
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
