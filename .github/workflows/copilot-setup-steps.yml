@@ -53,6 +53,7 @@ jobs:
         image: yetanalytics/lrsql:latest
         env:
           LRSQL_API_KEY_DEFAULT: test-api-key
+          LRSQL_DB_JDBC_URL: "jdbc:postgresql://postgres:5432/lrsql_test_db"
           LRSQL_API_SECRET_DEFAULT: test-api-secret
           LRSQL_ADMIN_USER_DEFAULT: admin
           LRSQL_ADMIN_PASS_DEFAULT: admin123
