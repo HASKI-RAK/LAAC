@@ -74,6 +74,74 @@ yarn test:e2e --coverage
 
 **Naming Convention**: `<feature>.e2e-spec.ts`
 
+### 3. Real LRS Integration Tests
+
+Real LRS integration tests run against an actual LRS instance to validate xAPI compliance and real-world behavior. These tests are **optional** and only run when LRS credentials are provided.
+
+```bash
+# Run with real LRS (tests will execute)
+LRS_DOMAIN="https://test.lrs.haski.app/xapi" \
+LRS_USER="your-api-key" \
+LRS_SECRET="your-api-secret" \
+yarn test:e2e --testPathPattern=real-lrs
+
+# Run without credentials (tests will be skipped)
+yarn test:e2e --testPathPattern=real-lrs
+```
+
+**Location**: `test/real-lrs.e2e-spec.ts`
+
+**Configuration Requirements**:
+
+- `LRS_DOMAIN`: Full URL to xAPI endpoint (e.g., `https://test.lrs.haski.app/xapi`)
+- `LRS_USER`: LRS API username or key
+- `LRS_SECRET`: LRS API password or secret
+
+**What These Tests Validate**:
+
+- ✅ Real xAPI 1.0.3 compliance with live LRS
+- ✅ Authentication and connection handling
+- ✅ Query filtering, pagination, and data retrieval
+- ✅ Metric computation with real-world data
+- ✅ Performance characteristics with actual network latency
+- ✅ HASKI-specific xAPI patterns and extensions
+- ✅ Error handling with real LRS responses
+
+**Test Behavior**:
+
+- If credentials are **not configured**: Tests are automatically skipped with a friendly message
+- If credentials **are configured**: Tests run against the real LRS instance
+- Tests are **read-only** and do not modify LRS data
+- Cache is cleared between tests for isolation
+
+**Example Output**:
+
+```bash
+# Without credentials
+⏭️  Real LRS Tests SKIPPED
+   Set LRS_DOMAIN, LRS_USER, LRS_SECRET environment variables to enable
+
+# With credentials
+✅ Real LRS Tests ENABLED
+   LRS Endpoint: https://test.lrs.haski.app/xapi
+   User: 0a15be33...
+
+Real LRS Integration (e2e)
+  LRS Connectivity and Health
+    ✓ should successfully connect to real LRS (245ms)
+    ✓ should return xAPI version from LRS about endpoint (198ms)
+  Real xAPI Statement Retrieval
+    ✓ should retrieve statements from real LRS (1523ms)
+    ✓ should handle pagination with real LRS data (2104ms)
+```
+
+**Security Notes**:
+
+- ⚠️ Never commit credentials to version control
+- ✓ Use environment variables or `.env.test` file
+- ✓ Use a dedicated test LRS instance, not production
+- ✓ Ensure the test LRS has appropriate read-only permissions
+
 ---
 
 ## E2E Test Infrastructure
@@ -266,7 +334,41 @@ await cleanupTestRedis();
 
 ````
 
-### 4. Test Fixtures (`test/fixtures/users.fixture.ts`)
+### 4. Real LRS Helper (`test/helpers/real-lrs.helper.ts`)
+
+Utilities for testing against real LRS instances with automatic test skipping.
+
+```typescript
+import {
+  hasRealLRSConfig,
+  getRealLRSConfig,
+  describeRealLRS,
+  itRealLRS,
+} from './helpers/real-lrs.helper';
+
+// Check if real LRS is configured
+if (hasRealLRSConfig()) {
+  console.log('Real LRS tests will run');
+}
+
+// Get LRS configuration
+const config = getRealLRSConfig();
+// Returns: { domain: string, user: string, secret: string } or undefined
+
+// Conditional describe block (skips entire suite if no LRS)
+describeRealLRS('My Real LRS Tests', () => {
+  it('should test against real LRS', async () => {
+    // These tests only run when LRS_DOMAIN, LRS_USER, LRS_SECRET are set
+  });
+});
+
+// Conditional single test
+itRealLRS('should handle real data', async () => {
+  // This test only runs when credentials are configured
+});
+```
+
+### 5. Test Fixtures (`test/fixtures/users.fixture.ts`)
 
 Provides sample test data with different permission levels.
 
@@ -280,7 +382,7 @@ const analyticsUser = getTestUser('ANALYTICS_USER');
 const superAdmin = getTestUser('SUPER_ADMIN');
 ````
 
-### 5. Test Constants (`test/constants.ts`)
+### 6. Test Constants (`test/constants.ts`)
 
 Centralized test configuration values.
 
