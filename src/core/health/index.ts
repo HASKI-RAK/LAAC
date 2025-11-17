@@ -4,5 +4,4 @@
 export * from './health.module';
 export * from './health.controller';
 export * from './indicators/redis.health';
-export * from './indicators/lrs.health';
 export * from './dto/health-response.dto';

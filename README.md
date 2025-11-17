@@ -677,7 +677,7 @@ Run simple curl checks against the health endpoints:
 # Check application health
 curl http://localhost:3000/health/liveness
 
-# Check application + dependencies (Redis, LRS)
+# Check application + dependencies (Redis)
 curl http://localhost:3000/health/readiness
 ```
 
@@ -706,7 +706,7 @@ Returns 200 OK if the application is running. This endpoint checks only the appl
 
 **Endpoint**: `GET /health/readiness`
 
-Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to accept traffic. Returns 503 Service Unavailable if any dependency is not reachable.
+Returns 200 OK if the application and Redis are ready to accept traffic. Returns 503 Service Unavailable if Redis is not reachable.
 
 **Response (Healthy)**:
 
@@ -714,13 +714,11 @@ Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to
 {
   "status": "ok",
   "info": {
-    "redis": { "status": "up" },
-    "lrs": { "status": "up" }
+    "redis": { "status": "up" }
   },
   "error": {},
   "details": {
-    "redis": { "status": "up" },
-    "lrs": { "status": "up" }
+    "redis": { "status": "up" }
   },
   "timestamp": "2025-10-21T12:14:07.537Z",
   "version": "0.0.1"
@@ -737,8 +735,7 @@ Returns 200 OK if the application and all dependencies (Redis, LRS) are ready to
     "redis": { "status": "down", "message": "Connection refused" }
   },
   "details": {
-    "redis": { "status": "down", "message": "Connection refused" },
-    "lrs": { "status": "up" }
+    "redis": { "status": "down", "message": "Connection refused" }
   }
 }
 ```

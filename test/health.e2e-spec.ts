@@ -97,7 +97,7 @@ describe('REQ-NF-002: Health Endpoints (e2e)', () => {
         });
     });
 
-    it('should check Redis and LRS dependencies', () => {
+    it('should report Redis dependency status', () => {
       return request(app.getHttpServer())
         .get('/health/readiness')
         .expect((res) => {
@@ -106,17 +106,12 @@ describe('REQ-NF-002: Health Endpoints (e2e)', () => {
           const errors = res.body.error || {};
           const info = res.body.info || {};
 
-          // At least one of these should be present (depending on status)
           const hasRedis =
             details.redis !== undefined ||
             errors.redis !== undefined ||
             info.redis !== undefined;
-          const hasLrs =
-            details.lrs !== undefined ||
-            errors.lrs !== undefined ||
-            info.lrs !== undefined;
 
-          expect(hasRedis || hasLrs).toBe(true);
+          expect(hasRedis).toBe(true);
         });
     });
 

@@ -20,7 +20,6 @@ export class HealthResponseDto {
     example: {
       app: { status: 'up' },
       redis: { status: 'up' },
-      lrs: { status: 'up' },
     },
   })
   info?: Record<string, any>;

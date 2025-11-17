@@ -1,5 +1,4 @@
 // REQ-NF-002: Health/Readiness Endpoints - Unit Tests
-// REQ-FN-025: LRS Instance Health Monitoring - Unit Tests
 // Tests for HealthController liveness and readiness probes
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -7,32 +6,17 @@ import { ConfigService } from '@nestjs/config';
 import { HealthCheckService, HealthCheckResult } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 import { RedisHealthIndicator } from './indicators/redis.health';
-import { LrsHealthIndicator } from './indicators/lrs.health';
-import {
-  LRSHealthSchedulerService,
-  LRSInstanceHealthInfo,
-} from './services/lrs-health-scheduler.service';
 
 describe('REQ-NF-002: HealthController', () => {
   let controller: HealthController;
   let healthCheckService: HealthCheckService;
   let redisHealthIndicator: RedisHealthIndicator;
-  let lrsHealthIndicator: LrsHealthIndicator;
-  let lrsHealthScheduler: LRSHealthSchedulerService;
 
   const mockHealthCheckResult: HealthCheckResult = {
     status: 'ok',
-    info: {
-      lrs: {
-        status: 'up',
-      },
-    },
+    info: {},
     error: {},
-    details: {
-      lrs: {
-        status: 'up',
-      },
-    },
+    details: {},
   };
 
   beforeEach(async () => {
@@ -52,21 +36,6 @@ describe('REQ-NF-002: HealthController', () => {
           },
         },
         {
-          provide: LrsHealthIndicator,
-          useValue: {
-            isHealthy: jest.fn(),
-          },
-        },
-        {
-          provide: LRSHealthSchedulerService,
-          useValue: {
-            getAllInstancesHealth: jest
-              .fn()
-              .mockReturnValue(new Map<string, LRSInstanceHealthInfo>()),
-            getOverallStatus: jest.fn().mockReturnValue('healthy'),
-          },
-        },
-        {
           provide: ConfigService,
           useValue: {
             get: jest.fn(),
@@ -79,12 +48,6 @@ describe('REQ-NF-002: HealthController', () => {
     healthCheckService = module.get<HealthCheckService>(HealthCheckService);
     redisHealthIndicator =
       module.get<RedisHealthIndicator>(RedisHealthIndicator);
-    lrsHealthIndicator = module.get<LrsHealthIndicator>(LrsHealthIndicator);
-    lrsHealthScheduler = module.get<LRSHealthSchedulerService>(
-      LRSHealthSchedulerService,
-    );
-    // Mark as used to avoid lint errors
-    expect(lrsHealthScheduler).toBeDefined();
   });
 
   it('should be defined', () => {
@@ -130,10 +93,7 @@ describe('REQ-NF-002: HealthController', () => {
       expect(checkSpy).toHaveBeenCalled();
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const redisHealthySpy = redisHealthIndicator.isHealthy as jest.Mock;
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const lrsHealthySpy = lrsHealthIndicator.isHealthy as jest.Mock;
       expect(redisHealthySpy).not.toHaveBeenCalled();
-      expect(lrsHealthySpy).not.toHaveBeenCalled();
     });
   });
 
@@ -151,8 +111,8 @@ describe('REQ-NF-002: HealthController', () => {
       expect(result).toHaveProperty('timestamp');
     });
 
-    it('should check Redis and LRS dependencies', async () => {
-      const mockChecks = [expect.any(Function), expect.any(Function)];
+    it('should check Redis dependency', async () => {
+      const mockChecks = [expect.any(Function)];
       const checkSpy = jest
         .spyOn(healthCheckService, 'check')
         .mockResolvedValue(mockHealthCheckResult);
@@ -162,17 +122,15 @@ describe('REQ-NF-002: HealthController', () => {
       expect(checkSpy).toHaveBeenCalledWith(mockChecks);
     });
 
-    it('should include all dependency statuses', async () => {
+    it('should include dependency statuses', async () => {
       const mockResult: HealthCheckResult = {
         status: 'ok',
         info: {
           redis: { status: 'up' },
-          lrs: { status: 'up' },
         },
         error: {},
         details: {
           redis: { status: 'up' },
-          lrs: { status: 'up' },
         },
       };
 

@@ -52,7 +52,7 @@ describe('REQ-FN-023: Authentication and Authorization (e2e)', () => {
       return request(app.getHttpServer())
         .get('/health/readiness')
         .expect((res) => {
-          // May be 200 or 503 depending on Redis/LRS availability
+          // May be 200 or 503 depending on Redis availability
           expect([200, 503]).toContain(res.status);
         });
     });
