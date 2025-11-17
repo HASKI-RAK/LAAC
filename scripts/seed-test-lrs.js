@@ -25,6 +25,9 @@ const LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
 const LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
 const MAX_RETRIES = 9; // Wait up to 40 seconds for LRS to be ready (9 attempts with 8 delays)
 const RETRY_DELAY = 5000; // 5 seconds between retries
+const BASIC_AUTH_HEADER = `Basic ${Buffer.from(
+  `${LRS_API_KEY}:${LRS_API_SECRET}`,
+).toString('base64')}`;
 
 // Load xAPI statements from fixtures
 const FIXTURES_PATH = path.join(
@@ -40,6 +43,17 @@ const FIXTURES_PATH = path.join(
  */
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Build a normalized xAPI URL for the configured LRS
+ * Ensures we always target the /xapi namespace regardless of trailing slashes
+ * @param {string} pathSuffix Suffix to append (e.g., '/about')
+ */
+function buildXapiUrl(pathSuffix = '') {
+  const normalized = LRS_URL.replace(/\/+$/, '');
+  const base = normalized.endsWith('/xapi') ? normalized : `${normalized}/xapi`;
+  return `${base}${pathSuffix}`;
 }
 
 /**
@@ -84,14 +98,19 @@ function makeRequest(url, options, body = null) {
  * Check if LRS is healthy and ready
  */
 async function waitForLRS() {
-  const lrsBaseUrl = new URL(LRS_URL);
-  const healthUrl = `${lrsBaseUrl.protocol}//${lrsBaseUrl.host}/health`;
+  const aboutUrl = buildXapiUrl('/about');
 
-  console.log(`⏳ Waiting for LRS at ${healthUrl} to be ready...`);
+  console.log(`⏳ Waiting for LRS at ${aboutUrl} to be ready...`);
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await makeRequest(healthUrl, { method: 'GET' });
+      const response = await makeRequest(aboutUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: BASIC_AUTH_HEADER,
+          'X-Experience-API-Version': '1.0.3',
+        },
+      });
 
       if (response.statusCode === 200) {
         console.log(`✅ LRS is ready (attempt ${attempt}/${MAX_RETRIES})`);
@@ -123,16 +142,7 @@ async function seedStatements(statements) {
     `📤 Seeding ${statements.length} xAPI statements to ${LRS_URL}...`,
   );
 
-  // Create Basic Auth header
-  const auth = Buffer.from(`${LRS_API_KEY}:${LRS_API_SECRET}`).toString(
-    'base64',
-  );
-
-  // Normalize LRS_URL to avoid double slashes when appending /statements (REQ-FN-018)
-  const normalizedLrsUrl = LRS_URL.replace(/\/+$/, '');
-  const statementsUrl = normalizedLrsUrl.endsWith('/xapi')
-    ? `${normalizedLrsUrl}/statements`
-    : `${normalizedLrsUrl}/xapi/statements`;
+  const statementsUrl = buildXapiUrl('/statements');
 
   try {
     const response = await makeRequest(
@@ -140,7 +150,7 @@ async function seedStatements(statements) {
       {
         method: 'POST',
         headers: {
-          Authorization: `Basic ${auth}`,
+          Authorization: BASIC_AUTH_HEADER,
           'Content-Type': 'application/json',
           'X-Experience-API-Version': '1.0.3',
         },
@@ -160,7 +170,9 @@ async function seedStatements(statements) {
       console.error(`Response: ${response.body}`);
       console.error(`\nDebug Info:`);
       console.error(`  URL: ${statementsUrl}`);
-      console.error(`  Auth: Basic ${auth.substring(0, 10)}...`);
+      console.error(
+        `  Auth: ${BASIC_AUTH_HEADER.substring(0, 15)}... (redacted)`,
+      );
       return false;
     }
   } catch (error) {

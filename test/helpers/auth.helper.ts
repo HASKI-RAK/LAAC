@@ -1,7 +1,7 @@
 // REQ-FN-018: E2E Test Helper - JWT Token Generation
 // Provides utilities for generating valid and invalid JWT tokens for E2E tests
 
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 
 /**
  * Options for generating test JWT tokens
@@ -10,7 +10,7 @@ export interface TestTokenOptions {
   sub?: string;
   username?: string;
   scopes?: string[];
-  expiresIn?: string | number;
+  expiresIn?: JwtSignOptions['expiresIn'];
   expired?: boolean;
   invalid?: boolean;
 }

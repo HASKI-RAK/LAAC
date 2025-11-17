@@ -177,79 +177,7 @@ export class ComputationService {
             timeUntilRetry: error.timeUntilRetry,
           });
 
-          // Check if graceful degradation is enabled
-          if (!this.fallbackHandler.isEnabled()) {
-            throw new ServiceUnavailableException(
-              'Learning Record Store is currently unavailable',
-            );
-          }
-
-          // REQ-NF-003: Execute fallback strategy
-          const fallbackResult =
-            await this.fallbackHandler.executeFallback<MetricResultResponseDto>(
-              {
-                metricId,
-                cacheKey,
-                enableCacheFallback:
-                  this.fallbackHandler.isCacheFallbackEnabled(),
-                defaultValue: null,
-              },
-            );
-
-          // Return degraded result with HTTP 200
-          // Robustly extract values from fallbackResult.value which may be:
-          // 1. A complete MetricResultResponseDto object (from cache)
-          // 2. A primitive value (number, string, etc.)
-          // 3. null/undefined
-          let degradedMetricId = metricId;
-          let degradedValue:
-            | number
-            | string
-            | boolean
-            | Record<string, unknown>
-            | unknown[]
-            | null = null;
-          let degradedTimestamp = new Date().toISOString();
-
-          if (
-            fallbackResult.value &&
-            typeof fallbackResult.value === 'object' &&
-            'value' in fallbackResult.value
-          ) {
-            // fallbackResult.value is a MetricResultResponseDto with nested value
-            const cachedDto = fallbackResult.value;
-            degradedMetricId = cachedDto.metricId ?? metricId;
-            degradedValue = cachedDto.value ?? null;
-            degradedTimestamp = cachedDto.timestamp ?? new Date().toISOString();
-          } else if (
-            fallbackResult.value !== null &&
-            fallbackResult.value !== undefined
-          ) {
-            // fallbackResult.value is a primitive or simple value
-            degradedValue = fallbackResult.value as
-              | number
-              | string
-              | boolean
-              | Record<string, unknown>
-              | unknown[];
-          }
-
-          const degradedResponse: MetricResultResponseDto = {
-            metricId: degradedMetricId,
-            value: degradedValue,
-            timestamp: degradedTimestamp,
-            computationTime: Date.now() - startTime,
-            fromCache: fallbackResult.fromCache ?? false,
-            status: fallbackResult.status,
-            warning: fallbackResult.warning,
-            error: fallbackResult.error,
-            cause: fallbackResult.cause,
-            cachedAt: fallbackResult.cachedAt,
-            age: fallbackResult.age,
-            dataAvailable: fallbackResult.dataAvailable,
-          };
-
-          return degradedResponse;
+          return this.buildFallbackResponse({ metricId, cacheKey, startTime });
         }
 
         // Handle other LRS errors
@@ -257,16 +185,22 @@ export class ComputationService {
           error instanceof Error ? error.message : String(error);
         this.logger.error('LRS query failed', error as Error);
 
-        // Check if it's an LRS connection/availability error
-        if (
+        const isAvailabilityError =
           errorMessage.includes('connection') ||
           errorMessage.includes('timeout') ||
-          errorMessage.includes('unavailable')
-        ) {
-          throw new ServiceUnavailableException(
-            'Learning Record Store is currently unavailable',
+          errorMessage.includes('unavailable');
+
+        if (isAvailabilityError) {
+          this.logger.warn(
+            'LRS unavailable, attempting graceful degradation fallback',
+            {
+              metricId,
+              reason: errorMessage,
+            },
           );
+          return this.buildFallbackResponse({ metricId, cacheKey, startTime });
         }
+
         // Re-throw other errors
         throw error;
       }
@@ -426,6 +360,84 @@ export class ComputationService {
     // For now, we fetch statements and let provider filter by context
 
     return filters;
+  }
+
+  /**
+   * Build graceful degradation response using fallback handler
+   * @param metricId - Metric identifier
+   * @param cacheKey - Cache key for potential stale data
+   * @param startTime - Start time for computation (used for computationTime)
+   * @returns Metric result response representing degraded/default data
+   * @private
+   */
+  private async buildFallbackResponse({
+    metricId,
+    cacheKey,
+    startTime,
+  }: {
+    metricId: string;
+    cacheKey: string;
+    startTime: number;
+  }): Promise<MetricResultResponseDto> {
+    if (!this.fallbackHandler.isEnabled()) {
+      throw new ServiceUnavailableException(
+        'Learning Record Store is currently unavailable',
+      );
+    }
+
+    const fallbackResult =
+      await this.fallbackHandler.executeFallback<MetricResultResponseDto>({
+        metricId,
+        cacheKey,
+        enableCacheFallback: this.fallbackHandler.isCacheFallbackEnabled(),
+        defaultValue: null,
+      });
+
+    let degradedMetricId = metricId;
+    let degradedValue:
+      | number
+      | string
+      | boolean
+      | Record<string, unknown>
+      | unknown[]
+      | null = null;
+    let degradedTimestamp = new Date().toISOString();
+
+    if (
+      fallbackResult.value &&
+      typeof fallbackResult.value === 'object' &&
+      'value' in fallbackResult.value
+    ) {
+      const cachedDto = fallbackResult.value;
+      degradedMetricId = cachedDto.metricId ?? metricId;
+      degradedValue = cachedDto.value ?? null;
+      degradedTimestamp = cachedDto.timestamp ?? new Date().toISOString();
+    } else if (
+      fallbackResult.value !== null &&
+      fallbackResult.value !== undefined
+    ) {
+      degradedValue = fallbackResult.value as
+        | number
+        | string
+        | boolean
+        | Record<string, unknown>
+        | unknown[];
+    }
+
+    return {
+      metricId: degradedMetricId,
+      value: degradedValue,
+      timestamp: degradedTimestamp,
+      computationTime: Date.now() - startTime,
+      fromCache: fallbackResult.fromCache ?? false,
+      status: fallbackResult.status,
+      warning: fallbackResult.warning,
+      error: fallbackResult.error,
+      cause: fallbackResult.cause,
+      cachedAt: fallbackResult.cachedAt,
+      age: fallbackResult.age,
+      dataAvailable: fallbackResult.dataAvailable,
+    };
   }
 
   /**

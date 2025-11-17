@@ -8,6 +8,8 @@ import {
   UseGuards,
   BadRequestException,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -50,6 +52,7 @@ export class CacheController {
    * @returns Invalidation response with count and status
    */
   @Post('invalidate')
+  @HttpCode(HttpStatus.OK)
   @RequireScopes('admin:cache')
   @ApiOperation({
     summary: 'Invalidate cache entries',

@@ -78,12 +78,6 @@ services:
       LRSQL_ENABLE_CLAMAV: "false"
       LRSQL_ALLOW_ALL_ORIGINS: "true"
       LRSQL_ENABLE_STMT_VALIDATE: "true"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
     networks:
       - laac-test
 

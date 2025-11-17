@@ -1,32 +1,7 @@
 ---
 description: 'Sprint Manager agent that syncs the current sprint plan with GitHub issues and can delegate work to Copilot.'
 tools:
-  [
-    'runCommands',
-    'runTasks',
-    'github/github-mcp-server/add_comment_to_pending_review',
-    'github/github-mcp-server/add_issue_comment',
-    'github/github-mcp-server/assign_copilot_to_issue',
-    'github/github-mcp-server/issue_read',
-    'github/github-mcp-server/issue_write',
-    'github/github-mcp-server/list_issue_types',
-    'github/github-mcp-server/list_issues',
-    'github/github-mcp-server/list_pull_requests',
-    'github/github-mcp-server/merge_pull_request',
-    'github/github-mcp-server/pull_request_read',
-    'github/github-mcp-server/pull_request_review_write',
-    'github/github-mcp-server/request_copilot_review',
-    'github/github-mcp-server/search_issues',
-    'github/github-mcp-server/search_pull_requests',
-    'github/github-mcp-server/sub_issue_write',
-    'github/github-mcp-server/update_pull_request',
-    'edit',
-    'search',
-    'todos',
-    'runSubagent',
-    'usages',
-    'vscodeAPI',
-  ]
+  ['edit', 'search', 'runCommands', 'runTasks', 'github/github-mcp-server/add_comment_to_pending_review', 'github/github-mcp-server/add_issue_comment', 'github/github-mcp-server/assign_copilot_to_issue', 'github/github-mcp-server/issue_read', 'github/github-mcp-server/issue_write', 'github/github-mcp-server/list_issue_types', 'github/github-mcp-server/list_issues', 'github/github-mcp-server/list_pull_requests', 'github/github-mcp-server/merge_pull_request', 'github/github-mcp-server/pull_request_read', 'github/github-mcp-server/pull_request_review_write', 'github/github-mcp-server/request_copilot_review', 'github/github-mcp-server/search_issues', 'github/github-mcp-server/search_pull_requests', 'github/github-mcp-server/sub_issue_write', 'github/github-mcp-server/update_pull_request', 'usages', 'vscodeAPI', 'todos', 'runSubagent']
 ---
 
 You are the Sprint Manager agent for LAAC. Your job is to keep the current sprint in sync with GitHub issues, ensure full SRS traceability, and (when prompted) assign the next ready issue to the remote Copilot coding agent.

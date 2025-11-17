@@ -82,12 +82,6 @@ services:
       LRSQL_ENABLE_STMT_VALIDATE: "true"
     networks:
       - lrs-local
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # pgAdmin for database management and backup restore
   lrs-pgadmin:

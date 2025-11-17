@@ -1,5 +1,215 @@
 # Sprint 3 Planning
 
+**LAAC System — MVP Analytics Pipeline (REQ-FN-004)**
+
+**Sprint Duration**: 2 weeks  
+**Sprint Goal**: Ship an end-to-end analytics pipeline that queries the Yetanalytics LRS, computes the metrics in the CSV, and serves them through the API results endpoint.  
+**Team Capacity**: [Copilot: Developer, theUpsider: Architect & Team Lead]  
+**Status**: 🔄 Reprioritized for MVP  
+**Planned Start**: November 14, 2025  
+**Planned End**: November 15, 2025
+
+---
+
+## Sprint Context
+
+### Why the Reprioritization?
+
+We need to expose a minimal but fully functional learning analytics pipeline to stakeholders. The previous plan focused on advanced metrics, scaffolding, and performance prep; the new goal is to satisfy REQ-FN-004 (Compute Analytics) end-to-end so that a single learner/course/topic/element flow is live against the LRS.
+
+### Implementation Snapshot (Nov 17, 2025)
+
+- ✅ **LRS integration (REQ-FN-002)** — `src/data-access/clients/lrs.client.ts` implements pagination, retries, circuit breaker metrics, and is covered by `lrs.client.spec.ts`.
+- ✅ **Cache-aside + resilience (REQ-FN-005/006/017)** — `src/metrics/services/computation.service.ts` orchestrates cache lookup, provider loading, LRS querying, fallback; Redis service lives in `src/data-access/services/cache.service.ts`.
+- ✅ **Metrics results endpoint (REQ-FN-005 & REQ-FN-023/024)** — `src/metrics/controllers/metrics.controller.ts` plus `test/metrics-results.e2e-spec.ts` prove the pipeline can be exercised via `/api/v1/metrics/:id/results`.
+- ✅ **Sample metric providers (REQ-FN-004/010)** — `course-completion`, `learning-engagement`, `topic-mastery` already compute against xAPI statements.
+- ⚠️ **Catalog + metadata still stubbed (REQ-FN-003)** — `MetricsService.getCatalog()` returns an empty list, so clients cannot discover the metrics that already exist.
+- ⚠️ **CSV coverage incomplete (REQ-FN-004)** — only 3/15 CSV metrics exist; no topic/element recency metrics or per-element best attempt calculations.
+- ⚠️ **LRS filters ignore course/topic/element IDs** — `ComputationService.buildLRSFilters()` passes only time filters, so every request fetches broad datasets.
+- ⚠️ **Docs and onboarding still describe the future state instead of the MVP**.
+
+---
+
+## Sprint Objectives
+
+1. Publish the actual catalog of available metrics and wire it to the providers already in code.
+2. Implement the CSV metrics required for MVP (CO/TO/EO tables) so that each dashboard level has actionable analytics.
+   2.1 Verify the CSV metrics against docker-compose Yetanalytics LRS with seeded data in e2e tests.
+3. Ensure each metric request issues the correct LRS query (course/topic/element scoped) and that we have seeded fixtures plus e2e tests to validate the pipeline.
+4. Update docs and API descriptions so integrators can call the MVP endpoints immediately after the sprint.
+
+---
+
+## Success Criteria
+
+- `/api/v1/metrics` returns at least the 15 CSV metrics with metadata (`requiredParams`, `dashboardLevel`, `outputType`).
+- `/api/v1/metrics/:id/results` produces deterministic results for sample data covering course, topic, and learning-element scopes with cache hits on repeated calls.
+- LRS queries include course/topic/element filters derived from request DTOs; warm-cache requests stay under P95 1s in dev measurements.
+- E2E suite seeds representative xAPI statements and validates the full flow for each dashboard level.
+- README + docs point to the MVP flow, environment variables, and REQ-FN-004 traceability.
+
+---
+
+## Sprint Backlog (Reprioritized)
+
+### Epic 10: Pipeline Hardening & Catalog (REQ-FN-003, REQ-FN-004, REQ-FN-005) — **11 pts**
+
+#### Story 10.1: Metrics Catalog & Provider Registry (4 pts)
+
+Expose every registered provider (existing + new) through the catalog and details endpoints.
+
+**Acceptance Criteria**
+
+- `GET /api/v1/metrics` lists all metrics with `id`, `dashboardLevel`, description, `requiredParams`, and `outputType`.
+- `GET /api/v1/metrics/:id` returns provider metadata and example payload.
+- Catalog reflects provider status dynamically (no duplicated config files).
+
+**Implementation Scope**
+
+- `src/metrics/services/metrics.service.ts` — replace stub with registry built from providers exported in `src/computation/providers/index.ts`.
+- `src/metrics/dto` — extend DTOs to include `requiredParams`, `outputType`, and version info.
+- `src/metrics/controllers/metrics.controller.ts` — update OpenAPI decorators.
+- `test/metrics.e2e-spec.ts` — add catalog assertions.
+
+#### Story 10.2: Parameter-Aware LRS Queries (4 pts)
+
+Inject course/topic/element filters into xAPI requests to minimize data fetch.
+
+**Acceptance Criteria**
+
+- Requests with `courseId` translate into `activity` filter; `topicId` maps to context extensions; `elementId` maps to specific activities per CSV definition.
+- Unit tests cover the mapping logic.
+- E2E verifies `LRSClient.queryStatements` receives filters reflecting request params.
+
+**Implementation Scope**
+
+- `src/metrics/dto/metric-results.dto.ts` — ensure validation for IDs aligns with filters.
+- `src/metrics/services/computation.service.ts` — enhance `buildLRSFilters`.
+- `src/data-access/clients/lrs-query.builder.ts` — helpers for topic/element context filters.
+- `test/metrics-results.e2e-spec.ts` — extend spies to assert filter payloads.
+
+#### Story 10.3: MVP Seed Data & Smoke Tests (3 pts)
+
+Provide deterministic fixtures that hit the full pipeline.
+
+**Acceptance Criteria**
+
+- New fixture set covers course/topic/element metrics.
+- `yarn test:e2e` seeds fixtures before running metrics tests.
+- Scripts documented so devs can replay locally.
+
+**Implementation Scope**
+
+- `test/fixtures/xapi/` — add JSON fixtures per dashboard level.
+- `test/setup-e2e.ts` & `scripts/seed-test-lrs.js` — load fixtures into in-memory/mock LRS.
+- `docs/TESTING.md` — document seeding workflow.
+
+---
+
+### Epic 11: CSV Metric Coverage (REQ-FN-004) — **14 pts**
+
+#### Story 11.1: Course-Level MVP Metrics (CO-001 → CO-005) (5 pts)
+
+Implement total score, possible score, total time, last three elements, and completion timestamps per course.
+
+**Acceptance Criteria**
+
+- Providers compute deterministic values with unit tests referencing REQ-FN-004.
+- Metadata clarifies filters (courseId, since/until, userId).
+- E2E proves results align with seeded fixtures.
+
+**Implementation Scope**
+
+- `src/computation/providers/course-score.provider.ts`
+- `src/computation/providers/course-max-score.provider.ts`
+- `src/computation/providers/course-time-spent.provider.ts`
+- `src/computation/providers/course-last-elements.provider.ts`
+- Corresponding `*.spec.ts` files + additions to `ComputationModule`.
+
+#### Story 11.2: Topic-Level MVP Metrics (TO-001 → TO-005) (5 pts)
+
+Extend topic providers beyond `topic-mastery` to cover score totals, time, recency.
+
+**Implementation Scope**
+
+- `topic-score.provider.ts`, `topic-max-score.provider.ts`, `topic-time-spent.provider.ts`, `topic-last-elements.provider.ts`.
+- Update catalog metadata + unit/e2e tests.
+
+#### Story 11.3: Learning-Element MVP Metrics (EO-001 → EO-005) (4 pts)
+
+Deliver best-attempt score/status/time-based metrics.
+
+**Implementation Scope**
+
+- `element-score.provider.ts`, `element-status.provider.ts`, `element-attempts.provider.ts`, `element-time-spent.provider.ts`.
+- Shared helper utilities for parsing attempts (`src/computation/utils/attempt-helpers.ts`).
+- Tests and catalog updates.
+
+---
+
+### Epic 12: MVP Delivery Readiness (REQ-FN-001, REQ-FN-004, REQ-FN-008/009) — **6 pts**
+
+#### Story 12.1: API Contract & Docs Refresh (3 pts)
+
+**Implementation Scope**
+
+- Update `docs/SRS.md`, `docs/Metrics-Specification.md` traceability tables with implemented metrics.
+- Refresh `README.md` + add quickstart for MVP pipeline.
+- Re-run Swagger generation to ensure new metadata exposed.
+
+#### Story 12.2: LRS Configuration & Health Paths (3 pts)
+
+**Implementation Scope**
+
+- Document env vars in `.env.example` / `docs/LOCAL-LRS-SETUP.md`.
+- Ensure `/health/readiness` verifies Redis + LRS connectivity for MVP.
+- Add troubleshooting section for Yetanalytics credentials.
+
+---
+
+## Execution Plan
+
+1. **Week 1 (Days 1-5)** — Finish Epic 10 and seed data so the base pipeline is stable.
+2. **Week 1.5 (Days 4-7)** — Build course + topic metrics (Story 11.1 + 11.2) leveraging new fixtures.
+3. **Week 2 (Days 8-12)** — Implement learning-element metrics (11.3) and documentation refresh (Epic 12).
+4. **Week 2 End (Days 13-14)** — Regression + E2E runs, polish catalog metadata, update docs.
+
+---
+
+## Dependencies & Blockers
+
+- Yetanalytics test LRS credentials must be available (REQ-FN-002); update `.env` with fresh API key.
+- Redis must be reachable for cache tests; docker-compose dev profile already in repo.
+- Need confirmation on CSV-to-metric ID mapping; will document decisions inside provider comments referencing REQ-FN-004.
+
+---
+
+## Testing Strategy
+
+- **Unit**: Each provider gets deterministic tests with mock statements + REQ-FN-004 references; catalog service unit tests verify metadata.
+- **E2E**: `metrics-results`, new `metrics-catalog`, and a dedicated `metrics-mvp.e2e-spec.ts` file cover course/topic/element flows.
+- **Performance smoke**: capture manual timing via `yarn test:e2e` + sample load, but full k6 suite deferred.
+
+---
+
+## Definition of Done
+
+- Code + tests merged with >80% coverage for touched code.
+- `/api/v1/metrics` and `/api/v1/metrics/:id/results` documented via Swagger with accurate examples.
+- Fixtures + docs enable devs to reproduce MVP results locally.
+- Traceability tables updated to show REQ-FN-004 progress.
+- No lint errors; CI green.
+
+---
+
+## Deferred / Stretch Work
+
+- Developer experience epics (contribution guide, scaffolding, testing utilities) moved to Sprint 4.
+- API versioning + deprecation policy (REQ-FN-016) postponed until MVP is adopted.
+- Performance testing (REQ-FN-022) and Grafana dashboards remain in backlog.
+
+# Sprint 3 Planning
+
 **LAAC System — Advanced Metrics, Documentation & Production Readiness**
 
 **Sprint Duration**: 2 weeks  
@@ -77,6 +287,7 @@ Sprint 3 builds on existing modules without structural changes:
 Sprint 3 implements metrics from `docs/Metrics-Specification.md`:
 
 **Topic Overview (TO-\*):**
+
 - TO-001: Total Score Earned by Student in Topic
 - TO-002: Possible Total Score for Topic
 - TO-003: Total Time Spent by Student in Topic
@@ -84,6 +295,7 @@ Sprint 3 implements metrics from `docs/Metrics-Specification.md`:
 - TO-005: Completion Dates of Last Three Elements in Topic
 
 **Element Overview (EO-\*):**
+
 - EO-001: Score of Best Attempt for Element
 - EO-002: Latest Attempt Status for Element
 - EO-003: Number of Attempts for Element
@@ -430,6 +642,7 @@ Close redundant open issues and consolidate documentation.
 ## Execution Plan
 
 ### Phase 1 — Advanced Metrics (Week 1)
+
 **Priority**: Critical | **Story Points**: 13
 
 - Story 10.1: Topic-Level Metrics (6 pts)
@@ -441,6 +654,7 @@ Close redundant open issues and consolidate documentation.
 ---
 
 ### Phase 2 — Developer Experience (Week 1-2)
+
 **Priority**: High | **Story Points**: 8
 
 - Story 11.1: Contribution Guide (3 pts)
@@ -452,6 +666,7 @@ Close redundant open issues and consolidate documentation.
 ---
 
 ### Phase 3 — API Maturity (Week 2)
+
 **Priority**: High | **Story Points**: 6
 
 - Story 12.1: API Versioning Infrastructure (4 pts)
@@ -462,6 +677,7 @@ Close redundant open issues and consolidate documentation.
 ---
 
 ### Phase 4 — Performance & Cleanup (Week 2)
+
 **Priority**: High | **Story Points**: 8
 
 - Story 13.1: k6 Performance Test Suite (4 pts)
@@ -504,12 +720,12 @@ Based on Sprint 2 performance:
 
 ### Known Risks
 
-| Risk                                  | Impact | Probability | Mitigation                                        |
-| ------------------------------------- | ------ | ----------- | ------------------------------------------------- |
-| xAPI statement complexity (Topic/Element) | High   | Medium      | Use Metrics Spec as authoritative reference       |
-| k6 test data seeding complexity       | Medium | Medium      | Start with minimal test data, expand iteratively  |
-| API versioning migration complexity   | Medium | Low         | v1 is baseline, no migrations needed yet          |
-| Developer guide comprehensiveness     | Low    | Low         | Iterate based on contributor feedback             |
+| Risk                                      | Impact | Probability | Mitigation                                       |
+| ----------------------------------------- | ------ | ----------- | ------------------------------------------------ |
+| xAPI statement complexity (Topic/Element) | High   | Medium      | Use Metrics Spec as authoritative reference      |
+| k6 test data seeding complexity           | Medium | Medium      | Start with minimal test data, expand iteratively |
+| API versioning migration complexity       | Medium | Low         | v1 is baseline, no migrations needed yet         |
+| Developer guide comprehensiveness         | Low    | Low         | Iterate based on contributor feedback            |
 
 ---
 
