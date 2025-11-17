@@ -12,6 +12,8 @@
  *   LRS_URL: LRS endpoint URL (default: http://localhost:8090/xapi)
  *   LRS_API_KEY: LRS API key (default: test-api-key)
  *   LRS_API_SECRET: LRS API secret (default: test-api-secret)
+ *   LRS_FIXTURES: Comma-separated list of fixture files to load (optional)
+ *   LRS_POST_READY_DELAY_MS: Delay after /about readiness before seeding
  */
 
 const fs = require('fs');
@@ -25,24 +27,116 @@ const LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
 const LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
 const MAX_RETRIES = 9; // Wait up to 40 seconds for LRS to be ready (9 attempts with 8 delays)
 const RETRY_DELAY = 5000; // 5 seconds between retries
+const POST_READY_DELAY_MS = Number(process.env.LRS_POST_READY_DELAY_MS || 5000);
 const BASIC_AUTH_HEADER = `Basic ${Buffer.from(
   `${LRS_API_KEY}:${LRS_API_SECRET}`,
 ).toString('base64')}`;
-
-// Load xAPI statements from fixtures
-const FIXTURES_PATH = path.join(
-  __dirname,
-  '..',
+const REPO_ROOT = path.join(__dirname, '..');
+const FIXTURES_DIR = path.join(REPO_ROOT, 'test', 'fixtures', 'xapi');
+const LEGACY_FIXTURE_PATH = path.join(
+  REPO_ROOT,
   'test',
   'fixtures',
   'xapi-statements.json',
 );
+const DEFAULT_FIXTURE_FILES = [
+  'course-mvp.json',
+  'topic-mvp.json',
+  'element-mvp.json',
+];
 
 /**
  * Sleep for specified milliseconds
  */
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Resolve fixture filenames from defaults or environment override
+ */
+function resolveFixtureFiles() {
+  if (process.env.LRS_FIXTURES) {
+    return process.env.LRS_FIXTURES.split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
+  const missingDefault = DEFAULT_FIXTURE_FILES.some((file) => {
+    const candidate = resolveFixturePath(file);
+    return !fs.existsSync(candidate);
+  });
+
+  if (missingDefault) {
+    console.warn(
+      '⚠️ Default MVP fixture files missing, falling back to legacy xapi-statements.json',
+    );
+    return [LEGACY_FIXTURE_PATH];
+  }
+
+  return DEFAULT_FIXTURE_FILES;
+}
+
+/**
+ * Resolve a fixture path relative to repo/test fixtures directory
+ * @param {string} fileRef Relative or absolute reference
+ */
+function resolveFixturePath(fileRef) {
+  if (path.isAbsolute(fileRef)) {
+    return fileRef;
+  }
+
+  const fixtureDirCandidate = path.join(FIXTURES_DIR, fileRef);
+  if (fs.existsSync(fixtureDirCandidate)) {
+    return fixtureDirCandidate;
+  }
+
+  return path.join(REPO_ROOT, fileRef);
+}
+
+/**
+ * Load statements for the requested fixture files
+ */
+function loadFixtureStatements(fixtureFiles = []) {
+  const filesToLoad =
+    fixtureFiles.length > 0 ? fixtureFiles : [LEGACY_FIXTURE_PATH];
+  const statements = [];
+  const loadedFiles = [];
+
+  filesToLoad.forEach((fileRef) => {
+    const absolutePath = resolveFixturePath(fileRef);
+
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error(`Fixtures file not found: ${absolutePath}`);
+    }
+
+    const fileContents = fs.readFileSync(absolutePath, 'utf-8');
+    let parsed;
+
+    try {
+      parsed = JSON.parse(fileContents);
+    } catch (error) {
+      throw new Error(`Failed to parse fixture file: ${absolutePath}`);
+    }
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error(
+        `Fixture file must contain a non-empty array of statements: ${absolutePath}`,
+      );
+    }
+
+    statements.push(...parsed);
+    loadedFiles.push({
+      path: absolutePath,
+      count: parsed.length,
+    });
+  });
+
+  if (statements.length === 0) {
+    throw new Error('No xAPI statements loaded from fixture files');
+  }
+
+  return { statements, files: loadedFiles };
 }
 
 /**
@@ -182,6 +276,38 @@ async function seedStatements(statements) {
 }
 
 /**
+ * Orchestrate deterministic seeding for tests and tooling
+ */
+async function seedTestLRS() {
+  const fixtureRefs = resolveFixtureFiles();
+  const { statements, files } = loadFixtureStatements(fixtureRefs);
+
+  console.log('📚 Fixture files to seed:');
+  files.forEach(({ path: fixturePath, count }) => {
+    console.log(`  • ${fixturePath} (${count} statements)`);
+  });
+  console.log(
+    `✅ Loaded ${statements.length} statements from ${files.length} file(s)\n`,
+  );
+
+  await waitForLRS();
+
+  if (POST_READY_DELAY_MS > 0) {
+    console.log(
+      `⏳ Waiting ${POST_READY_DELAY_MS / 1000}s for LRS to fully initialize...`,
+    );
+    await sleep(POST_READY_DELAY_MS);
+  }
+
+  const success = await seedStatements(statements);
+  if (!success) {
+    throw new Error('Failed to seed xAPI statements to LRS');
+  }
+
+  return { statementCount: statements.length, files };
+}
+
+/**
  * Main execution
  */
 async function main() {
@@ -189,41 +315,21 @@ async function main() {
   console.log('================================\n');
   console.log(`LRS URL: ${LRS_URL}`);
   console.log(`API Key: ${LRS_API_KEY}`);
-  console.log(`Fixtures: ${FIXTURES_PATH}\n`);
+  if (process.env.LRS_FIXTURES) {
+    console.log(`Fixtures Override: ${process.env.LRS_FIXTURES}`);
+  } else {
+    console.log(
+      `Fixture Defaults: ${DEFAULT_FIXTURE_FILES.join(', ') || 'legacy file'}`,
+    );
+  }
+  console.log('');
 
   try {
-    // Check if fixtures file exists
-    if (!fs.existsSync(FIXTURES_PATH)) {
-      throw new Error(`Fixtures file not found: ${FIXTURES_PATH}`);
-    }
-
-    // Load xAPI statements
-    const statementsJson = fs.readFileSync(FIXTURES_PATH, 'utf-8');
-    const statements = JSON.parse(statementsJson);
-
-    if (!Array.isArray(statements) || statements.length === 0) {
-      throw new Error('Fixtures file must contain an array of xAPI statements');
-    }
-
-    console.log(`✅ Loaded ${statements.length} statements from fixtures\n`);
-
-    // Wait for LRS to be ready
-    await waitForLRS();
-
-    // Add a small delay to ensure LRS is fully initialized
-    console.log('⏳ Waiting 5 seconds for LRS to fully initialize...');
-    await sleep(5000);
-
-    // Seed statements
-    const success = await seedStatements(statements);
-
-    if (success) {
-      console.log('\n✅ Test LRS seeding completed successfully!');
-      process.exit(0);
-    } else {
-      console.error('\n❌ Test LRS seeding failed!');
-      process.exit(1);
-    }
+    const result = await seedTestLRS();
+    console.log(
+      `\n✅ Test LRS seeding completed successfully (${result.statementCount} statements)!`,
+    );
+    process.exit(0);
   } catch (error) {
     console.error(`\n❌ Fatal error: ${error.message}`);
     if (error.stack) {
@@ -238,4 +344,9 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { seedStatements, waitForLRS };
+module.exports = {
+  seedStatements,
+  waitForLRS,
+  seedTestLRS,
+  loadFixtureStatements,
+};

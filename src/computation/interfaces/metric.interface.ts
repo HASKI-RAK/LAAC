@@ -81,6 +81,33 @@ export interface IMetricComputation {
   readonly version?: string;
 
   /**
+   * User-facing title shown in catalog responses (optional)
+   * Falls back to a title-cased version of the metric id when omitted
+   */
+  readonly title?: string;
+
+  /**
+   * Required query parameters for the metric (e.g., courseId, topicId)
+   * Used by catalog metadata and request validation guidance
+   */
+  readonly requiredParams?: (keyof MetricParams)[];
+
+  /**
+   * Optional parameters supported by the metric (e.g., since, until)
+   */
+  readonly optionalParams?: (keyof MetricParams)[];
+
+  /**
+   * Declares the shape of the metric output value for catalog metadata
+   */
+  readonly outputType?: MetricOutputType;
+
+  /**
+   * Example inputs/outputs for documentation and testing hints
+   */
+  readonly example?: MetricExample;
+
+  /**
    * Compute the metric value from xAPI statements
    * Implements REQ-FN-004: Must be a stateless, pure function
    *
@@ -137,4 +164,22 @@ export interface IMetricComputation {
    * ```
    */
   validateParams?(params: MetricParams): void;
+}
+
+/**
+ * Enum representing high-level output shapes exposed via the API catalog
+ */
+export type MetricOutputType = 'scalar' | 'object' | 'array';
+
+/**
+ * Example configuration surfaced in the catalog/detail endpoints
+ */
+export interface MetricExample {
+  /** Sample request parameters */
+  params: Partial<MetricParams>;
+  /** Representative value + metadata snippet */
+  result: {
+    value: MetricResult['value'] | null;
+    metadata?: Record<string, unknown>;
+  };
 }

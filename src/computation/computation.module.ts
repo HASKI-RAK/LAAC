@@ -1,10 +1,5 @@
 import { Module } from '@nestjs/common';
-import {
-  ExampleMetricProvider,
-  CourseCompletionProvider,
-  LearningEngagementProvider,
-  TopicMasteryProvider,
-} from './providers';
+import { METRIC_PROVIDER_CLASSES } from './providers';
 
 /**
  * Computation Module
@@ -20,17 +15,7 @@ import {
 @Module({
   imports: [],
   controllers: [],
-  providers: [
-    ExampleMetricProvider,
-    CourseCompletionProvider,
-    LearningEngagementProvider,
-    TopicMasteryProvider,
-  ],
-  exports: [
-    ExampleMetricProvider,
-    CourseCompletionProvider,
-    LearningEngagementProvider,
-    TopicMasteryProvider,
-  ],
+  providers: [...METRIC_PROVIDER_CLASSES],
+  exports: [...METRIC_PROVIDER_CLASSES],
 })
 export class ComputationModule {}

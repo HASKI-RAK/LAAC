@@ -31,10 +31,10 @@ import { MetricsPrometheusController } from '../admin/controllers/metrics-promet
     }),
     // REQ-NF-002: Health check endpoints
     HealthModule,
-    // REQ-FN-021: Prometheus metrics export at /metrics endpoint
-    // Use custom controller with @Public() decorator to allow unauthenticated access
+    // REQ-FN-021: Prometheus metrics export at /prometheus endpoint
+    // Controller has @Controller('prometheus') and is excluded from global prefix
+    // This results in the endpoint being accessible at /prometheus (standard would be /metrics but we avoid conflict)
     PrometheusModule.register({
-      path: '/metrics',
       defaultMetrics: {
         enabled: true, // Enable default Node.js metrics
       },

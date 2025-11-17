@@ -8,6 +8,7 @@ This document provides comprehensive information about testing the LAAC (Learnin
 - [Test Types](#test-types)
 - [Running Tests](#running-tests)
 - [E2E Test Infrastructure](#e2e-test-infrastructure)
+- [Deterministic LRS Fixtures](#deterministic-lrs-fixtures)
 - [Writing Tests](#writing-tests)
 - [Test Helpers and Utilities](#test-helpers-and-utilities)
 - [Test Configuration](#test-configuration)
@@ -121,8 +122,8 @@ test/
 
 ```json
 {
-  "testTimeout": 30000,        // 30 second timeout for E2E tests
-  "testEnvironment": "node",    // Node environment
+  "testTimeout": 30000, // 30 second timeout for E2E tests
+  "testEnvironment": "node", // Node environment
   "testRegex": ".e2e-spec.ts$", // Match E2E test files
   "setupFiles": ["<rootDir>/setup-e2e.ts"]
 }
@@ -137,7 +138,11 @@ test/
 Generates JWT tokens for testing authenticated endpoints.
 
 ```typescript
-import { generateJwt, generateAnalyticsToken, generateAdminToken } from './helpers/auth.helper';
+import {
+  generateJwt,
+  generateAnalyticsToken,
+  generateAdminToken,
+} from './helpers/auth.helper';
 
 // Generate valid token with custom options
 const token = generateJwt({
@@ -168,33 +173,73 @@ import { authenticatedGet, authenticatedPost } from './helpers/request.helper';
 
 // Authenticated GET request
 await authenticatedGet(app, '/api/v1/metrics', {
-  scopes: ['analytics:read']
+  scopes: ['analytics:read'],
 }).expect(200);
 
 // Authenticated POST request
-await authenticatedPost(app, '/api/v1/metrics', {
-  metricId: 'test-metric'
-}, {
-  scopes: ['analytics:write']
-}).expect(201);
+await authenticatedPost(
+  app,
+  '/api/v1/metrics',
+  {
+    metricId: 'test-metric',
+  },
+  {
+    scopes: ['analytics:write'],
+  },
+).expect(201);
 ```
 
 ### 3. Redis Helper (`test/helpers/redis.helper.ts`)
 
 Manages test Redis instances (optional - most tests use in-memory storage).
 
-```typescript
+````typescript
 import { setupTestRedis, cleanupTestRedis, clearTestRedis } from './helpers/redis.helper';
 
 // Setup Redis for tests
 const redis = await setupTestRedis();
+
+## Deterministic LRS Fixtures
+
+Deterministic seeding keeps metrics-focused E2E tests stable and traceable (REQ-FN-005, REQ-FN-018). Each run loads a small, representative xAPI dataset into the local LRS before any specs execute.
+
+### Fixture Layout
+
+- `test/fixtures/xapi/course-mvp.json` — course-level statements for completion and engagement scenarios
+- `test/fixtures/xapi/topic-mvp.json` — topic-level quiz attempts with scored verbs for mastery calculations
+- `test/fixtures/xapi/element-mvp.json` — element-level interactions for fine-grained metrics and future expansion
+
+You can add additional files alongside these defaults; the seeding script aggregates all selected fixtures.
+
+### Automation Flow
+
+1. `test/jest-e2e.json` registers `test/global-setup.js` as `globalSetup`.
+2. The setup step imports `seedTestLRS()` from `scripts/seed-test-lrs.js`, loads the fixtures, waits for `/xapi/about`, and posts the statements.
+3. `yarn test:e2e` (and CI) therefore run against a predictable dataset unless you explicitly opt out.
+
+### Configuration Flags
+
+- `SKIP_LRS_SEED=true yarn test:e2e` — bypass seeding when the LRS already contains the desired data.
+- `LRS_FIXTURES="test/fixtures/xapi/course-mvp.json" yarn test:e2e` — override the default file list with a comma-separated set of absolute or repo-relative paths.
+- `LRS_POST_READY_DELAY_MS=0 node scripts/seed-test-lrs.js` — shorten or disable the warm-up delay once the LRS is already responsive.
+
+To refresh the dataset manually (e.g., while editing fixtures), run:
+
+```bash
+node scripts/seed-test-lrs.js
+````
+
+The script logs which files were ingested and how many statements were inserted, making it easy to verify coverage against `docs/SRS.md` requirements.
+
+---
 
 // Clear test data between tests
 await clearTestRedis();
 
 // Cleanup Redis after tests
 await cleanupTestRedis();
-```
+
+````
 
 ### 4. Test Fixtures (`test/fixtures/users.fixture.ts`)
 
@@ -208,7 +253,7 @@ const analyticsUser = getTestUser('ANALYTICS_USER');
 
 // Get super admin
 const superAdmin = getTestUser('SUPER_ADMIN');
-```
+````
 
 ### 5. Test Constants (`test/constants.ts`)
 
@@ -261,7 +306,7 @@ describe('REQ-FN-XXX: Feature Name (e2e)', () => {
   describe('GET /endpoint', () => {
     it('should return 200 with valid authentication', async () => {
       const token = generateJwt({ scopes: ['analytics:read'] });
-      
+
       return request(app.getHttpServer())
         .get('/api/v1/endpoint')
         .set('Authorization', `Bearer ${token}`)
@@ -272,9 +317,7 @@ describe('REQ-FN-XXX: Feature Name (e2e)', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      return request(app.getHttpServer())
-        .get('/api/v1/endpoint')
-        .expect(401);
+      return request(app.getHttpServer()).get('/api/v1/endpoint').expect(401);
     });
   });
 });
@@ -320,7 +363,12 @@ The project provides shared testing utilities to simplify unit test setup and re
 #### 1. Test Module Helpers (`test-utils.ts`)
 
 ```typescript
-import { createTestingModule, getTestService, createMockProvider, createSpyObj } from '@/common/testing';
+import {
+  createTestingModule,
+  getTestService,
+  createMockProvider,
+  createSpyObj,
+} from '@/common/testing';
 
 // Create a testing module with providers
 const module = await createTestingModule({
@@ -330,7 +378,7 @@ const module = await createTestingModule({
 // Create and retrieve service in one call
 const service = await getTestService(
   { providers: [MyService, mockLoggerProvider] },
-  MyService
+  MyService,
 );
 
 // Create a mock provider
@@ -346,7 +394,11 @@ const loggerSpy = createSpyObj(['log', 'error', 'warn']);
 #### 2. Mock Logger (`mock-logger.ts`)
 
 ```typescript
-import { createMockLogger, getMockLoggerProvider, createSilentLogger } from '@/common/testing';
+import {
+  createMockLogger,
+  getMockLoggerProvider,
+  createSilentLogger,
+} from '@/common/testing';
 
 // Create mock logger with jest.fn() methods
 const mockLogger = createMockLogger();
@@ -365,11 +417,11 @@ const silentLogger = createSilentLogger();
 #### 3. Mock Cache/Redis (`mock-cache.ts`)
 
 ```typescript
-import { 
-  createMockRedis, 
-  createMockCache, 
-  getMockCacheProvider, 
-  getMockRedisProvider 
+import {
+  createMockRedis,
+  createMockCache,
+  getMockCacheProvider,
+  getMockRedisProvider,
 } from '@/common/testing';
 
 // Mock Redis client with in-memory storage
@@ -396,9 +448,9 @@ const module = await Test.createTestingModule({
 #### 4. Test Fixtures (`fixtures/test-data.ts`)
 
 ```typescript
-import { 
-  TEST_USERS, 
-  TEST_METRICS, 
+import {
+  TEST_USERS,
+  TEST_METRICS,
   TEST_XAPI_STATEMENTS,
   getTestUser,
   getTestMetric,
@@ -417,20 +469,17 @@ const statement = TEST_XAPI_STATEMENTS[0];
 
 // Create custom xAPI statement
 const customStatement = createTestStatement({
-  actor: { name: 'Custom Actor' }
+  actor: { name: 'Custom Actor' },
 });
 ```
 
 ### Testing Patterns
 
-
 #### 1. Authentication Testing
 
 ```typescript
 it('should deny access without auth token', async () => {
-  return request(app.getHttpServer())
-    .get('/api/v1/protected')
-    .expect(401);
+  return request(app.getHttpServer()).get('/api/v1/protected').expect(401);
 });
 
 it('should deny access with invalid token', async () => {
@@ -503,29 +552,29 @@ module.exports = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
-  
+
   // Test file pattern
   testRegex: '.*\\.spec\\.ts$',
-  
+
   // Coverage thresholds - gradually increasing to 80% target
   coverageThreshold: {
     global: {
-      branches: 55,   // Target: 80%
-      functions: 45,  // Target: 80%
-      lines: 55,      // Target: 80%
+      branches: 55, // Target: 80%
+      functions: 45, // Target: 80%
+      lines: 55, // Target: 80%
       statements: 55, // Target: 80%
     },
   },
-  
+
   // Files excluded from coverage
   collectCoverageFrom: [
     '**/*.(t|j)s',
-    '!**/*.spec.ts',      // Test files
+    '!**/*.spec.ts', // Test files
     '!**/*.interface.ts', // Type definitions
-    '!**/*.dto.ts',       // DTOs (validated via class-validator)
-    '!**/index.ts',       // Barrel exports
-    '!main.ts',           // Application entry point
-    '!**/testing/**',     // Test utilities and fixtures
+    '!**/*.dto.ts', // DTOs (validated via class-validator)
+    '!**/index.ts', // Barrel exports
+    '!main.ts', // Application entry point
+    '!**/testing/**', // Test utilities and fixtures
   ],
 };
 ```
@@ -547,6 +596,7 @@ Coverage reports are generated in the `coverage/` directory:
 - **Console Summary**: Displayed after running `yarn test:cov`
 
 The coverage threshold ensures that:
+
 - Code coverage does not regress below current baseline
 - New code should include adequate test coverage
 - Critical paths (authentication, validation, metrics) are well-tested
@@ -560,7 +610,6 @@ Tests will **fail** if coverage drops below the configured thresholds, preventin
 ---
 
 ## Test Configuration
-
 
 ### Environment Variables
 
@@ -728,6 +777,7 @@ open coverage/lcov-report/index.html
 ```
 
 Coverage reports show:
+
 - Line coverage
 - Branch coverage
 - Function coverage
@@ -755,4 +805,4 @@ Coverage reports show:
 
 ---
 
-*Last Updated: 2025-11-12*
+_Last Updated: 2025-11-12_

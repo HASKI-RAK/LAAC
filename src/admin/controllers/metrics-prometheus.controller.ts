@@ -21,7 +21,7 @@ import { Public } from '../../auth/decorators';
  * The @Controller() decorator without path allows PrometheusModule to set the path
  */
 @ApiTags('Prometheus')
-@Controller()
+@Controller('prometheus') // Explicit path for exclude from global prefix
 @Public() // REQ-FN-021: Metrics endpoint must be publicly accessible for scraping
 @SkipThrottle() // REQ-FN-024: Metrics endpoint bypasses rate limiting
 export class MetricsPrometheusController {

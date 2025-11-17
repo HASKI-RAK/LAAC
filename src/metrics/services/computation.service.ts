@@ -27,6 +27,7 @@ import { MetricParams } from '../../computation/interfaces/metric-params.interfa
 import { MetricResultResponseDto } from '../dto/metric-results.dto';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
 import { generateCacheKey } from '../../data-access/utils/cache-key.util';
+import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
 
 /**
  * Computation Service
@@ -281,21 +282,7 @@ export class ComputationService {
    */
   private async loadProvider(metricId: string): Promise<IMetricComputation> {
     try {
-      // Import all provider classes
-      const {
-        ExampleMetricProvider,
-        CourseCompletionProvider,
-        LearningEngagementProvider,
-        TopicMasteryProvider,
-      } = await import('../../computation/providers');
-
-      // List of all provider classes
-      const providerClasses = [
-        ExampleMetricProvider,
-        CourseCompletionProvider,
-        LearningEngagementProvider,
-        TopicMasteryProvider,
-      ];
+      const providerClasses = [...METRIC_PROVIDER_CLASSES];
 
       // Search for provider with matching ID
       for (const ProviderClass of providerClasses) {
@@ -355,11 +342,33 @@ export class ComputationService {
       filters.until = params.until;
     }
 
-    // Context filters (courseId maps to xAPI context.extensions)
-    // Note: Full context filtering implementation depends on xAPI schema
-    // For now, we fetch statements and let provider filter by context
+    const activityFilter = this.resolveActivityFilter(params);
+    if (activityFilter) {
+      filters.activity = activityFilter.id;
+      if (activityFilter.related !== undefined) {
+        filters.related_activities = activityFilter.related;
+      }
+    }
 
     return filters;
+  }
+
+  private resolveActivityFilter(
+    params: MetricParams,
+  ): { id: string; related?: boolean } | null {
+    if (params.elementId) {
+      return { id: params.elementId, related: false };
+    }
+
+    if (params.topicId) {
+      return { id: params.topicId, related: true };
+    }
+
+    if (params.courseId) {
+      return { id: params.courseId, related: true };
+    }
+
+    return null;
   }
 
   /**

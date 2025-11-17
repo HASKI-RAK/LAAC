@@ -38,7 +38,7 @@ async function bootstrap() {
       'health',
       'health/liveness',
       'health/readiness',
-      'prometheus',
+      'prometheus', // Prometheus metrics controller path (REQ-FN-021)
     ], // Exclude public routes from prefix
   });
 

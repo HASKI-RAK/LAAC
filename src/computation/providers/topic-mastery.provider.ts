@@ -42,6 +42,9 @@ export class TopicMasteryProvider implements IMetricComputation {
    */
   readonly dashboardLevel = 'topic';
 
+  /** Catalog-facing title */
+  readonly title = 'Topic Mastery Score';
+
   /**
    * Human-readable description
    */
@@ -52,6 +55,27 @@ export class TopicMasteryProvider implements IMetricComputation {
    * Semantic version
    */
   readonly version = '1.0.0';
+
+  readonly requiredParams: Array<keyof MetricParams> = ['courseId', 'topicId'];
+
+  readonly optionalParams: Array<keyof MetricParams> = ['since', 'until'];
+
+  readonly outputType = 'scalar' as const;
+
+  readonly example = {
+    params: {
+      courseId: 'course-123',
+      topicId: 'topic-456',
+    },
+    result: {
+      value: 88.1,
+      metadata: {
+        attemptCount: 12,
+        successRate: 0.83,
+        unit: 'score',
+      },
+    },
+  } as const;
 
   /**
    * Compute the topic mastery score

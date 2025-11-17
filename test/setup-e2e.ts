@@ -4,11 +4,22 @@
 // Set up required environment variables before any imports
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long-for-testing';
 
-// LRS configuration - use real LRS in CI, mock URL locally
+// LRS configuration - matches docker-compose.test.yml
 // CI will provide LRS_URL, LRS_API_KEY, and LRS_API_SECRET via environment
-process.env.LRS_URL = process.env.LRS_URL || 'http://localhost:8090/xapi';
-process.env.LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
-process.env.LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
+// For local testing, these match the docker-compose.test.yml LRS service
+process.env.LRS_INSTANCES = process.env.LRS_INSTANCES || JSON.stringify([
+  {
+    id: 'local-dev',
+    name: 'Local Development LRS',
+    endpoint: process.env.LRS_URL || 'http://localhost:8090/xapi',
+    timeoutMs: 10000,
+    auth: {
+      type: 'basic',
+      username: process.env.LRS_API_KEY || 'test-api-key',
+      password: process.env.LRS_API_SECRET || 'test-api-secret',
+    },
+  },
+]);
 
 process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
 process.env.NODE_ENV = 'test';
