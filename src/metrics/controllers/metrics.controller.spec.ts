@@ -97,9 +97,11 @@ describe('REQ-FN-003: MetricsController', () => {
     it('should return metric detail from service', () => {
       const mockMetric: MetricDetailResponseDto = {
         id: 'test-metric',
+        title: 'Test Metric',
         dashboardLevel: DashboardLevel.COURSE,
         description: 'Test metric description',
-        params: { test: true },
+        requiredParams: ['courseId'],
+        outputType: 'scalar',
       };
 
       const getByIdSpy = jest
@@ -151,8 +153,11 @@ describe('REQ-FN-003: MetricsController', () => {
     it('should handle metric response without optional params field', () => {
       const mockMetric: MetricDetailResponseDto = {
         id: 'simple-metric',
+        title: 'Simple Metric',
         dashboardLevel: DashboardLevel.TOPIC,
         description: 'Simple metric without params',
+        requiredParams: [],
+        outputType: 'scalar',
       };
 
       jest.spyOn(service, 'getMetricById').mockReturnValue(mockMetric);
@@ -160,7 +165,6 @@ describe('REQ-FN-003: MetricsController', () => {
       const result = controller.getMetricById('simple-metric');
 
       expect(result).toEqual(mockMetric);
-      expect(result.params).toBeUndefined();
     });
 
     it('should handle all dashboard levels', () => {
@@ -173,8 +177,11 @@ describe('REQ-FN-003: MetricsController', () => {
       dashboardLevels.forEach((level, index) => {
         const mockMetric: MetricDetailResponseDto = {
           id: `metric-${index}`,
+          title: `Metric ${index}`,
           dashboardLevel: level,
           description: `Metric for ${level} level`,
+          requiredParams: [],
+          outputType: 'scalar',
         };
 
         jest.spyOn(service, 'getMetricById').mockReturnValue(mockMetric);

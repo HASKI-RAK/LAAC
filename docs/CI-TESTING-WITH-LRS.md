@@ -1,17 +1,16 @@
 # Testing with Real LRS and Redis in CI/CD
 
-This guide explains how LAAC tests against real LRS (Learning Record Store) and Redis instances in GitHub Actions CI/CD pipelines.
+This guide explains how LAAC tests against real LRS (Learning Record Store) and Redis instances in GitHub Actions CI/CD pipelines, with automatic environment detection for seamless local and cloud testing.
 
 ## Overview
 
 When GitHub Copilot or any CI/CD runner executes tests, they now run against:
 
 - **Redis 7** (for caching tests)
-- **PostgreSQL 16** (LRS database)
-- **Yetanalytics LRSQL** (xAPI-compliant LRS)
-- **Seeded test data** (sample xAPI statements)
+- **External LRS** (your production-like LRS with pre-populated test data - CI/CD only)
+- **Local LRS** (containerized Yetanalytics LRSQL - local development only)
 
-This ensures E2E tests validate real integrations rather than mocked responses.
+**Key Feature: Automatic Environment Detection** - Tests automatically use the correct LRS configuration based on the environment without manual intervention.
 
 ## Architecture
 
@@ -19,23 +18,42 @@ This ensures E2E tests validate real integrations rather than mocked responses.
 ┌─────────────────────────────────────────────────────────────┐
 │ GitHub Actions Runner (Ubuntu)                              │
 │                                                              │
-│  ┌──────────────┐    ┌─────────────┐    ┌───────────────┐  │
-│  │ LAAC App     │───▶│ Redis       │    │ PostgreSQL    │  │
-│  │ (Tests)      │    │ :6379       │    │ :5432         │  │
-│  └──────┬───────┘    └─────────────┘    └───────┬───────┘  │
-│         │                                        │          │
-│         └────────────▶┌─────────────────────────┘          │
-│                       │ Yetanalytics LRS                    │
-│                       │ :8080 (internal, :8090 external)    │
-│                       │ /xapi endpoint                      │
-│                       │ (with seeded test data)             │
-│                       └─────────────────────────────────────┘
-└─────────────────────────────────────────────────────────────┘
+│  ┌──────────────┐    ┌─────────────┐                        │
+│  │ LAAC App     │───▶│ Redis       │                        │
+│  │ (Tests)      │    │ :6379       │                        │
+│  └──────┬───────┘    └─────────────┘                        │
+│         │                                                    │
+│         └────────────────────────────────────────────────┐  │
+└──────────────────────────────────────────────────────────┼──┘
+                                                           │
+                                                           ▼
+                                       ┌────────────────────────────┐
+                                       │ External LRS (GitHub Repo) │
+                                       │ - Pre-populated test data  │
+                                       │ - Production-like env      │
+                                       │ - Accessible via secrets   │
+                                       └────────────────────────────┘
 ```
 
 ## Files Created/Modified
 
-### 1. Test Fixtures
+### 1. GitHub Secrets Configuration
+
+**Repository Secrets (configured in GitHub):**
+
+| GitHub Secret Name | Maps to Environment Variable | Purpose                                    |
+| ------------------ | ---------------------------- | ------------------------------------------ |
+| `LRS_DOMAIN`       | `LRS_URL`                    | Full URL to your external LRS endpoint     |
+| `LRS_API_USER`     | `LRS_API_KEY`                | LRS API username/key for authentication    |
+| `LRS_API_SECRET`   | `LRS_API_SECRET`             | LRS API password/secret for authentication |
+
+**Important:** GitHub secrets use different names (`LRS_DOMAIN`, `LRS_API_USER`) to distinguish them from local environment variables. Workflows automatically map these to standard application variables (`LRS_URL`, `LRS_API_KEY`).
+
+These secrets are injected into the CI/CD environment and Copilot workspace for testing.
+
+**See:** [docs/LRS-CONFIGURATION.md](LRS-CONFIGURATION.md) for complete LRS configuration guide.
+
+### 2. Test Fixtures
 
 **File:** `test/fixtures/xapi-statements.json`
 
@@ -44,7 +62,9 @@ This ensures E2E tests validate real integrations rather than mocked responses.
 - Multiple students and activities
 - Valid xAPI 1.0.3 format
 
-### 2. LRS Seeding Script
+**Note:** Your external LRS should be pre-populated with test data for reliable test execution.
+
+### 3. LRS Seeding Script (for local testing)
 
 **File:** `scripts/seed-test-lrs.js`
 
@@ -53,7 +73,9 @@ This ensures E2E tests validate real integrations rather than mocked responses.
 - Posts xAPI statements via LRS API
 - Exits with proper codes for CI/CD
 
-### 3. Docker Compose Test Configuration
+**Note:** CI/CD uses pre-populated external LRS; seeding only needed for local development.
+
+### 4. Docker Compose Test Configuration
 
 **File:** `docker-compose.test.yml`
 
@@ -62,71 +84,159 @@ This ensures E2E tests validate real integrations rather than mocked responses.
 - Health checks for all services
 - Network isolation for tests
 
-### 4. CI/CD Workflows
+**Note:** For local development only; CI/CD uses external LRS.
+
+### 5. CI/CD Workflows
 
 **Files:**
 
 - `.github/workflows/ci-cd.yml` (main branch pushes)
 - `.github/workflows/nest_js.yml` (pull requests)
+- `.github/workflows/copilot-setup-steps.yml` (Copilot environment)
 
 **Changes:**
 
-- Added `services` section with Redis, PostgreSQL, and LRS containers
-- Added "Seed test LRS with data" step before tests
-- Set environment variables for test connectivity
-- All tests now run against real services
+- Added `services` section with Redis container
+- Removed local PostgreSQL and LRS containers (using external LRS instead)
+- Set environment variables from GitHub secrets for external LRS connectivity
+- All tests now run against external LRS with pre-populated data
 
-### 5. Test Setup
+### 6. Test Setup
 
 **File:** `test/setup-e2e.ts`
 
-- Updated to use environment-provided LRS credentials
-- Falls back to localhost for local development
-- Configurable via env vars in CI
+- Automatically detects environment (CI vs local) based on LRS_URL
+- CI/CD: Uses environment variables from GitHub secrets
+- Local: Falls back to localhost defaults for docker-compose.test.yml
+- Logs which environment is being used for transparency
+- Configurable via env vars in both environments
+
+**Environment Detection Logic:**
+
+```typescript
+// CI detected when LRS_URL doesn't contain 'localhost'
+const isCI = !lrsUrl.includes('localhost');
+```
+
+This ensures tests automatically use the correct configuration without manual intervention.
 
 ## Usage
 
-### Local Testing (with real services)
-
-```bash
-# 1. Start test infrastructure
-docker-compose -f docker-compose.test.yml up -d
-
-# 2. Wait for services to be healthy (check logs)
-docker-compose -f docker-compose.test.yml logs -f
-
-# 3. Seed test data
-node scripts/seed-test-lrs.js
-
-# 4. Run E2E tests (using mapped port 8090 for local development)
-LRS_URL=http://localhost:8090/xapi \
-LRS_API_KEY=test-api-key \
-LRS_API_SECRET=test-api-secret \
-yarn test:e2e
-
-# 5. Clean up
-docker-compose -f docker-compose.test.yml down
-```
-
-### CI/CD (Automatic)
+### CI/CD Testing (Automatic with GitHub Secrets)
 
 When code is pushed to `main` or a PR is opened:
 
-1. **GitHub Actions** spins up service containers
-2. **LRS health check** waits until ready (30s start period, 10 retries)
-3. **Seeding script** posts test xAPI statements
-4. **Tests run** against populated LRS and Redis
-5. **Services terminate** after test completion
+1. **GitHub Actions** spins up Redis service container
+2. **Environment variables** injected from repository secrets:
+   - `LRS_URL=${{ secrets.LRS_DOMAIN }}`
+   - `LRS_API_KEY=${{ secrets.LRS_API_USER }}`
+   - `LRS_API_SECRET=${{ secrets.LRS_API_SECRET }}`
+3. **Tests run** against your pre-populated external LRS
+4. **Services terminate** after test completion
 
-**Environment Variables Set by CI:**
+**No seeding required** - your external LRS already has test data populated.
+
+### Local Testing (with local LRS)
+
+For local development with a containerized LRS:
+
+```bash
+# 1. (Optional) Create .env.test for custom configuration
+cp .env.test.example .env.test
+
+# 2. Start test infrastructure
+docker-compose -f docker-compose.test.yml up -d
+
+# 3. Wait for services to be healthy (check logs)
+docker-compose -f docker-compose.test.yml logs -f
+
+# 4. Seed test data
+node scripts/seed-test-lrs.js
+
+# 5. Run E2E tests (automatically uses local LRS)
+yarn test:e2e
+# Output: [E2E Setup] Using LRS: Local Development LRS at http://localhost:8090/xapi
+
+# 6. Clean up
+docker-compose -f docker-compose.test.yml down
+```
+
+**How it works:**
+
+- Test setup detects localhost URL and uses local configuration
+- No environment variables needed (uses defaults)
+- Fallback values: `test-api-key` / `test-api-secret`
+
+### Local Testing (with external LRS)
+
+To test against the same external LRS used in CI/CD:
+
+```bash
+# Method 1: Set environment variables
+export LRS_URL="https://your-lrs-domain.com/xapi"
+export LRS_API_KEY="your-api-user"
+export LRS_API_SECRET="your-api-secret"
+yarn test:e2e
+# Output: [E2E Setup] Using LRS: External LRS (CI/CD) at https://your-lrs-domain.com/xapi
+
+# Method 2: Use .env.test file
+cp .env.test.example .env.test
+# Edit .env.test with your external LRS credentials
+yarn test:e2e
+```
+
+**How it works:**
+
+- Test setup detects non-localhost URL
+- Automatically configures for external LRS
+- Same behavior as CI/CD environment
+
+### CI/CD Environment Variables
+
+**Automatically injected from GitHub secrets:**
 
 ```yaml
-LRS_URL: http://localhost:8080/xapi
-LRS_API_KEY: test-api-key
-LRS_API_SECRET: test-api-secret
+LRS_URL: ${{ secrets.LRS_DOMAIN }}
+LRS_API_KEY: ${{ secrets.LRS_API_USER }}
+LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}
 REDIS_HOST: localhost
 REDIS_PORT: 6379
 ```
+
+**For Copilot workspace:** Same secrets are available via `copilot-setup-steps.yml` workflow.
+
+## Environment Detection
+
+The test setup (`test/setup-e2e.ts`) automatically detects whether tests are running locally or in CI/CD:
+
+### Detection Logic
+
+```typescript
+const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
+const isCI = !lrsUrl.includes('localhost');
+```
+
+### Environment Configurations
+
+| Environment               | LRS_URL                         | Credentials                                       | Detection                          |
+| ------------------------- | ------------------------------- | ------------------------------------------------- | ---------------------------------- |
+| **CI/CD**                 | `secrets.LRS_DOMAIN` (external) | `secrets.LRS_API_USER` / `secrets.LRS_API_SECRET` | URL doesn't contain "localhost"    |
+| **Local (containerized)** | `http://localhost:8090/xapi`    | `test-api-key` / `test-api-secret`                | URL contains "localhost" (default) |
+| **Local (external)**      | User-provided external URL      | User-provided credentials                         | URL doesn't contain "localhost"    |
+
+### Console Output
+
+Tests log which LRS they're using:
+
+```bash
+# CI/CD or external LRS
+[E2E Setup] Using LRS: External LRS (CI/CD) at https://lrs.example.com/xapi
+
+# Local containerized LRS
+[E2E Setup] Using LRS: Local Development LRS at http://localhost:8090/xapi
+```
+
+This provides transparency and helps debug configuration issues.
 
 ## Test Data Details
 
@@ -149,39 +259,51 @@ REDIS_PORT: 6379
 
 These are real statements extracted from production LRS and anonymized, ensuring tests validate against diverse, real-world data structures without exposing user data.
 
-### LRS Credentials (Test Only)
+### LRS Credentials
 
-**CI Environment:**
+**CI/CD Environment (via GitHub Secrets):**
+
 ```
-URL: http://localhost:8080/xapi
-API Key: test-api-key
-API Secret: test-api-secret
+URL: ${{ secrets.LRS_DOMAIN }}
+API User: ${{ secrets.LRS_API_USER }}
+API Secret: ${{ secrets.LRS_API_SECRET }}
 ```
 
-**Local Development:**
+Your external LRS should be pre-populated with test data for reliable testing.
+
+**Local Development (containerized LRS):**
+
 ```
 URL: http://localhost:8090/xapi  (mapped from container's 8080)
 API Key: test-api-key
 API Secret: test-api-secret
 ```
 
-⚠️ **Never use these credentials in production!**
+⚠️ **Never use production credentials in code or commit them to the repository!**
 
 ## Verification
 
-### Check if LRS is running:
+### Check if external LRS is accessible (CI/CD):
 
 ```bash
+# This is done automatically by the test setup
+# Tests will fail if LRS is unreachable
+```
+
+### Check if local LRS is running:
+
+```bash
+# For local containerized LRS
 curl http://localhost:8080/health
 # Expected: 200 OK
 ```
 
-### Check seeded statements:
+### Check seeded statements (local LRS):
 
 ```bash
 curl -u "test-api-key:test-api-secret" \
   -H "X-Experience-API-Version: 1.0.3" \
-  "http://localhost:8080/xapi/statements"
+  "http://localhost:8090/xapi/statements"
 ```
 
 ### Check Redis:
@@ -193,18 +315,26 @@ docker exec laac-redis-test redis-cli ping
 
 ## Troubleshooting
 
-### LRS Not Ready in CI
+### Tests Fail with "LRS Connection Error" in CI
+
+- **Check:** GitHub secrets are configured correctly:
+  - `LRS_DOMAIN` should be full URL (e.g., `https://lrs.example.com/xapi`)
+  - `LRS_API_USER` and `LRS_API_SECRET` match your LRS credentials
+- **Check:** External LRS is accessible from GitHub Actions runners
+- **Check:** LRS has proper CORS/authentication configuration
+
+### LRS Not Ready in Local Development
 
 - **Symptom:** Seeding script fails with "LRS did not become ready"
-- **Solution:** Increase `MAX_RETRIES` in `scripts/seed-test-lrs.js` or `start_period` in workflow
+- **Solution:** Increase `MAX_RETRIES` in `scripts/seed-test-lrs.js` or wait longer for container startup
 
-### Tests Fail with Connection Errors
+### Tests Fail with Connection Errors (Local)
 
 - **Check:** Environment variables are set correctly
 - **Check:** Service containers have `ports` exposed (not just internal)
 - **Check:** Health checks are passing
 
-### Seed Script Fails
+### Seed Script Fails (Local)
 
 - **Check:** LRS health endpoint returns 200
 - **Check:** xAPI statements JSON is valid
@@ -213,15 +343,58 @@ docker exec laac-redis-test redis-cli ping
 ## Benefits
 
 ✅ **Real Integration Testing**: Tests validate against actual LRS behavior, not mocks  
-✅ **Consistent Environments**: CI and local use identical service versions  
-✅ **Known Test Data**: Predictable xAPI statements for assertions  
-✅ **Fast Feedback**: Services start in ~30 seconds  
-✅ **No External Dependencies**: All services run in containers  
-✅ **Reproducible**: Same setup works locally and in cloud
+✅ **Production-Like Environment**: CI/CD uses same LRS as production testing  
+✅ **Secure Credentials**: GitHub secrets protect sensitive LRS credentials  
+✅ **Fast Feedback**: Tests run directly against pre-populated LRS  
+✅ **Copilot Compatible**: Same environment available for AI-assisted development  
+✅ **No Container Overhead**: CI/CD doesn't need to spin up LRS containers
+
+## GitHub Secrets Configuration
+
+To configure the repository secrets:
+
+1. Go to your GitHub repository
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Add the following secrets:
+
+| GitHub Secret Name | Maps to Env Variable | Example Value                  | Purpose                 |
+| ------------------ | -------------------- | ------------------------------ | ----------------------- |
+| `LRS_DOMAIN`       | `LRS_URL`            | `https://lrs.example.com/xapi` | Full LRS endpoint URL   |
+| `LRS_API_USER`     | `LRS_API_KEY`        | `4876c54d1677...`              | LRS API username/key    |
+| `LRS_API_SECRET`   | `LRS_API_SECRET`     | `61d14e51a4a6...`              | LRS API password/secret |
+
+**Important:**
+
+- GitHub secrets use different names to avoid confusion with local `.env` files
+- Workflows automatically map these to standard application variables
+- Application code always uses `LRS_URL`, `LRS_API_KEY`, `LRS_API_SECRET`
+
+### Why Different Names?
+
+- **`LRS_DOMAIN`** vs `LRS_URL`: Distinguishes secret name from environment variable
+- **`LRS_API_USER`** vs `LRS_API_KEY`: Clarifies it's a username/key, not just any key
+- **`LRS_API_SECRET`**: Same name in both contexts for consistency
+
+This naming convention makes it clear when you're configuring secrets (in GitHub UI) vs setting environment variables (in code/configs).
+
+**See:** [docs/LRS-CONFIGURATION.md](LRS-CONFIGURATION.md) for complete configuration guide including multi-instance setup.
+
+These secrets will be automatically available in:
+
+- CI/CD workflows (`ci-cd.yml`, `nest_js.yml`)
+- Copilot workspace (`copilot-setup-steps.yml`)
 
 ## Next Steps
 
-To refresh or update test data:
+### For CI/CD Testing
+
+1. **Ensure GitHub secrets are configured** with your external LRS credentials
+2. **Verify external LRS has test data** populated for consistent test results
+3. **Monitor test runs** to ensure connectivity and data availability
+
+### For Local Development
+
+To refresh or update test data in local LRS:
 
 1. **Fetch fresh statements** from your LRS:
    ```bash

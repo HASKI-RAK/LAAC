@@ -1,0 +1,183 @@
+[
+  {
+    "id": "course-math-101-completion-learner-001",
+    "actor": {
+      "objectType": "Agent",
+      "name": "Avery Mathis",
+      "account": {
+        "homePage": "https://lrs.laac.local",
+        "name": "learner-001"
+      }
+    },
+    "verb": {
+      "id": "https://wiki.haski.app/variables/xapi.completed",
+      "display": {
+        "en-US": "completed"
+      }
+    },
+    "object": {
+      "id": "course-math-101",
+      "objectType": "Activity",
+      "definition": {
+        "name": {
+          "en-US": "Math 101"
+        },
+        "type": "http://adlnet.gov/expapi/activities/course"
+      }
+    },
+    "result": {
+      "completion": true,
+      "success": true
+    },
+    "context": {
+      "contextActivities": {
+        "parent": [
+          {
+            "id": "course-math-101"
+          }
+        ],
+        "grouping": [
+          {
+            "id": "topic-algebra"
+          }
+        ]
+      }
+    },
+    "timestamp": "2025-01-07T09:00:00Z"
+  },
+  {
+    "id": "course-math-101-view-learner-001",
+    "actor": {
+      "objectType": "Agent",
+      "name": "Avery Mathis",
+      "account": {
+        "homePage": "https://lrs.laac.local",
+        "name": "learner-001"
+      }
+    },
+    "verb": {
+      "id": "https://wiki.haski.app/variables/xapi.viewed",
+      "display": {
+        "en-US": "viewed"
+      }
+    },
+    "object": {
+      "id": "module-linear-functions",
+      "objectType": "Activity",
+      "definition": {
+        "name": {
+          "en-US": "Linear Functions Module"
+        },
+        "type": "http://adlnet.gov/expapi/activities/module"
+      }
+    },
+    "result": {
+      "duration": "PT15M30S"
+    },
+    "context": {
+      "contextActivities": {
+        "parent": [
+          {
+            "id": "course-math-101"
+          }
+        ],
+        "grouping": [
+          {
+            "id": "topic-algebra"
+          }
+        ]
+      }
+    },
+    "timestamp": "2025-01-07T09:30:00Z"
+  },
+  {
+    "id": "course-math-101-view-learner-002",
+    "actor": {
+      "objectType": "Agent",
+      "name": "Logan Ortiz",
+      "account": {
+        "homePage": "https://lrs.laac.local",
+        "name": "learner-002"
+      }
+    },
+    "verb": {
+      "id": "http://adlnet.gov/expapi/verbs/experienced",
+      "display": {
+        "en-US": "experienced"
+      }
+    },
+    "object": {
+      "id": "module-quadratic-review",
+      "objectType": "Activity",
+      "definition": {
+        "name": {
+          "en-US": "Quadratic Review"
+        },
+        "type": "http://adlnet.gov/expapi/activities/module"
+      }
+    },
+    "result": {
+      "duration": "PT10M"
+    },
+    "context": {
+      "contextActivities": {
+        "parent": [
+          {
+            "id": "course-math-101"
+          }
+        ],
+        "grouping": [
+          {
+            "id": "topic-algebra"
+          }
+        ]
+      }
+    },
+    "timestamp": "2025-01-07T11:00:00Z"
+  },
+  {
+    "id": "course-math-101-open-learner-002",
+    "actor": {
+      "objectType": "Agent",
+      "name": "Logan Ortiz",
+      "account": {
+        "homePage": "https://lrs.laac.local",
+        "name": "learner-002"
+      }
+    },
+    "verb": {
+      "id": "http://activitystrea.ms/schema/1.0/open",
+      "display": {
+        "en-US": "opened"
+      }
+    },
+    "object": {
+      "id": "module-linear-functions",
+      "objectType": "Activity",
+      "definition": {
+        "name": {
+          "en-US": "Linear Functions Module"
+        },
+        "type": "http://adlnet.gov/expapi/activities/module"
+      }
+    },
+    "result": {
+      "duration": "PT8M45S"
+    },
+    "context": {
+      "contextActivities": {
+        "parent": [
+          {
+            "id": "course-math-101"
+          }
+        ],
+        "grouping": [
+          {
+            "id": "topic-algebra"
+          }
+        ]
+      }
+    },
+    "timestamp": "2025-01-07T11:15:00Z"
+  }
+]

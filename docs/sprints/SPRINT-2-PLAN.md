@@ -51,7 +51,7 @@
 - [x] Circuit breaker protects against LRS failures (PR #71)
 - [x] All data access abstracted through interfaces
 - [x] Comprehensive unit & E2E tests for all new components
-- [x] LRS health monitoring with 30s checks and Prometheus metrics (PR #73)
+- [x] LRS health monitoring with 30s checks and telemetry logging (PR #73)
 - [x] No performance regression from Sprint 1
 
 ---
@@ -74,7 +74,7 @@
 - LRS instances configuration in `.env` example (REQ-FN-026)
 - Metrics API endpoints skeleton ready for population
 - Admin cache invalidation endpoint waiting for implementation
-- Prometheus metrics registry ready for metric computation tracking
+- Telemetry metrics registry ready for metric computation tracking
 
 ---
 
@@ -141,7 +141,7 @@ Notes
 - **Sprint Status**: ✅ **COMPLETED** (All committed stories finished, deferred work documented)
 - Resilience phase (Epic 8) fully complete with circuit breaker and graceful degradation
 - Story 9.2 remaining work (2 pts) deferred pending multi-LRS deployment configuration
-- Story 9.3 (4 pts) completed Nov 13, 2025 via PR #73 - LRS health monitoring with 30s checks, enhanced readiness probe, 3 new Prometheus metrics
+- Story 9.3 (4 pts) completed Nov 13, 2025 via PR #73 - LRS health monitoring with 30s checks, enhanced readiness probe, and 3 new telemetry event types
 - **Story 9.2 Split Decision (Nov 13)**: Foundation completed (3 pts) with statement tagging, instance-aware caching, and instances API. Advanced filtering features (2 pts) deferred until actual multi-LRS deployment is available for testing. System architecture supports multi-LRS but only single instance currently deployed.
 
 ### Epic 6: Data Access & Caching Layer ([#49](https://github.com/HASKI-RAK/LAAC/issues/49))
@@ -282,7 +282,7 @@ Implement metric computation layer with extensible provider pattern.
 - [x] Each provider validates parameters (courseId, dateRange, etc.)
 - [x] Each provider calls LRS client for data
 - [x] Results cached via CacheService (cache-aside)
-- [x] Metrics published to Prometheus
+- [x] Telemetry events recorded for every metric computation
 - [x] Unit tests with mocked LRS client
 - [x] E2E tests end-to-end
 
@@ -373,7 +373,7 @@ Implement circuit breaker pattern and graceful degradation.
 - [x] HTTP 200 (not 503) for graceful degradation
 - [x] Circuit breaker integration: Catches CircuitBreakerOpenError
 - [x] Configuration via environment variables
-- [x] Prometheus metrics: metric_graceful_degradation_total{reason}
+- [x] Telemetry events logged: `graceful.degradation` with reason metadata
 - [x] Comprehensive logging with correlation IDs
 - [x] Unit tests (16 new) + E2E tests (9 scenarios)
 
@@ -465,8 +465,8 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 - [x] 2xx/401/403 considered reachable; others down
 - [x] Background scheduler checks all instances (30s interval)
 - [x] Enhanced readiness probe with per-instance breakdown
-- [x] Duration recorded in Prometheus with instance label
-- [x] 3 new Prometheus metrics registered
+- [x] Duration captured via telemetry logs with instance metadata
+- [x] 3 new telemetry events defined for health monitoring
 - [x] Batch logging for operational visibility
 - [x] Unit tests with 100% coverage for new code
 - [x] Circular dependency resolution via HealthModule → DataAccessModule
@@ -477,7 +477,7 @@ Tracks alignment to REQ-FN-026 (configuration), REQ-FN-004/005 (results API & DT
 - `src/core/health/schedulers/lrs-health.scheduler.ts` — Background cron job
 - `src/core/health/health.controller.ts` — Enhanced readiness response
 - `src/core/health/health.module.ts` — Module wiring
-- `src/admin/services/metrics-registry.service.ts` — Prometheus metrics
+- `src/admin/services/metrics-registry.service.ts` — Telemetry logging hooks
 - `test/health.e2e-spec.ts` — E2E test structure
 
 **Story Points**: 4 | **Assigned To**: [#62](https://github.com/HASKI-RAK/LAAC/issues/62) | **PR**: [#73](https://github.com/HASKI-RAK/LAAC/pull/73)

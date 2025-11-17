@@ -85,7 +85,7 @@ Conform to `.github/prompts/implement-feature.prompt.md`. At minimum, include:
 - Definition of Done (including tests, coverage 80%, OpenAPI, security, observability, docs)
 - Implementation Scope with action required (e.g., FULL_IMPLEMENTATION_AND_TESTS)
 - Architectural Context (module, components, interfaces)
-- Implementation Guidelines (NestJS/TS conventions, DI, DTO validation, Swagger, guards, logging, Prometheus, env docs)
+- Implementation Guidelines (NestJS/TS conventions, DI, DTO validation, Swagger, guards, logging, env docs)
 
 Assign Next (Optional)
 If `mode` is `assign-next` (or if the user explicitly prompts you to assign the next sprint issue):

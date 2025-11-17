@@ -44,7 +44,7 @@ export interface CircuitBreakerDecoratorConfig
  *
  * **Important**: This decorator bypasses the application's centralized logging
  * infrastructure (LoggerService) and uses console methods directly. For production
- * use with proper logging, Prometheus metrics, and dependency injection, use the
+ * use with proper logging, telemetry, and dependency injection, use the
  * CircuitBreaker class directly instead of this decorator.
  *
  * Usage:

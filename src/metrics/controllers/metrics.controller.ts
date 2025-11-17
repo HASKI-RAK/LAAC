@@ -63,7 +63,7 @@ export class MetricsController {
     summary: 'List all metrics in the catalog',
     description:
       'Returns a catalog of all available analytics metrics. ' +
-      'Each metric includes id, dashboard level, description, and optional parameters. ' +
+      'Each metric includes id, title, dashboard level, description, required/optional parameters, output type, version, and example payload. ' +
       'Requires analytics:read scope. ' +
       'Implements REQ-FN-003: Metrics Catalog and Discovery',
   })
@@ -103,7 +103,7 @@ export class MetricsController {
   @ApiOperation({
     summary: 'Get metric details by ID',
     description:
-      'Returns detailed information for a specific metric by its identifier. ' +
+      'Returns detailed information for a specific metric by its identifier including example inputs/outputs. ' +
       'Requires analytics:read scope. ' +
       'Returns 404 if the metric ID is not found in the catalog. ' +
       'Implements REQ-FN-003: Metrics Catalog and Discovery',

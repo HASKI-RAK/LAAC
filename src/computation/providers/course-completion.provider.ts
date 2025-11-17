@@ -42,15 +42,48 @@ export class CourseCompletionProvider implements IMetricComputation {
   readonly dashboardLevel = 'course';
 
   /**
+   * Human friendly label for catalog consumers (REQ-FN-003)
+   */
+  readonly title = 'Course Completion Rate';
+
+  /**
    * Human-readable description
    */
   readonly description =
-    'Percentage of enrolled students who completed the course';
+    'percentage of enrolled students who completed the course';
 
   /**
    * Semantic version
    */
   readonly version = '1.0.0';
+
+  /**
+   * Required/optional parameter metadata for catalog responses
+   */
+  readonly requiredParams: Array<keyof MetricParams> = ['courseId'];
+
+  readonly optionalParams: Array<keyof MetricParams> = ['since', 'until'];
+
+  /**
+   * Output metadata + representative example for catalog/detail endpoints
+   */
+  readonly outputType = 'scalar' as const;
+
+  readonly example = {
+    params: {
+      courseId: 'course-123',
+      since: '2025-01-01T00:00:00Z',
+      until: '2025-12-31T23:59:59Z',
+    },
+    result: {
+      value: 85.5,
+      metadata: {
+        totalLearners: 40,
+        completedLearners: 34,
+        unit: 'percentage',
+      },
+    },
+  } as const;
 
   /**
    * Compute the course completion percentage

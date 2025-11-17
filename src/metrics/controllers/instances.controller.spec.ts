@@ -1,8 +1,6 @@
 // REQ-FN-017: Unit tests for Instances Controller
 // Tests for LRS instance metadata endpoint
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { InstancesController } from './instances.controller';
 import { InstancesService } from '../services/instances.service';

@@ -33,13 +33,7 @@ async function bootstrap() {
   // Set global API prefix (e.g., /api/v1)
   const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
   app.setGlobalPrefix(apiPrefix, {
-    exclude: [
-      '/',
-      'health',
-      'health/liveness',
-      'health/readiness',
-      'prometheus',
-    ], // Exclude public routes from prefix
+    exclude: ['/', 'health', 'health/liveness', 'health/readiness'], // Exclude public routes from prefix
   });
 
   // REQ-FN-008/009: Configure Swagger/OpenAPI documentation
@@ -72,7 +66,6 @@ async function bootstrap() {
       .addTag('Health', 'Health check and readiness endpoints (public)')
       .addTag('Metrics', 'Metrics catalog and computation endpoints')
       .addTag('Admin', 'Administrative endpoints (cache, config)')
-      .addTag('Prometheus', 'Prometheus metrics endpoint (public)')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

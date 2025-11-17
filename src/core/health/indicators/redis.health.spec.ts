@@ -24,7 +24,7 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
         jest.resetModules();
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { RedisHealthIndicator } = require('./redis.health');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
         new RedisHealthIndicator(configService);
       }).toThrow('Redis configuration is missing');
     });
@@ -39,7 +39,7 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
         jest.resetModules();
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { RedisHealthIndicator } = require('./redis.health');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
         const indicator = new RedisHealthIndicator(configService);
         expect(indicator).toBeDefined();
       }).not.toThrow();
@@ -55,7 +55,7 @@ describe('REQ-NF-002: RedisHealthIndicator', () => {
       jest.resetModules();
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { RedisHealthIndicator } = require('./redis.health');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
       const indicator = new RedisHealthIndicator(configService);
 
       // Check that the indicator has the expected methods from HealthIndicator

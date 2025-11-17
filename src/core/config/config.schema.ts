@@ -101,13 +101,15 @@ export const configValidationSchema = Joi.object({
   LRS_URL: Joi.string()
     .uri()
     .optional()
-    .description(
-      'Learning Record Store xAPI endpoint URL (legacy single-instance)',
-    ),
+    .description('Learning Record Store xAPI endpoint URL (single-instance)'),
 
   LRS_API_KEY: Joi.string()
     .optional()
-    .description('LRS API authentication key (legacy single-instance)'),
+    .description('LRS API authentication key/username (single-instance)'),
+
+  LRS_API_SECRET: Joi.string()
+    .optional()
+    .description('LRS API authentication secret/password (single-instance)'),
 
   LRS_TIMEOUT: Joi.number()
     .integer()
@@ -231,10 +233,10 @@ export const configFactory = () => {
         timeoutMs: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
         auth: {
           type: 'basic' as const,
-          // Legacy LRS_API_KEY is used for both username and password
-          // This is a limitation of the legacy single-instance configuration
+          // Use LRS_API_KEY as username and LRS_API_SECRET as password
+          // If LRS_API_SECRET is not provided, fall back to LRS_API_KEY for backward compatibility
           username: process.env.LRS_API_KEY,
-          password: process.env.LRS_API_KEY,
+          password: process.env.LRS_API_SECRET || process.env.LRS_API_KEY,
         },
       };
 
@@ -295,6 +297,7 @@ export const configFactory = () => {
         process.env.LRS_URL ||
         (lrsInstances.length > 0 ? lrsInstances[0].endpoint : ''),
       apiKey: process.env.LRS_API_KEY || '',
+      apiSecret: process.env.LRS_API_SECRET || process.env.LRS_API_KEY || '',
       timeout: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
       // REQ-FN-026: Multi-LRS instances
       instances: lrsInstances,

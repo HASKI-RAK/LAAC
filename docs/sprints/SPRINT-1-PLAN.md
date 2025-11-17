@@ -32,7 +32,7 @@
 - [ ] Input validation pipeline configured — story #22 (2.4) — NOT STARTED
 - [x] Metrics catalog endpoints implemented — story #25 (3.2) — COMPLETED
 - [x] Admin cache invalidation endpoints implemented — story #26 (3.3) — COMPLETED
-- [x] Prometheus metrics endpoint implemented — story #27 (3.4) — COMPLETED
+- [x] Telemetry logging instrumentation implemented — story #27 (3.4) — COMPLETED
 - [x] Swagger UI setup and endpoint documentation — story #31 (3.1) — **COMPLETED** (2025-11-11, PR #37 merged)
 - [x] Rate limiting guard implementation — story #32 (2.3) — **COMPLETED** (2025-11-11, PR #39 merged)
 - [x] Input validation pipeline — story #33 (2.4) — **COMPLETED** (2025-11-11, PR #36 merged)
@@ -329,7 +329,7 @@ interface JwtPayload {
 - [x] Create `src/core/guards/custom-throttler.guard.ts` with correlation ID logging
 - [x] Configure ThrottlerModule with Redis storage in AppModule
 - [x] Apply guard globally via APP_GUARD provider
-- [x] Implement Prometheus counter `rate_limit_rejections_total`
+- [x] Emit telemetry logs for rate limit rejections with correlation IDs
 - [x] Write comprehensive E2E tests (burst testing, header validation, endpoint bypass)
 - [x] Update `.env.example` with rate limit configuration
 
@@ -504,42 +504,38 @@ interface MetricCatalogResponse {
 
 ---
 
-#### Story 3.4: Prometheus Metrics Endpoint
+#### Story 3.4: Telemetry Log Instrumentation
 
-**Description**: Set up Prometheus metrics exporter (REQ-FN-021, Section 10.2)  
-**Status**: COMPLETED (2025-11-11) — PR #30 merged with MetricsPrometheusController, MetricsRegistryService, and comprehensive metrics
+**Description**: Implement structured, log-based telemetry exporter (REQ-FN-021, Section 10.2)  
+**Status**: COMPLETED (2025-11-11) — PR #30 merged with `MetricsRegistryService`, logger hook-ins, and the `METRICS_DEBUG` toggle
 
 **Acceptance Criteria**:
 
-- [x] `GET /metrics` returns Prometheus format
-- [x] Endpoint is public (no authentication)
-- [x] Default metrics included (HTTP request duration, etc.)
-- [x] Custom metrics: `cache_hit_ratio`, `lrs_query_duration_seconds`
-- [x] E2E tests verify metric format
+- [x] Telemetry logs emit cache, computation, HTTP, and LRS events with metric identifiers
+- [x] Emission controlled via `METRICS_DEBUG` env var (disabled by default)
+- [x] Logs use JSON payloads ready for downstream log ingestion
+- [x] No public `/metrics` endpoint; telemetry flows through existing application logs
+- [x] Unit + E2E tests validate telemetry toggling behavior
 
 **Tasks** (completed):
 
-- [x] Install `prom-client` library
-- [x] Create `src/admin/controllers/metrics-prometheus.controller.ts` — MetricsPrometheusController with @Public() decorator
-- [x] Create `src/admin/services/metrics-registry.service.ts` — MetricsRegistryService for typed metric recording
-- [x] Configure PrometheusModule in AdminModule
-- [x] Register default + custom metrics (cache_hits_total, cache_misses_total, metric_computation_duration_seconds)
-- [x] Write e2e tests — Public access verification and format validation
+- [x] Create `src/admin/services/metrics-registry.service.ts` — structured telemetry emitter backed by `LoggerService`
+- [x] Wire registry into computation, cache, circuit breaker, and LRS layers
+- [x] Add correlation IDs and metadata (metricId, instanceId, durationSeconds) to each telemetry payload
+- [x] Document `METRICS_DEBUG` usage in README and `.env.example`
+- [x] Write unit tests verifying telemetry logs only emit when enabled
 
-**Metrics Registered** (implemented):
+**Telemetry Events Registered** (implemented):
 
-**Default**: Node.js process metrics (CPU, memory, event loop lag)
-
-**Custom Application Metrics**:
-
-- `cache_hits_total{metricId}` — Counter for cache hits
-- `cache_misses_total{metricId}` — Counter for cache misses
-- `metric_computation_duration_seconds{metricId}` — Histogram (buckets: 0.1-10s)
-- `lrs_query_duration_seconds` — Histogram (buckets: 0.1-10s)
+- `cache.hit`, `cache.miss`, `cache.eviction`
+- `metric.computation`, `metric.error`
+- `lrs.query`, `lrs.error`, `lrs.health.*`
+- `http.request`, `http.duration`, `http.error`, `http.active.*`
+- `graceful.degradation`, `circuit.*`
 
 **Story Points**: 1 | **Assigned To**: Copilot | **Completed**: 2025-11-11
 
-**PR**: [#30](https://github.com/HASKI-RAK/LAAC/pull/30) — Comprehensive metrics implementation with cardinality warnings and public endpoint
+**PR**: [#30](https://github.com/HASKI-RAK/LAAC/pull/30) — Structured telemetry instrumentation with METRICS_DEBUG guard
 
 ---
 

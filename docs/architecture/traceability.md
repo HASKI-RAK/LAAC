@@ -54,7 +54,7 @@ The traceability matrix includes implementation status for each requirement:
 | **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | ✅ Complete           | This document and PlantUML diagrams                 | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`           | Section 1-17              |
 | **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | ✅ Complete           | Design patterns, module structure                   | Module boundaries, dependency injection, interfaces               | Section 12.1, 12.2        |
 | **REQ-FN-020** | Structured Logging with Correlation IDs             | ✅ Complete           | CoreModule, LoggerService                           | `LoggerService` (Winston), correlation ID middleware              | ADR-006, Section 10.1     |
-| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | 🟡 In Progress        | AdminModule, MetricsExporter                        | `MetricsExporter`, `GET /metrics` (Prometheus format)             | Section 10.2              |
+| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | ⚪ Deferred (log-based) | AdminModule, TelemetryHooks                        | `MetricsRegistryService` log events (`METRICS_DEBUG=true`)       | Section 10.2              |
 | **REQ-FN-022** | Performance Testing and SLO Validation              | 🔵 Deferred           | Testing strategy, observability                     | Load tests (k6/Artillery), SLO dashboards                         | Section 7.2, 10.2         |
 | **REQ-FN-023** | Authentication and Authorization Framework          | ✅ Complete           | AuthModule, JWT strategy                            | `JwtAuthGuard`, `ScopesGuard`, JWT validation                     | ADR-005, Section 9.1, 9.2 |
 | **REQ-FN-024** | Input Validation and Rate Limiting                  | 🟡 In Progress        | API Gateway Layer                                   | `ValidationPipe` (class-validator), `RateLimitGuard`              | Section 4.2, 9.3, 9.4     |
@@ -193,7 +193,7 @@ The traceability matrix includes implementation status for each requirement:
 | **REQ-NF-018** | 🔵 Deferred    | Circuit breaker pattern          | Implement circuit breaker for LRS client      |
 | **REQ-FN-001** | 🟡 In Progress | Client-facing API                | Complete controller endpoints with validation |
 | **REQ-FN-003** | 🟡 In Progress | Metrics catalog                  | Implement registry and discovery endpoints    |
-| **REQ-FN-021** | 🟡 In Progress | Prometheus metrics               | Complete all metric exporters                 |
+| **REQ-FN-021** | ⚪ Deferred | Log-based telemetry hooks        | Monitor logs or add new exporter if needed    |
 
 ---
 

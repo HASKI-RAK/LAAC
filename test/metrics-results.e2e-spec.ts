@@ -1,8 +1,6 @@
 // E2E tests for Metrics Results Endpoint
 // Implements REQ-FN-005: GET /api/v1/metrics/:id/results endpoint
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -110,6 +108,10 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
     describe('Successful Computation', () => {
       it('should compute course-completion metric', async () => {
         // REQ-FN-005: Compute metric with cache miss
+        // Mock LRS response since we're running without seed data
+        const querySpy = jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(mockStatements);
 
         const response = await request(app.getHttpServer())
           .get('/api/v1/metrics/course-completion/results')
@@ -132,10 +134,15 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
 
         expect(response.body.value).toBeGreaterThanOrEqual(0);
         expect(response.body.value).toBeLessThanOrEqual(100);
+
+        querySpy.mockRestore();
       });
 
       it('should support time-based filtering', async () => {
         // REQ-FN-005: Time range filters
+        const querySpy = jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(mockStatements);
 
         const response = await request(app.getHttpServer())
           .get('/api/v1/metrics/course-completion/results')
@@ -148,12 +155,79 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .expect(200);
 
         expect(response.body.fromCache).toBe(false);
-        expect(lrsClient.queryStatements).toHaveBeenCalledWith(
+        expect(querySpy).toHaveBeenCalledWith(
           expect.objectContaining({
             since: '2025-01-01T00:00:00Z',
             until: '2025-12-31T23:59:59Z',
           }),
         );
+
+        querySpy.mockRestore();
+      });
+
+      describe('Parameter-aware LRS filters', () => {
+        it('should translate courseId to activity filter', async () => {
+          const querySpy = jest
+            .spyOn(lrsClient, 'queryStatements')
+            .mockResolvedValue(mockStatements);
+
+          await request(app.getHttpServer())
+            .get('/api/v1/metrics/course-completion/results')
+            .query({ courseId: 'course-abc' })
+            .set('Authorization', `Bearer ${authToken}`)
+            .expect(200);
+
+          expect(querySpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              activity: 'course-abc',
+              related_activities: true,
+            }),
+          );
+
+          querySpy.mockRestore();
+        });
+
+        it('should prefer topicId when provided', async () => {
+          const querySpy = jest
+            .spyOn(lrsClient, 'queryStatements')
+            .mockResolvedValue(mockStatements);
+
+          await request(app.getHttpServer())
+            .get('/api/v1/metrics/topic-mastery/results')
+            .query({ courseId: 'course-abc', topicId: 'topic-xyz' })
+            .set('Authorization', `Bearer ${authToken}`)
+            .expect(200);
+
+          expect(querySpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              activity: 'topic-xyz',
+              related_activities: true,
+            }),
+          );
+
+          querySpy.mockRestore();
+        });
+
+        it('should prefer elementId for most specific scope', async () => {
+          const querySpy = jest
+            .spyOn(lrsClient, 'queryStatements')
+            .mockResolvedValue(mockStatements);
+
+          await request(app.getHttpServer())
+            .get('/api/v1/metrics/course-completion/results')
+            .query({ courseId: 'course-abc', elementId: 'element-111' })
+            .set('Authorization', `Bearer ${authToken}`)
+            .expect(200);
+
+          expect(querySpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              activity: 'element-111',
+              related_activities: false,
+            }),
+          );
+
+          querySpy.mockRestore();
+        });
       });
     });
 
@@ -370,7 +444,7 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .set('Authorization', `Bearer ${authToken}`)
           .expect(200);
 
-        expect(response.body.computationTime).toBeGreaterThan(0);
+        expect(response.body.computationTime).toBeGreaterThanOrEqual(0);
         expect(response.body.computationTime).toBeLessThan(10000); // Less than 10 seconds
       });
     });

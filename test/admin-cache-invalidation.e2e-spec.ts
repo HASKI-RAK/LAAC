@@ -17,7 +17,6 @@ const GLOBAL_PREFIX_EXCLUDE = [
   'health',
   'health/liveness',
   'health/readiness',
-  'prometheus',
 ] as const;
 
 describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {

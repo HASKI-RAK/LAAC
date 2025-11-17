@@ -134,6 +134,7 @@ describe('REQ-FN-026: Multi-LRS Configuration Integration', () => {
       delete process.env.LRS_HS_KE_ENDPOINT;
       process.env.LRS_URL = 'https://lrs.example.com/xapi';
       process.env.LRS_API_KEY = 'legacy-api-key';
+      process.env.LRS_API_SECRET = 'legacy-api-secret';
       process.env.LRS_TIMEOUT = '12000';
 
       const module: TestingModule = await Test.createTestingModule({
@@ -165,6 +166,7 @@ describe('REQ-FN-026: Multi-LRS Configuration Integration', () => {
       });
       expect(lrsConfig?.url).toBe('https://lrs.example.com/xapi');
       expect(lrsConfig?.apiKey).toBe('legacy-api-key');
+      expect(lrsConfig?.apiSecret).toBe('legacy-api-secret');
 
       // Verify console log called for legacy fallback
       expect(console.log).toHaveBeenCalledWith(

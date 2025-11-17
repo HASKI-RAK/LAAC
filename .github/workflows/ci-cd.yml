@@ -59,43 +59,6 @@ jobs:
         ports:
           - 6379:6379
 
-      # PostgreSQL for LRS
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: lrsql_test
-          POSTGRES_PASSWORD: lrsql_test_pass
-          POSTGRES_DB: lrsql_test_db
-        options: >-
-          --health-cmd "pg_isready -U lrsql_test -d lrsql_test_db"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-        ports:
-          - 5432:5432
-
-      # Yetanalytics LRS for xAPI statement tests
-      lrs:
-        image: yetanalytics/lrsql:latest
-        env:
-          LRSQL_API_KEY_DEFAULT: test-api-key
-          LRSQL_API_SECRET_DEFAULT: test-api-secret
-          LRSQL_DB_HOST: postgres
-          LRSQL_DB_NAME: lrsql_test_db
-          LRSQL_DB_USER: lrsql_test
-          LRSQL_DB_PASSWORD: lrsql_test_pass
-          LRSQL_DB_PORT: 5432
-          LRSQL_POOL_MAXIMUM_POOL_SIZE: 5
-          LRSQL_ENABLE_CLAMAV: "false"
-          LRSQL_ALLOW_ALL_ORIGINS: "true"
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 12
-        ports:
-          - 8080:8080
-
     steps:
       # Step 1: Checkout code
       - name: Checkout repository
@@ -112,13 +75,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # Step 4: Seed test LRS with xAPI statements
-      - name: Seed test LRS with data
-        env:
-          LRS_URL: http://localhost:8080/xapi
-          LRS_API_KEY: test-api-key
-          LRS_API_SECRET: test-api-secret
-        run: node scripts/seed-test-lrs.js
+      # Note: Using external LRS (GitHub secrets) - no seeding needed
+      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
 
       # Step 5: Run linting
       - name: Run ESLint
@@ -128,20 +86,24 @@ jobs:
       - name: Run unit tests
         run: yarn test
 
-      # Step 7: Run E2E tests with real services
+      # Note: Using external LRS (GitHub secrets) - no seeding needed
+      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
+
+      # Step 6: Run E2E tests with external LRS
       - name: Run E2E tests
         env:
-          # Configure tests to use service containers
-          LRS_URL: http://localhost:8080/xapi
-          LRS_API_KEY: test-api-key
-          LRS_API_SECRET: test-api-secret
+          # Configure tests to use external LRS via GitHub secrets
+          # GitHub Secret Name → Environment Variable (used by application)
+          LRS_URL: ${{ secrets.LRS_DOMAIN }}              # LRS_DOMAIN → LRS_URL
+          LRS_API_KEY: ${{ secrets.LRS_API_USER }}        # LRS_API_USER → LRS_API_KEY
+          LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}   # LRS_API_SECRET → LRS_API_SECRET
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           TEST_REDIS_HOST: localhost
           TEST_REDIS_PORT: 6379
         run: yarn test:e2e
 
-      # Step 8: Generate coverage report
+      # Step 7: Generate coverage report
       - name: Generate test coverage
         run: yarn test:cov
 

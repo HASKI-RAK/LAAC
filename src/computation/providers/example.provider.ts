@@ -31,6 +31,9 @@ export class ExampleMetricProvider implements IMetricComputation {
    */
   readonly dashboardLevel = 'course';
 
+  /** Catalog-friendly display name */
+  readonly title = 'Example Statement Count';
+
   /**
    * Human-readable description
    */
@@ -40,6 +43,25 @@ export class ExampleMetricProvider implements IMetricComputation {
    * Semantic version
    */
   readonly version = '1.0.0';
+
+  readonly requiredParams: Array<keyof MetricParams> = ['courseId'];
+
+  readonly optionalParams: Array<keyof MetricParams> = ['since', 'until'];
+
+  readonly outputType = 'scalar' as const;
+
+  readonly example = {
+    params: {
+      courseId: 'course-123',
+    },
+    result: {
+      value: 24,
+      metadata: {
+        totalStatements: 60,
+        verbFilter: 'none',
+      },
+    },
+  } as const;
 
   /**
    * Compute the metric value

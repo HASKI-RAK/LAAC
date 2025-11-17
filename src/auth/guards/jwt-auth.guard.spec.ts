@@ -81,7 +81,7 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
       const result = guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(reflector.getAllAndOverride).toHaveBeenCalledWith(IS_PUBLIC_KEY, [
         mockContext.getHandler(),
         mockContext.getClass(),
@@ -131,7 +131,7 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
       expect(() => guard.handleRequest(null, null, null, mockContext)).toThrow(
         UnauthorizedException,
       );
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
         expect.objectContaining({
@@ -147,7 +147,7 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
       expect(() => guard.handleRequest(error, null, null, mockContext)).toThrow(
         UnauthorizedException,
       );
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
         expect.objectContaining({
@@ -164,7 +164,7 @@ describe('REQ-FN-023: JwtAuthGuard', () => {
       expect(() => guard.handleRequest(null, null, info, mockContext)).toThrow(
         UnauthorizedException,
       );
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(logger.warn).toHaveBeenCalledWith(
         'Authentication failed',
         expect.objectContaining({

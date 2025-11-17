@@ -37,13 +37,7 @@ describe('REQ-FN-017: Multi-Instance Support (e2e)', () => {
     // Set global API prefix
     const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
     app.setGlobalPrefix(apiPrefix, {
-      exclude: [
-        '/',
-        'health',
-        'health/liveness',
-        'health/readiness',
-        'prometheus',
-      ],
+      exclude: ['/', 'health', 'health/liveness', 'health/readiness'],
     });
 
     await app.init();

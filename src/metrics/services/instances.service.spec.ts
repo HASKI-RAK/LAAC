@@ -1,8 +1,6 @@
 // REQ-FN-017: Unit tests for Instances Service
 // Tests for LRS instance metadata retrieval and health status mapping
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { InstancesService } from './instances.service';
 import { LRSClient } from '../../data-access/clients/lrs.client';

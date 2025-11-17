@@ -37,13 +37,7 @@ describe('REQ-FN-003: Metrics Catalog Endpoints (e2e)', () => {
     // Set global API prefix (e.g., /api/v1)
     const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
     app.setGlobalPrefix(apiPrefix, {
-      exclude: [
-        '/',
-        'health',
-        'health/liveness',
-        'health/readiness',
-        'prometheus',
-      ], // Exclude public routes from prefix
+      exclude: ['/', 'health', 'health/liveness', 'health/readiness'], // Exclude public routes from prefix
     });
 
     await app.init();
@@ -56,7 +50,7 @@ describe('REQ-FN-003: Metrics Catalog Endpoints (e2e)', () => {
   });
 
   describe('GET /api/v1/metrics - List Catalog', () => {
-    it('should return empty catalog array (skeleton implementation)', async () => {
+    it('should return catalog populated from registered providers', async () => {
       const token = jwtService.sign({
         sub: 'user-123',
         username: 'testuser',
@@ -70,7 +64,19 @@ describe('REQ-FN-003: Metrics Catalog Endpoints (e2e)', () => {
         .expect((res) => {
           expect(res.body).toHaveProperty('items');
           expect(Array.isArray(res.body.items)).toBe(true);
-          expect(res.body.items).toHaveLength(0);
+          expect(res.body.items.length).toBeGreaterThanOrEqual(3);
+
+          const completionMetric = res.body.items.find(
+            (item: { id: string }) => item.id === 'course-completion',
+          );
+
+          expect(completionMetric).toMatchObject({
+            id: 'course-completion',
+            title: 'Course Completion Rate',
+            requiredParams: ['courseId'],
+            outputType: 'scalar',
+          });
+          expect(completionMetric.description).toContain('percentage');
         });
     });
 
@@ -138,6 +144,27 @@ describe('REQ-FN-003: Metrics Catalog Endpoints (e2e)', () => {
   });
 
   describe('GET /api/v1/metrics/:id - Get Metric Detail', () => {
+    it('should return provider metadata for existing metric', async () => {
+      const token = jwtService.sign({
+        sub: 'user-123',
+        scopes: ['analytics:read'],
+      });
+
+      return request(app.getHttpServer())
+        .get('/api/v1/metrics/course-completion')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            id: 'course-completion',
+            title: 'Course Completion Rate',
+            requiredParams: ['courseId'],
+            outputType: 'scalar',
+          });
+          expect(res.body.example).toBeDefined();
+        });
+    });
+
     it('should return 404 for unknown metric ID', async () => {
       const token = jwtService.sign({
         sub: 'user-123',

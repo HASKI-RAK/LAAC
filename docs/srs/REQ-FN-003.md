@@ -47,7 +47,7 @@ Clients need to discover which analytics are implemented and how to reference th
   - GET /api/v1/metrics — returns the analytics catalog list.
   - GET /api/v1/metrics/{id} — returns details for a specific metric.
 
-**Note**: This analytics catalog endpoint is distinct from the Prometheus metrics export endpoint at root level `/metrics` (see REQ-FN-021).
+**Note**: This analytics catalog endpoint is distinct from the log-based observability telemetry defined in REQ-FN-021 (no shared HTTP surface).
 
 ## Observability
 

@@ -60,7 +60,7 @@ For each requirement ID in the sprint scope:
        - Definition of Done (tests, coverage 80%, security, observability, docs)
        - Implementation Scope with files table
        - Architectural Context (module, components, schemas)
-       - Implementation Guidelines (NestJS/TS patterns, DI, validation, guards, logging, Prometheus)
+       - Implementation Guidelines (NestJS/TS patterns, DI, validation, guards, logging)
        - References (SRS, architecture, standards)
        - Related Issues (dependencies, related work)
    - After creation, add a short comment linking back to the sprint plan and noting traceability
@@ -74,7 +74,7 @@ Conform to `.github/issue-templates/feature-implementation.md`. At minimum, incl
 - **Definition of Done**: Tests (>80% coverage), security, observability, docs, ESLint/Prettier compliance
 - **Implementation Scope**: Files table with purpose, action (Create/Modify), types
 - **Architectural Context**: Module, dependencies, schemas, design patterns, constraints
-- **Implementation Guidelines**: NestJS/TS conventions, DI, DTO validation, guards, logging, Prometheus, test structure
+- **Implementation Guidelines**: NestJS/TS conventions, DI, DTO validation, guards, logging, test structure
 - **References**: Links to SRS, architecture docs, standards
 - **Related Issues**: Epic, dependencies, related work
 

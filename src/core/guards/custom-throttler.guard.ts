@@ -1,5 +1,5 @@
 // Implements REQ-FN-024: Rate Limiting Guard
-// Custom throttler guard with logging and metrics integration
+// Custom throttler guard with structured logging
 
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
@@ -9,19 +9,15 @@ import { ThrottlerLimitDetail } from '@nestjs/throttler/dist/throttler.guard.int
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
 import { LoggerService } from '../logger';
-import { Counter } from 'prom-client';
-import { InjectMetric } from '@willsoto/nestjs-prometheus';
 
 /**
  * Custom Throttler Guard
  * Extends NestJS ThrottlerGuard to add:
  * - Structured logging with correlation IDs
- * - Prometheus metrics for rate limit rejections
  * - Enhanced error messages
  *
  * Implements REQ-FN-024: Rate Limiting
  * Implements REQ-FN-020: Structured Logging
- * Implements REQ-FN-021: Prometheus Metrics
  */
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
@@ -30,8 +26,6 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     storageService: ThrottlerStorage,
     reflector: Reflector,
     private readonly logger: LoggerService,
-    @InjectMetric('rate_limit_rejections_total')
-    private readonly rateLimitCounter: Counter<string>,
   ) {
     super(options, storageService, reflector);
   }
@@ -41,6 +35,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
     try {
       // Call parent implementation
@@ -54,15 +49,13 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
       const clientIp = this.getClientIp(request);
       const endpoint = `${request.method} ${request.path}`;
 
+      // Set X-RateLimit-Remaining to 0 when rate limited
+      response.setHeader('X-RateLimit-Remaining', '0');
+
       // Log rate limit event (REQ-FN-020)
       this.logger.warn('Rate limit exceeded', {
         endpoint,
         clientIp,
-      });
-
-      // Increment Prometheus counter (REQ-FN-021)
-      this.rateLimitCounter.inc({
-        path: request.path,
       });
 
       // Re-throw the exception

@@ -20,7 +20,7 @@ import { AuthMetricsService } from '../metrics';
  * JWT Authentication Guard
  * Enforces authentication on all routes except those marked with @Public()
  * Implements REQ-FN-023: JWT Bearer token validation
- * Implements REQ-FN-021: Track authentication failures in Prometheus
+ * Implements REQ-FN-021: Track authentication failure telemetry hooks
  *
  * Returns 401 with WWW-Authenticate header on authentication failure
  * Can be disabled via AUTH_ENABLED=false for dev/test environments
@@ -70,7 +70,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * Handles authentication errors
    * Implements REQ-FN-023: Failed authentication returns 401 with appropriate headers
    * Implements REQ-FN-020: Log auth failures without leaking tokens
-   * Implements REQ-FN-021: Increment auth failure metrics
+   * Implements REQ-FN-021: Invoke telemetry hook for auth failures
    * @param err - Authentication error
    * @param user - User object (if validation succeeded)
    * @param info - Additional information about the error

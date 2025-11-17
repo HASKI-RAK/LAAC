@@ -1,7 +1,21 @@
 // Implements REQ-FN-003: Metric Provider Exports
 // Central export point for all metric providers
 
-export { ExampleMetricProvider } from './example.provider';
-export { CourseCompletionProvider } from './course-completion.provider';
-export { LearningEngagementProvider } from './learning-engagement.provider';
-export { TopicMasteryProvider } from './topic-mastery.provider';
+import { ExampleMetricProvider } from './example.provider';
+import { CourseCompletionProvider } from './course-completion.provider';
+import { LearningEngagementProvider } from './learning-engagement.provider';
+import { TopicMasteryProvider } from './topic-mastery.provider';
+
+export {
+  ExampleMetricProvider,
+  CourseCompletionProvider,
+  LearningEngagementProvider,
+  TopicMasteryProvider,
+};
+
+export const METRIC_PROVIDER_CLASSES = [
+  ExampleMetricProvider,
+  CourseCompletionProvider,
+  LearningEngagementProvider,
+  TopicMasteryProvider,
+] as const;

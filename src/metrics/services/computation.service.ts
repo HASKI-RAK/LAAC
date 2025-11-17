@@ -27,6 +27,7 @@ import { MetricParams } from '../../computation/interfaces/metric-params.interfa
 import { MetricResultResponseDto } from '../dto/metric-results.dto';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
 import { generateCacheKey } from '../../data-access/utils/cache-key.util';
+import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
 
 /**
  * Computation Service
@@ -38,7 +39,7 @@ import { generateCacheKey } from '../../data-access/utils/cache-key.util';
  * - Implements cache-aside pattern per REQ-FN-006
  * - Implements graceful degradation per REQ-NF-003
  * - Loads metric providers dynamically via NestJS ModuleRef
- * - Records Prometheus metrics for observability
+ * - Emits telemetry hooks for observability
  * - Handles errors gracefully with descriptive messages
  * - Propagates correlation IDs through pipeline
  *
@@ -140,7 +141,7 @@ export class ComputationService {
       });
 
       // Step 3: Load metric provider (REQ-FN-010: Dynamic provider loading)
-      const provider = await this.loadProvider(metricId);
+      const provider = this.loadProvider(metricId);
 
       // Step 4: Validate parameters (REQ-FN-010: Provider validates params)
       if (provider.validateParams) {
@@ -186,9 +187,10 @@ export class ComputationService {
         this.logger.error('LRS query failed', error as Error);
 
         const isAvailabilityError =
-          errorMessage.includes('connection') ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('unavailable');
+          errorMessage.toLowerCase().includes('connection') ||
+          errorMessage.toLowerCase().includes('timeout') ||
+          errorMessage.toLowerCase().includes('unavailable') ||
+          errorMessage.toLowerCase().includes('network');
 
         if (isAvailabilityError) {
           this.logger.warn(
@@ -279,23 +281,9 @@ export class ComputationService {
    * @throws NotFoundException if provider not found
    * @private
    */
-  private async loadProvider(metricId: string): Promise<IMetricComputation> {
+  private loadProvider(metricId: string): IMetricComputation {
     try {
-      // Import all provider classes
-      const {
-        ExampleMetricProvider,
-        CourseCompletionProvider,
-        LearningEngagementProvider,
-        TopicMasteryProvider,
-      } = await import('../../computation/providers');
-
-      // List of all provider classes
-      const providerClasses = [
-        ExampleMetricProvider,
-        CourseCompletionProvider,
-        LearningEngagementProvider,
-        TopicMasteryProvider,
-      ];
+      const providerClasses = [...METRIC_PROVIDER_CLASSES];
 
       // Search for provider with matching ID
       for (const ProviderClass of providerClasses) {
@@ -355,11 +343,33 @@ export class ComputationService {
       filters.until = params.until;
     }
 
-    // Context filters (courseId maps to xAPI context.extensions)
-    // Note: Full context filtering implementation depends on xAPI schema
-    // For now, we fetch statements and let provider filter by context
+    const activityFilter = this.resolveActivityFilter(params);
+    if (activityFilter) {
+      filters.activity = activityFilter.id;
+      if (activityFilter.related !== undefined) {
+        filters.related_activities = activityFilter.related;
+      }
+    }
 
     return filters;
+  }
+
+  private resolveActivityFilter(
+    params: MetricParams,
+  ): { id: string; related?: boolean } | null {
+    if (params.elementId) {
+      return { id: params.elementId, related: false };
+    }
+
+    if (params.topicId) {
+      return { id: params.topicId, related: true };
+    }
+
+    if (params.courseId) {
+      return { id: params.courseId, related: true };
+    }
+
+    return null;
   }
 
   /**

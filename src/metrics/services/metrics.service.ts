@@ -2,8 +2,16 @@
 // Provides catalog management and metric discovery functionality
 
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { LoggerService } from '../../core/logger';
-import { MetricsCatalogResponseDto, MetricDetailResponseDto } from '../dto';
+import {
+  MetricsCatalogResponseDto,
+  MetricDetailResponseDto,
+  MetricCatalogItemDto,
+} from '../dto';
+import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
+import { IMetricComputation } from '../../computation/interfaces/metric.interface';
+import { DashboardLevel } from '../dto/metric-query.dto';
 
 /**
  * Metrics Service
@@ -15,7 +23,14 @@ import { MetricsCatalogResponseDto, MetricDetailResponseDto } from '../dto';
  */
 @Injectable()
 export class MetricsService {
-  constructor(private readonly logger: LoggerService) {}
+  private providerCache?: IMetricComputation[];
+
+  constructor(
+    private readonly logger: LoggerService,
+    private readonly moduleRef: ModuleRef,
+  ) {
+    this.logger.setContext('MetricsService');
+  }
 
   /**
    * Get the complete metrics catalog
@@ -26,15 +41,15 @@ export class MetricsService {
    * @returns Catalog response with array of metric items
    */
   getCatalog(): MetricsCatalogResponseDto {
-    // Phase 1: Return empty catalog (skeleton implementation)
-    // Phase 2+: Return metrics from providers (QuickMetricProvider, ThesisMetricProvider)
+    const providers = this.getProviders();
+    const items = providers.map((provider) => this.toCatalogItem(provider));
+
     this.logger.log('Metrics catalog requested', {
-      context: 'MetricsService',
-      metricCount: 0,
+      metricCount: items.length,
     });
 
     return {
-      items: [],
+      items,
     };
   }
 
@@ -48,18 +63,83 @@ export class MetricsService {
    * @throws NotFoundException if metric ID is not found
    */
   getMetricById(id: string): MetricDetailResponseDto {
-    // Phase 1: Always throw 404 (empty catalog)
-    // Phase 2+: Lookup metric from registry/providers
+    const providers = this.getProviders();
+    const provider = providers.find((metric) => metric.id === id);
+
+    if (!provider) {
+      this.logger.warn('Metric detail lookup failed', { metricId: id });
+      throw new NotFoundException({
+        statusCode: 404,
+        message: `Metric with id '${id}' not found in catalog`,
+        error: 'Not Found',
+      });
+    }
+
     this.logger.log('Metric detail requested', {
-      context: 'MetricsService',
       metricId: id,
+      dashboardLevel: provider.dashboardLevel,
     });
 
-    // Metric not found in catalog (empty in Phase 1)
-    throw new NotFoundException({
-      statusCode: 404,
-      message: `Metric with id '${id}' not found in catalog`,
-      error: 'Not Found',
-    });
+    return this.toDetailResponse(provider);
+  }
+
+  private getProviders(): IMetricComputation[] {
+    if (this.providerCache) {
+      return this.providerCache;
+    }
+
+    const instances: IMetricComputation[] = [];
+
+    for (const ProviderClass of METRIC_PROVIDER_CLASSES) {
+      try {
+        const provider = this.moduleRef.get<IMetricComputation>(ProviderClass, {
+          strict: false,
+        });
+
+        if (provider) {
+          instances.push(provider);
+        }
+      } catch (error) {
+        this.logger.warn('Metric provider not registered in moduleRef', {
+          provider: ProviderClass.name,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    this.providerCache = instances;
+    return instances;
+  }
+
+  private toCatalogItem(provider: IMetricComputation): MetricCatalogItemDto {
+    return {
+      id: provider.id,
+      title: provider.title ?? this.deriveTitle(provider.id),
+      dashboardLevel: provider.dashboardLevel as DashboardLevel,
+      description: provider.description,
+      version: provider.version,
+      requiredParams: provider.requiredParams ?? [],
+      optionalParams: provider.optionalParams ?? [],
+      outputType: provider.outputType ?? 'scalar',
+      example: provider.example,
+    };
+  }
+
+  private toDetailResponse(
+    provider: IMetricComputation,
+  ): MetricDetailResponseDto {
+    return this.toCatalogItem(provider);
+  }
+
+  private deriveTitle(metricId: string): string {
+    return metricId
+      .split(/[-_]/)
+      .map((segment) =>
+        segment.length > 0
+          ? segment[0].toUpperCase() + segment.slice(1)
+          : segment,
+      )
+      .join(' ')
+      .trim();
   }
 }

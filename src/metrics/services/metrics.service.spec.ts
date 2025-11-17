@@ -17,6 +17,7 @@ describe('REQ-FN-003: MetricsService', () => {
         {
           provide: LoggerService,
           useValue: {
+            setContext: jest.fn(),
             log: jest.fn(),
             warn: jest.fn(),
             error: jest.fn(),
@@ -46,11 +47,9 @@ describe('REQ-FN-003: MetricsService', () => {
     it('should log catalog request', () => {
       service.getCatalog();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.log).toHaveBeenCalledWith(
         'Metrics catalog requested',
         expect.objectContaining({
-          context: 'MetricsService',
           metricCount: 0,
         }),
       );
@@ -88,18 +87,14 @@ describe('REQ-FN-003: MetricsService', () => {
       }
     });
 
-    it('should log metric detail request before throwing', () => {
-      try {
-        service.getMetricById('sample-metric');
-      } catch {
-        // Expected to throw
-      }
+    it('should log warning when metric not found', () => {
+      const metricId = 'sample-metric';
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(logger.log).toHaveBeenCalledWith(
-        'Metric detail requested',
+      expect(() => service.getMetricById(metricId)).toThrow(NotFoundException);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Metric detail lookup failed',
         expect.objectContaining({
-          context: 'MetricsService',
           metricId: 'sample-metric',
         }),
       );

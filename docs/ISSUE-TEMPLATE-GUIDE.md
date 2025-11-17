@@ -22,7 +22,7 @@ The Feature Implementation template is designed for any issue that implements a 
 
 **What**: 1-2 sentence overview of the feature  
 **Why**: Helps reviewers and Copilot quickly understand scope  
-**Example**: "Implement public Prometheus metrics endpoint exposing HTTP request metrics, cache hit ratios, and LRS query latency."
+**Example**: "Implement log-based telemetry hooks that capture HTTP request metrics, cache hit ratios, and LRS query latency when `METRICS_DEBUG=true`."
 
 ---
 
@@ -260,7 +260,6 @@ See the following sprint issues for real-world examples:
 
 - [#25](https://github.com/HASKI-RAK/LAAC/issues/25) — REQ-FN-003: Metrics Catalog Endpoints
 - [#26](https://github.com/HASKI-RAK/LAAC/issues/26) — REQ-FN-007: Admin Cache Invalidation
-- [#27](https://github.com/HASKI-RAK/LAAC/issues/27) — REQ-FN-021: Prometheus Metrics Endpoint
 
 These follow the formalized template and demonstrate best practices.
 

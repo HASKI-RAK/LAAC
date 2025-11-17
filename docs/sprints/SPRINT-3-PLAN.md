@@ -325,7 +325,7 @@ Implement Topic and Element-level metrics from the CSV specification.
 - [ ] TO-005: Completion dates for last three elements in topic
 - [ ] All metrics use `topicId` parameter from query context
 - [ ] Results cached with topic-specific cache keys
-- [ ] Prometheus metrics track computation duration per metric
+- [ ] Log-based telemetry captures computation duration per metric
 - [ ] Unit tests with mocked LRS data
 - [ ] E2E tests with real xAPI statements
 
@@ -355,7 +355,7 @@ Implement Topic and Element-level metrics from the CSV specification.
 - [ ] EO-005: Completion status for element (boolean from best attempt)
 - [ ] All metrics use `elementId` parameter from query context
 - [ ] Results cached with element-specific cache keys
-- [ ] Prometheus metrics track computation duration per metric
+- [ ] Log-based telemetry captures computation duration per metric
 - [ ] Unit tests with mocked LRS data
 - [ ] E2E tests with real xAPI statements
 
@@ -588,12 +588,12 @@ Establish performance testing infrastructure and baseline SLO validation.
 - [ ] Dashboard includes SLO threshold lines (P95 1s/2s)
 - [ ] Dashboard supports filtering by endpoint, test run, date range
 - [ ] Documentation in `docs/MONITORING.md` on importing dashboard
-- [ ] CI exports test results in Prometheus format for ingestion
+- [ ] CI exports test results as structured logs for ingestion
 
 **Implementation Scope**:
 
 - `monitoring/dashboards/performance.json` — Grafana dashboard
-- `test/performance/export-prometheus.js` — Results exporter
+- `test/performance/export-telemetry.js` — Results exporter
 - `docs/MONITORING.md` — Monitoring setup guide
 - Update `docker-compose.dev.yml` — Add Grafana service
 

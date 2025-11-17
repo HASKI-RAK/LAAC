@@ -198,6 +198,7 @@ The production environment uses pre-built Docker images with Traefik reverse pro
    JWT_SECRET=<generated-secure-secret>
    LRS_API_KEY=<your-lrs-api-key>
    REDIS_PASSWORD=<optional-redis-password>
+   METRICS_DEBUG=false # Set true to emit telemetry logs
    ```
 
 #### Start Production Environment
@@ -217,7 +218,7 @@ docker compose ps
 
 - **Application**: `https://laac.example.com` (via Traefik)
 - **Health Check**: `https://laac.example.com/health/liveness`
-- **Prometheus Metrics**: `https://laac.example.com/metrics`
+- **Telemetry Logs**: enable via `METRICS_DEBUG=true` to stream metrics events through application logs
 
 **Note**: Replace `laac.example.com` with your configured `${SUBDOMAIN}.${DOMAIN_NAME}`.
 
@@ -501,6 +502,12 @@ See `.env.example` for a complete list of required environment variables. Key va
 | `NODE_ENV`       | No       | Application environment       | Public                              |
 | `PORT`           | No       | Application port              | Public                              |
 
+**Note:** For LRS configuration, see [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md) which explains:
+
+- Single-instance vs multi-instance LRS setup
+- GitHub secret naming (`LRS_DOMAIN`, `LRS_API_USER`) vs environment variables (`LRS_URL`, `LRS_API_KEY`)
+- Configuration priority and fallback logic
+
 ### Security Checklist
 
 - ✅ All secrets use environment variables or Docker secrets
@@ -516,7 +523,9 @@ The application validates all required configuration at startup using Joi schema
 
 For more details, see:
 
+- [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md) - Complete LRS configuration guide
 - `.env.example` - Complete environment variable documentation
+- [docs/CI-TESTING-WITH-LRS.md](docs/CI-TESTING-WITH-LRS.md) - CI/CD testing infrastructure
 - `docs/srs/REQ-FN-014.md` - Requirements specification
 - `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
 - `src/core/config/` - Configuration validation implementation

@@ -43,6 +43,9 @@ export class LearningEngagementProvider implements IMetricComputation {
    */
   readonly dashboardLevel = 'course';
 
+  /** Human-readable title for catalog consumers */
+  readonly title = 'Learning Engagement Score';
+
   /**
    * Human-readable description
    */
@@ -53,6 +56,31 @@ export class LearningEngagementProvider implements IMetricComputation {
    * Semantic version
    */
   readonly version = '1.0.0';
+
+  readonly requiredParams: Array<keyof MetricParams> = ['courseId'];
+
+  readonly optionalParams: Array<keyof MetricParams> = [
+    'topicId',
+    'since',
+    'until',
+  ];
+
+  readonly outputType = 'scalar' as const;
+
+  readonly example = {
+    params: {
+      courseId: 'course-123',
+      topicId: 'topic-456',
+    },
+    result: {
+      value: 72.5,
+      metadata: {
+        activityCount: 18,
+        avgTimeMinutes: 12.3,
+        unit: 'score',
+      },
+    },
+  } as const;
 
   /**
    * Compute the learning engagement score

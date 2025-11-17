@@ -63,11 +63,11 @@ Multi-LRS architecture (REQ-FN-002, REQ-FN-017) requires visibility into each in
   - Circuit half-open after recovery timeout (default: 60s), retry single request
   - Circuit closes after M successful requests (default: 2)
   - Circuit state exposed in health endpoint metadata
-- **Prometheus Metrics**: Export per-instance health metrics:
-  - `lrs_health_status{instance_id}` — gauge: 1=healthy, 0=unhealthy
-  - `lrs_health_check_duration_seconds{instance_id}` — histogram of check latency
-  - `lrs_health_check_failures_total{instance_id}` — counter of failed checks
-  - `lrs_circuit_breaker_state{instance_id}` — gauge: 0=closed, 1=open, 2=half-open
+- **Telemetry Events**: Emit per-instance health events when `METRICS_DEBUG=true`:
+  - `lrs.health.status` payload includes `instanceId` and status (1=healthy, 0=unhealthy)
+  - `lrs.health.duration` payload includes latency seconds
+  - `lrs.health.failure` increments failure count in logs
+  - `circuit.state` payload indicates 0=closed, 1=open, 2=half-open
 - **Admin API**: Optional admin endpoint for manual health checks:
   - `POST /admin/health/lrs/{instanceId}/check` — trigger immediate health check for instance
   - `POST /admin/health/lrs/check-all` — trigger health check for all instances
@@ -92,9 +92,9 @@ Multi-LRS architecture (REQ-FN-002, REQ-FN-017) requires visibility into each in
   - E2E test: bring down one mock LRS, verify health endpoint reports degraded within 60s
   - E2E test: restore LRS, verify health recovers within 120s
   - Load test: verify health checks don't impact query performance
-- **Metrics Validation**:
-  - Scrape Prometheus endpoint, verify all expected metrics present for each configured instance
-  - Verify metric values match health endpoint status
+- **Telemetry Validation**:
+  - Enable `METRICS_DEBUG`, verify logs contain expected telemetry payloads for each configured instance
+  - Verify logged status transitions match health endpoint output
 
 ## Dependencies
 
@@ -116,12 +116,12 @@ Multi-LRS architecture (REQ-FN-002, REQ-FN-017) requires visibility into each in
 - `/health/liveness` — liveness probe for orchestrator
 - `/health/readiness` — readiness probe with per-instance LRS status
 - `/admin/health/lrs/{instanceId}/check` — admin-only manual health check
-- Prometheus `/metrics` — includes `lrs_health_*` and `lrs_circuit_breaker_*` metrics
+- Telemetry logs — include `lrs.health.*` and `circuit.*` events
 
 ## Observability
 
 - **Logging**: Structured logs for all health check events (success, failure, transitions)
-- **Metrics**: Per-instance health and circuit breaker metrics exported to Prometheus
+- **Telemetry**: Per-instance health and circuit breaker events emitted via logs
 - **Alerting Guidance** (for operations team):
   - Alert: `lrs_health_status == 0` for > 5 minutes → LRS instance down
   - Alert: `lrs_circuit_breaker_state == 1` → Circuit open, investigate LRS

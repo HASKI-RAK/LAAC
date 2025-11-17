@@ -1,43 +1,31 @@
-// Implements REQ-FN-021: Prometheus metrics for authentication and authorization
 // Implements REQ-FN-023: Track authentication failures and rate limiting
+// Legacy metrics hooks now emit structured logs when METRICS_DEBUG=true.
 
 import { Injectable } from '@nestjs/common';
-import { Counter } from 'prom-client';
-import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { LoggerService } from '../../core/logger';
 
-/**
- * Authentication and Authorization Metrics Service
- * Provides counters for tracking security events
- * Implements REQ-FN-021: Prometheus metrics export
- */
 @Injectable()
 export class AuthMetricsService {
-  constructor(
-    @InjectMetric('auth_failures_total')
-    public readonly authFailuresCounter: Counter<string>,
-    @InjectMetric('rate_limit_rejections_total')
-    public readonly rateLimitRejectionsCounter: Counter<string>,
-  ) {}
+  private readonly shouldLog =
+    (process.env.METRICS_DEBUG ?? '').toLowerCase() === 'true';
 
-  /**
-   * Increment authentication failure counter
-   * @param reason - Reason for authentication failure
-   * @param path - Request path
-   */
-  incrementAuthFailures(reason: string, path?: string): void {
-    this.authFailuresCounter.inc({
-      reason,
-      path: path || 'unknown',
-    });
+  constructor(private readonly logger: LoggerService) {
+    this.logger.setContext('AuthMetricsService');
   }
 
-  /**
-   * Increment rate limit rejection counter
-   * @param path - Request path
-   */
+  incrementAuthFailures(reason: string, path?: string): void {
+    this.log('auth.failure', { reason, path: path ?? 'unknown' });
+  }
+
   incrementRateLimitRejections(path?: string): void {
-    this.rateLimitRejectionsCounter.inc({
-      path: path || 'unknown',
-    });
+    this.log('rate.limit', { path: path ?? 'unknown' });
+  }
+
+  private log(event: string, payload?: Record<string, unknown>): void {
+    if (!this.shouldLog) {
+      return;
+    }
+
+    this.logger.debug(`Telemetry event: ${event}`, payload ?? {});
   }
 }

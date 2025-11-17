@@ -39,7 +39,6 @@ describe('REQ-FN-008/009: OpenAPI/Swagger Endpoints (e2e)', () => {
       .addTag('Health', 'Health check and readiness endpoints (public)')
       .addTag('Metrics', 'Metrics catalog and computation endpoints')
       .addTag('Admin', 'Administrative endpoints (cache, config)')
-      .addTag('Prometheus', 'Prometheus metrics endpoint (public)')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -76,13 +75,7 @@ describe('REQ-FN-008/009: OpenAPI/Swagger Endpoints (e2e)', () => {
     // Set global API prefix
     const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
     app.setGlobalPrefix(apiPrefix, {
-      exclude: [
-        '/',
-        'health',
-        'health/liveness',
-        'health/readiness',
-        'prometheus',
-      ],
+      exclude: ['/', 'health', 'health/liveness', 'health/readiness'],
     });
 
     // Setup Swagger
@@ -158,9 +151,6 @@ describe('REQ-FN-008/009: OpenAPI/Swagger Endpoints (e2e)', () => {
           // Metrics endpoints
           expect(paths).toHaveProperty('/api/v1/metrics');
           expect(paths).toHaveProperty('/api/v1/metrics/{id}');
-
-          // Note: Prometheus endpoint /metrics is registered by PrometheusModule
-          // and may not appear in OpenAPI spec since it's managed differently
         });
     });
 
@@ -178,7 +168,6 @@ describe('REQ-FN-008/009: OpenAPI/Swagger Endpoints (e2e)', () => {
           expect(tagNames).toContain('Health');
           expect(tagNames).toContain('Metrics');
           expect(tagNames).toContain('Admin');
-          expect(tagNames).toContain('Prometheus');
         });
     });
 
@@ -263,13 +252,7 @@ describe('REQ-FN-008/009: OpenAPI/Swagger Endpoints (e2e)', () => {
 
       const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
       appDisabled.setGlobalPrefix(apiPrefix, {
-        exclude: [
-          '/',
-          'health',
-          'health/liveness',
-          'health/readiness',
-          'prometheus',
-        ],
+        exclude: ['/', 'health', 'health/liveness', 'health/readiness'],
       });
 
       // Do NOT setup Swagger when SWAGGER_ENABLED=false

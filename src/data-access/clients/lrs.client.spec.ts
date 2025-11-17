@@ -1,8 +1,6 @@
 // REQ-FN-002: Unit tests for LRS Client
 // Tests xAPI HTTP client with mocked Axios
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -50,6 +48,7 @@ describe('REQ-FN-002: LRSClient', () => {
           return {
             url: 'https://lrs.example.com/xapi',
             apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
             timeout: 10000,
           };
         }

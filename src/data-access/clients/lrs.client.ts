@@ -21,7 +21,7 @@ import { getCorrelationId } from '../../core/logger/cls-context';
  * LRS Client
  * Implements xAPI Statement API client with HTTP Basic Auth
  * Handles pagination, retry logic, and error handling
- * Exports Prometheus metrics for monitoring
+ * Emits telemetry hooks for monitoring
  *
  * @remarks
  * - REQ-FN-002: xAPI Learning Record Store Integration
@@ -29,7 +29,7 @@ import { getCorrelationId } from '../../core/logger/cls-context';
  * - Supports HTTP Basic Authentication (username:password or key:secret)
  * - Implements retry logic with exponential backoff (3 retries, 100-500ms)
  * - Propagates correlation IDs via X-Correlation-ID header
- * - Records Prometheus metrics: lrs_query_duration_seconds, lrs_errors_total
+ * - Records telemetry hooks for query duration and error counts
  * - Follows xAPI 1.0.3 specification
  */
 @Injectable()
@@ -61,8 +61,8 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       endpoint: lrsConfig.url,
       auth: {
         type: 'basic',
-        key: lrsConfig.apiKey,
-        secret: lrsConfig.apiKey, // Yetanalytics uses same key for both (REQ-FN-002)
+        username: lrsConfig.apiKey,
+        password: lrsConfig.apiSecret,
       },
       timeoutMs: lrsConfig.timeout,
       maxRetries: 3,
@@ -490,7 +490,7 @@ export class LRSClient implements ILRSClient, OnModuleInit {
   }
 
   /**
-   * Categorize error for Prometheus metrics
+   * Categorize error for telemetry hooks
    */
   private categorizeError(error: unknown): string {
     const err = error as Error & {

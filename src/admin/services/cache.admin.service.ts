@@ -25,7 +25,7 @@ export interface CacheInvalidateResponse {
  * @remarks
  * - Handles single key and pattern-based cache invalidation
  * - Logs all operations with admin context and correlation IDs
- * - Records Prometheus metrics for observability
+ * - Records telemetry hooks for observability
  * - Emits audit events for compliance tracking
  */
 @Injectable()
@@ -171,8 +171,8 @@ export class CacheAdminService {
   }
 
   /**
-   * Record Prometheus metrics for cache invalidation
-   * Implements REQ-FN-021: Observability metrics
+   * Record telemetry for cache invalidation
+   * Implements REQ-FN-021: Observability metrics (now logged instead of exported)
    *
    * @param type - Operation type (single, pattern, all)
    * @param count - Number of keys invalidated

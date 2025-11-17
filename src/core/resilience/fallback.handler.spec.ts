@@ -1,8 +1,6 @@
 // REQ-NF-003: Unit tests for FallbackHandler
 // Tests graceful degradation strategies: cache fallback and default values
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { FallbackHandler } from './fallback.handler';

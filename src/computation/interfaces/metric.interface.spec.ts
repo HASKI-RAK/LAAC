@@ -118,6 +118,10 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
         'Example metric that counts xAPI statements',
       );
       expect(provider.version).toBe('1.0.0');
+      expect(provider.title).toBe('Example Statement Count');
+      expect(provider.requiredParams).toEqual(['courseId']);
+      expect(provider.outputType).toBe('scalar');
+      expect(provider.example).toBeDefined();
     });
 
     it('should have compute method', () => {

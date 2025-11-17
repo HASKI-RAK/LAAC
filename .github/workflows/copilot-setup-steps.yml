@@ -33,46 +33,6 @@ jobs:
         ports:
           - 6379:6379
 
-      # PostgreSQL for LRS
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: lrsql_test
-          POSTGRES_PASSWORD: lrsql_test_pass
-          POSTGRES_DB: lrsql_test_db
-        options: >-
-          --health-cmd "pg_isready -U lrsql_test -d lrsql_test_db"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 12
-        ports:
-          - 5432:5432
-
-      # Yetanalytics LRS for xAPI statement tests
-      lrs:
-        image: yetanalytics/lrsql:latest
-        options: >-
-          --entrypoint /lrsql/bin/run_postgres.sh
-          --health-cmd "curl -f http://localhost:8080/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 15
-        env:
-          LRSQL_API_KEY_DEFAULT: test-api-key
-          LRSQL_API_SECRET_DEFAULT: test-api-secret
-          LRSQL_ADMIN_USER_DEFAULT: admin
-          LRSQL_ADMIN_PASS_DEFAULT: admin123
-          LRSQL_DB_HOST: postgres
-          LRSQL_DB_NAME: lrsql_test_db
-          LRSQL_DB_USER: lrsql_test
-          LRSQL_DB_PASSWORD: lrsql_test_pass
-          LRSQL_DB_PORT: 5432
-          LRSQL_POOL_MAXIMUM_POOL_SIZE: 5
-          LRSQL_ENABLE_CLAMAV: "false"
-          LRSQL_ALLOW_ALL_ORIGINS: "true"
-        ports:
-          - 8080:8080
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -88,12 +48,16 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Seed test LRS with data
-        env:
-          LRS_URL: http://localhost:8080/xapi
-          LRS_API_KEY: test-api-key
-          LRS_API_SECRET: test-api-secret
-        run: node scripts/seed-test-lrs.js
+      # Note: Using external LRS (GitHub secrets) - no seeding needed
+      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
 
       - name: Build the application
+        env:
+          # Configure build/tests to use external LRS via GitHub secrets
+          # GitHub Secret Name → Environment Variable (used by application)
+          LRS_URL: ${{ secrets.LRS_DOMAIN }}              # LRS_DOMAIN → LRS_URL
+          LRS_API_KEY: ${{ secrets.LRS_API_USER }}        # LRS_API_USER → LRS_API_KEY
+          LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}   # LRS_API_SECRET → LRS_API_SECRET
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: yarn build

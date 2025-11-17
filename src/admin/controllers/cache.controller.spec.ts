@@ -1,8 +1,6 @@
 // REQ-FN-007: Unit tests for Cache Controller
 // Tests cache invalidation endpoint with mocked service
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { CacheController } from './cache.controller';

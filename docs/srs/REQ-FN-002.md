@@ -118,11 +118,11 @@ Fulfills the mediator role by sourcing analytics input from multiple xAPI-capabl
 - **Logging**: All LRS interactions logged with:
   - `instanceId`, `correlationId`, query parameters, response time, status code
   - Authentication failures logged as security events (without credentials)
-- **Metrics**: Prometheus metrics exported per instance:
-  - `lrs_query_duration_seconds{instance_id}` (histogram)
-  - `lrs_query_total{instance_id,status}` (counter)
-  - `lrs_auth_failures_total{instance_id}` (counter)
-  - `lrs_connection_pool_size{instance_id}` (gauge)
+- **Telemetry**: Log-based events emitted per instance when `METRICS_DEBUG=true`:
+  - `lrs.query` with `instanceId`, duration
+  - `lrs.error` with categorized `errorType`
+  - `lrs.auth.failure` events
+  - `lrs.connection` events when pool state changes
 - **Health Checks**: `/health/readiness` includes LRS connectivity status per instance (401/403 considered reachable for health)
 - **Tracing**: Distributed tracing spans for each LRS query with instance metadata
 

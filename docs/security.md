@@ -129,9 +129,8 @@ The following endpoints are publicly accessible (no authentication required):
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/docs` | GET | Swagger API documentation (future) |
-| `/metrics` | GET | Prometheus metrics endpoint (future) |
 
-**Note**: Metrics endpoint (`/metrics`) for Prometheus scraping is public by design for monitoring infrastructure.
+**Note**: Observability telemetry is now emitted via structured logs (no dedicated HTTP metrics endpoint).
 
 ---
 
@@ -293,21 +292,19 @@ const token = jwtService.sign({
 
 ### Monitoring and Alerting
 
-1. **Authentication metrics**: Monitor `auth_failures_total` counter (REQ-FN-021)
-2. **Authorization metrics**: Track authorization denials by endpoint
-3. **Alerting**: Set up alerts for unusual patterns (e.g., high auth failure rate)
+1. **Authentication telemetry**: Enable `METRICS_DEBUG=true` to log events such as `auth.failures`
+2. **Authorization telemetry**: Track denials via structured logs with correlation IDs
+3. **Alerting**: Configure log-based alerts for unusual patterns (e.g., high auth failure rate)
 4. **Audit logs**: Maintain audit logs for admin operations
 
-### Prometheus Metrics
+### Telemetry Events
 
-LAAC exports the following security-related metrics:
+LAAC emits the following security-related events via logs when `METRICS_DEBUG=true`:
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `auth_failures_total` | Counter | Total authentication failures |
-| `rate_limit_rejections_total` | Counter | Total rate limit rejections |
-
-These metrics are available at the `/metrics` endpoint for Prometheus scraping.
+| Event | Description |
+|-------|-------------|
+| `auth.failure` (logged by `AuthMetricsService`) | Authentication failures with reason/path metadata |
+| `rate.limit` (logged by guards/AuthMetricsService) | Rate limit rejections captured by guards |
 
 ---
 
@@ -322,7 +319,7 @@ These metrics are available at the `/metrics` endpoint for Prometheus scraping.
 
 ### Unauthorized Access Attempt
 
-1. Check `auth_failures_total` metric for patterns
+1. Review `auth.failure` telemetry events for patterns
 2. Review logs with correlation IDs
 3. Block IP addresses if needed (at infrastructure level)
 4. Update security policies as needed
@@ -335,7 +332,7 @@ These metrics are available at the `/metrics` endpoint for Prometheus scraping.
 - **REQ-FN-014**: Secrets and Configuration Management
 - **REQ-FN-024**: Input Validation and Rate Limiting
 - **REQ-FN-020**: Structured Logging with Correlation IDs
-- **REQ-FN-021**: Prometheus Metrics Export
+- **REQ-FN-021**: Observability Telemetry Hooks
 - **REQ-NF-019**: Security Baseline and Testing
 
 ---

@@ -3,7 +3,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ConfigService } from '@nestjs/config';
-import { makeCounterProvider } from '@willsoto/nestjs-prometheus';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CoreModule } from './core';
@@ -66,12 +65,6 @@ import { Configuration } from './core/config';
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,
     },
-    // REQ-FN-021: Prometheus counter for rate limit rejections
-    makeCounterProvider({
-      name: 'rate_limit_rejections_total',
-      help: 'Total number of requests rejected due to rate limiting',
-      labelNames: ['path'],
-    }),
   ],
 })
 export class AppModule {}
