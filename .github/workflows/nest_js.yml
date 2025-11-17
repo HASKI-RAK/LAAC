@@ -12,6 +12,56 @@ jobs:
       matrix:
         node-version: [20.x, 22.x]
 
+    # Service containers for E2E tests
+    services:
+      # Redis for caching tests
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      # PostgreSQL for LRS
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lrsql_test
+          POSTGRES_PASSWORD: lrsql_test_pass
+          POSTGRES_DB: lrsql_test_db
+        options: >-
+          --health-cmd "pg_isready -U lrsql_test -d lrsql_test_db"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+      # Yetanalytics LRS for xAPI statement tests
+      lrs:
+        image: yetanalytics/lrsql:latest
+        env:
+          LRSQL_API_KEY_DEFAULT: test-api-key
+          LRSQL_API_SECRET_DEFAULT: test-api-secret
+          LRSQL_DB_HOST: postgres
+          LRSQL_DB_NAME: lrsql_test_db
+          LRSQL_DB_USER: lrsql_test
+          LRSQL_DB_PASSWORD: lrsql_test_pass
+          LRSQL_DB_PORT: 5432
+          LRSQL_POOL_MAXIMUM_POOL_SIZE: 5
+          LRSQL_ENABLE_CLAMAV: "false"
+          LRSQL_ALLOW_ALL_ORIGINS: "true"
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+        ports:
+          - 8080:8080
+
     steps:
       - name: Copy repository
         uses: actions/checkout@v4
@@ -25,10 +75,26 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Seed test LRS with data
+        env:
+          LRS_URL: http://localhost:8080/xapi
+          LRS_API_KEY: test-api-key
+          LRS_API_SECRET: test-api-secret
+        run: node scripts/seed-test-lrs.js
+
       - name: Lint code
         run: yarn lint
 
       - name: Run tests
+        env:
+          # Configure tests to use service containers
+          LRS_URL: http://localhost:8080/xapi
+          LRS_API_KEY: test-api-key
+          LRS_API_SECRET: test-api-secret
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          TEST_REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6379
         run: yarn test
 
       - name: Build application

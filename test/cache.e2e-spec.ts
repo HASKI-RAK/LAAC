@@ -10,6 +10,8 @@ import {
   generateCacheKeyPattern,
 } from '../src/data-access/utils/cache-key.util';
 
+const TEST_INSTANCE_ID = 'test-instance';
+
 describe('REQ-FN-006: Cache Service (e2e)', () => {
   let app: INestApplication;
   let cacheService: CacheService;
@@ -40,6 +42,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should store and retrieve a value', async () => {
       const key = generateCacheKey({
         metricId: 'test-metric',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
         filters: { courseId: '123' },
       });
@@ -58,6 +61,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should return null for non-existent key', async () => {
       const key = generateCacheKey({
         metricId: 'test-nonexistent',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
       });
 
@@ -68,6 +72,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should delete a key', async () => {
       const key = generateCacheKey({
         metricId: 'test-delete',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'topic',
       });
 
@@ -90,6 +95,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should return false when deleting non-existent key', async () => {
       const key = generateCacheKey({
         metricId: 'test-nonexistent-delete',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'element',
       });
 
@@ -100,6 +106,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should handle custom TTL', async () => {
       const key = generateCacheKey({
         metricId: 'test-ttl',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
       });
 
@@ -125,16 +132,19 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
       const keys = [
         generateCacheKey({
           metricId: 'test-pattern-1',
+          instanceId: TEST_INSTANCE_ID,
           scope: 'course',
           filters: { id: '1' },
         }),
         generateCacheKey({
           metricId: 'test-pattern-2',
+          instanceId: TEST_INSTANCE_ID,
           scope: 'course',
           filters: { id: '2' },
         }),
         generateCacheKey({
           metricId: 'test-other',
+          instanceId: TEST_INSTANCE_ID,
           scope: 'topic',
           filters: { id: '3' },
         }),
@@ -148,6 +158,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
       // Invalidate pattern
       const pattern = generateCacheKeyPattern({
         metricId: 'test-pattern-*',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
       });
       const count = await cacheService.invalidatePattern(pattern);
@@ -169,6 +180,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should return 0 for pattern with no matches', async () => {
       const pattern = generateCacheKeyPattern({
         metricId: 'test-nonexistent-pattern',
+        instanceId: TEST_INSTANCE_ID,
       });
 
       const count = await cacheService.invalidatePattern(pattern);
@@ -178,11 +190,19 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should invalidate all cache entries with wildcard', async () => {
       // Create test keys
       await cacheService.set(
-        generateCacheKey({ metricId: 'test-all-1', scope: 'course' }),
+        generateCacheKey({
+          metricId: 'test-all-1',
+          instanceId: TEST_INSTANCE_ID,
+          scope: 'course',
+        }),
         { test: '1' },
       );
       await cacheService.set(
-        generateCacheKey({ metricId: 'test-all-2', scope: 'topic' }),
+        generateCacheKey({
+          metricId: 'test-all-2',
+          instanceId: TEST_INSTANCE_ID,
+          scope: 'topic',
+        }),
         { test: '2' },
       );
 
@@ -198,6 +218,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should generate deterministic keys', async () => {
       const params = {
         metricId: 'test-deterministic',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
         filters: { a: '1', b: '2', c: '3' },
       };
@@ -218,6 +239,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should handle numeric and boolean filter values', async () => {
       const key = generateCacheKey({
         metricId: 'test-types',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
         filters: {
           id: 123,
@@ -243,6 +265,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should handle large values', async () => {
       const key = generateCacheKey({
         metricId: 'test-large',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
       });
 
@@ -266,6 +289,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     it('should handle special characters in filter values', async () => {
       const key = generateCacheKey({
         metricId: 'test-special',
+        instanceId: TEST_INSTANCE_ID,
         scope: 'course',
         filters: {
           email: 'test@example.com',

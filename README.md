@@ -71,7 +71,10 @@ yarn test:e2e
 yarn test:cov
 ```
 
-For more details, see **docs/TESTING.md**.
+For detailed testing documentation, see:
+
+- **[docs/TESTING.md](docs/TESTING.md)** - Test strategy and best practices
+- **[docs/CI-TESTING-WITH-LRS.md](docs/CI-TESTING-WITH-LRS.md)** - CI/CD testing with real LRS and Redis
 
 ## Docker Compose Deployment
 

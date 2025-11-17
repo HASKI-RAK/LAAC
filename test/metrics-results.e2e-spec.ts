@@ -10,6 +10,7 @@ import { AppModule } from '../src/app.module';
 import { CacheService } from '../src/data-access/services/cache.service';
 import { LRSClient } from '../src/data-access/clients/lrs.client';
 import { xAPIStatement } from '../src/data-access';
+import { generateTokenWithScopes } from './helpers/auth.helper';
 
 describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
   let app: INestApplication;
@@ -73,14 +74,23 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
       }),
     );
 
+    const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
+    app.setGlobalPrefix(apiPrefix, {
+      exclude: [
+        '/',
+        'health',
+        'health/liveness',
+        'health/readiness',
+        'metrics',
+      ],
+    });
+
     await app.init();
 
     cacheService = moduleFixture.get<CacheService>(CacheService);
     lrsClient = moduleFixture.get<LRSClient>(LRSClient);
 
-    // Mock authentication token (requires auth setup from previous stories)
-    // For now, we assume JWT auth is properly configured
-    authToken = 'mock-jwt-token';
+    authToken = generateTokenWithScopes(['analytics:read']);
   });
 
   afterAll(async () => {
@@ -92,13 +102,14 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
     await cacheService.invalidatePattern('cache:*');
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('GET /api/v1/metrics/:id/results', () => {
     describe('Successful Computation', () => {
       it('should compute course-completion metric', async () => {
         // REQ-FN-005: Compute metric with cache miss
-        jest
-          .spyOn(lrsClient, 'queryStatements')
-          .mockResolvedValue(mockStatements);
 
         const response = await request(app.getHttpServer())
           .get('/api/v1/metrics/course-completion/results')
@@ -125,9 +136,6 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
 
       it('should support time-based filtering', async () => {
         // REQ-FN-005: Time range filters
-        jest
-          .spyOn(lrsClient, 'queryStatements')
-          .mockResolvedValue(mockStatements);
 
         const response = await request(app.getHttpServer())
           .get('/api/v1/metrics/course-completion/results')
@@ -157,6 +165,10 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .mockResolvedValue(mockStatements);
 
         // First request - cache miss
+        const querySpy = jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(mockStatements);
+
         const firstResponse = await request(app.getHttpServer())
           .get('/api/v1/metrics/course-completion/results')
           .query({ courseId: 'course-123' })
@@ -176,12 +188,13 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
         expect(secondResponse.body.value).toBe(firstResponse.body.value);
 
         // LRS should only be called once (for first request)
-        expect(lrsClient.queryStatements).toHaveBeenCalledTimes(1);
+        expect(querySpy).toHaveBeenCalledTimes(1);
+        querySpy.mockRestore();
       });
 
       it('should cache results with different parameters separately', async () => {
         // REQ-FN-006: Cache key differentiation
-        jest
+        const querySpy = jest
           .spyOn(lrsClient, 'queryStatements')
           .mockResolvedValue(mockStatements);
 
@@ -200,7 +213,8 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .expect(200);
 
         expect(response.body.fromCache).toBe(false);
-        expect(lrsClient.queryStatements).toHaveBeenCalledTimes(2);
+        expect(querySpy).toHaveBeenCalledTimes(2);
+        querySpy.mockRestore();
       });
     });
 
@@ -238,12 +252,21 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .set('Authorization', `Bearer ${authToken}`)
           .expect(400);
 
-        expect(response.body.message).toContain('ISO 8601');
+        const message = response.body.message;
+        if (Array.isArray(message)) {
+          expect(message).toEqual(
+            expect.arrayContaining([
+              'since must be a valid ISO 8601 timestamp',
+            ]),
+          );
+        } else {
+          expect(message).toContain('ISO 8601');
+        }
       });
 
-      it('should return 503 when LRS is unavailable', async () => {
-        // REQ-FN-005: LRS unavailable
-        jest
+      it('should return graceful degradation response when LRS is unavailable', async () => {
+        // REQ-NF-003: Graceful degradation
+        const querySpy = jest
           .spyOn(lrsClient, 'queryStatements')
           .mockRejectedValue(new Error('LRS connection failed'));
 
@@ -251,11 +274,13 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
           .get('/api/v1/metrics/course-completion/results')
           .query({ courseId: 'course-123' })
           .set('Authorization', `Bearer ${authToken}`)
-          .expect(503);
+          .expect(200);
 
-        expect(response.body.message).toContain(
-          'Learning Record Store is currently unavailable',
-        );
+        expect(response.body.status).toMatch(/degraded|unavailable/);
+        expect(response.body.value).toBeNull();
+        expect(response.body.cause).toBe('LRS_UNAVAILABLE');
+        expect(response.body.error || response.body.warning).toBeTruthy();
+        querySpy.mockRestore();
       });
 
       it('should return 401 without authentication token', async () => {
