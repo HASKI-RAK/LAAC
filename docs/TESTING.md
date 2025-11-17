@@ -244,7 +244,7 @@ You can add additional files alongside these defaults; the seeding script aggreg
 
 ### Configuration Flags
 
-- `SKIP_LRS_SEED=true yarn test:e2e` — bypass seeding when the LRS already contains the desired data.
+- `LRS_SEED=true yarn test:e2e` — opt-in to seed the LRS with deterministic fixtures before running tests (skipped by default).
 - `LRS_FIXTURES="test/fixtures/xapi/course-mvp.json" yarn test:e2e` — override the default file list with a comma-separated set of absolute or repo-relative paths.
 - `LRS_POST_READY_DELAY_MS=0 node scripts/seed-test-lrs.js` — shorten or disable the warm-up delay once the LRS is already responsive.
 

@@ -3,8 +3,12 @@
 // Reuse the deterministic seeding helper without spawning a child process
 const { seedTestLRS } = require('../scripts/seed-test-lrs');
 
-function shouldSkipSeeding() {
-  const flag = process.env.SKIP_LRS_SEED;
+// Print LRS_DOMAIN and LRS_API_USER env vars for debugging
+console.log('LRS_DOMAIN:', process.env.LRS_DOMAIN);
+console.log('LRS_API_USER:', process.env.LRS_API_USER);
+
+function shouldSeed() {
+  const flag = process.env.LRS_SEED;
   if (!flag) {
     return false;
   }
@@ -13,8 +17,8 @@ function shouldSkipSeeding() {
 }
 
 module.exports = async () => {
-  if (shouldSkipSeeding()) {
-    console.log('⚠️  SKIP_LRS_SEED detected, skipping LRS seeding step.');
+  if (!shouldSeed()) {
+    console.log('⚠️  LRS_SEED not enabled, skipping LRS seeding step.');
     return;
   }
 

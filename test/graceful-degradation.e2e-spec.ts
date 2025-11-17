@@ -79,9 +79,16 @@ describe('REQ-NF-003: Graceful Degradation E2E', () => {
       };
 
       await cacheService.set(cacheKey, cachedData, 300, 'results');
+
+      // Mock get() to return null (simulating expired cache)
       const cacheGetSpy = jest
         .spyOn(cacheService, 'get')
         .mockResolvedValueOnce(null);
+
+      // Mock getIgnoringExpiry() to return stale data
+      const cacheGetIgnoringExpirySpy = jest
+        .spyOn(cacheService, 'getIgnoringExpiry')
+        .mockResolvedValueOnce(cachedData);
 
       // Step 2: Simulate LRS failure by mocking queryStatements to throw
       const originalQueryStatements = lrsClient.queryStatements;
@@ -113,6 +120,7 @@ describe('REQ-NF-003: Graceful Degradation E2E', () => {
 
       // Cleanup
       cacheGetSpy.mockRestore();
+      cacheGetIgnoringExpirySpy.mockRestore();
       lrsClient.queryStatements = originalQueryStatements;
       await cacheService.delete(cacheKey);
     });
@@ -134,6 +142,11 @@ describe('REQ-NF-003: Graceful Degradation E2E', () => {
         .spyOn(cacheService, 'get')
         .mockResolvedValueOnce(null);
 
+      // Mock getIgnoringExpiry() to return stale data
+      const cacheGetIgnoringExpirySpy = jest
+        .spyOn(cacheService, 'getIgnoringExpiry')
+        .mockResolvedValueOnce(cachedData);
+
       // Simulate LRS failure
       const originalQueryStatements = lrsClient.queryStatements;
       jest
@@ -153,6 +166,7 @@ describe('REQ-NF-003: Graceful Degradation E2E', () => {
 
       // Cleanup
       cacheGetSpy.mockRestore();
+      cacheGetIgnoringExpirySpy.mockRestore();
       lrsClient.queryStatements = originalQueryStatements;
       await cacheService.delete(cacheKey);
     });

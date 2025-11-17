@@ -50,7 +50,7 @@ export class CourseCompletionProvider implements IMetricComputation {
    * Human-readable description
    */
   readonly description =
-    'Percentage of enrolled students who completed the course';
+    'percentage of enrolled students who completed the course';
 
   /**
    * Semantic version

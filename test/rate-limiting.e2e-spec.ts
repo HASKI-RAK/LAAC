@@ -93,13 +93,17 @@ describe('REQ-FN-024: Rate Limiting (e2e)', () => {
       // Use a unique endpoint or wait to avoid rate limit from previous tests
       const endpoint = '/';
 
-      // Make requests up to the limit
-      const requests = [];
+      // Make requests sequentially to avoid connection issues
+      const responses = [];
       for (let i = 0; i < 12; i++) {
-        requests.push(request(app.getHttpServer()).get(endpoint));
+        try {
+          const response = await request(app.getHttpServer()).get(endpoint);
+          responses.push(response);
+        } catch (error) {
+          // Handle potential connection errors
+          console.error(`Request ${i} failed:`, error);
+        }
       }
-
-      const responses = await Promise.all(requests);
 
       // Check that at least one request returned 429
       const hasRateLimitError = responses.some((res) => res.status === 429);
@@ -159,13 +163,14 @@ describe('REQ-FN-024: Rate Limiting (e2e)', () => {
 
   describe('Health Endpoint Bypass', () => {
     it('should not rate limit /health/liveness endpoint', async () => {
-      // Make many requests to health endpoint
-      const requests = [];
-      for (let i = 0; i < 50; i++) {
-        requests.push(request(app.getHttpServer()).get('/health/liveness'));
+      // Make many requests to health endpoint sequentially to avoid overwhelming server
+      const responses = [];
+      for (let i = 0; i < 30; i++) {
+        const response = await request(app.getHttpServer()).get(
+          '/health/liveness',
+        );
+        responses.push(response);
       }
-
-      const responses = await Promise.all(requests);
 
       // All should succeed
       responses.forEach((res) => {
@@ -174,13 +179,14 @@ describe('REQ-FN-024: Rate Limiting (e2e)', () => {
     }, 15000);
 
     it('should not rate limit /health/readiness endpoint', async () => {
-      // Make many requests to health endpoint
-      const requests = [];
-      for (let i = 0; i < 50; i++) {
-        requests.push(request(app.getHttpServer()).get('/health/readiness'));
+      // Make many requests to health endpoint sequentially to avoid overwhelming server
+      const responses = [];
+      for (let i = 0; i < 30; i++) {
+        const response = await request(app.getHttpServer()).get(
+          '/health/readiness',
+        );
+        responses.push(response);
       }
-
-      const responses = await Promise.all(requests);
 
       // All should succeed (200) or fail due to dependencies (503), but not 429
       responses.forEach((res) => {

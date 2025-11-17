@@ -35,6 +35,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
     try {
       // Call parent implementation
@@ -47,6 +48,9 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
       // Extract client information
       const clientIp = this.getClientIp(request);
       const endpoint = `${request.method} ${request.path}`;
+
+      // Set X-RateLimit-Remaining to 0 when rate limited
+      response.setHeader('X-RateLimit-Remaining', '0');
 
       // Log rate limit event (REQ-FN-020)
       this.logger.warn('Rate limit exceeded', {

@@ -187,9 +187,10 @@ export class ComputationService {
         this.logger.error('LRS query failed', error as Error);
 
         const isAvailabilityError =
-          errorMessage.includes('connection') ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('unavailable');
+          errorMessage.toLowerCase().includes('connection') ||
+          errorMessage.toLowerCase().includes('timeout') ||
+          errorMessage.toLowerCase().includes('unavailable') ||
+          errorMessage.toLowerCase().includes('network');
 
         if (isAvailabilityError) {
           this.logger.warn(
