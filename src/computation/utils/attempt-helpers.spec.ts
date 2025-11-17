@@ -76,7 +76,31 @@ describe('attempt-helpers (REQ-FN-004)', () => {
       expect(selectBestAttempt([])).toBeNull();
     });
 
-    it('should handle statements with no scores (select most recent)', () => {
+    it('should handle statements with no scores and no completion (select most recent overall)', () => {
+      const statements: xAPIStatement[] = [
+        {
+          actor: { account: { homePage: 'test', name: 'user1' } },
+          verb: { id: 'test' },
+          object: { id: 'test' },
+          result: { completion: false },
+          timestamp: '2025-11-15T10:00:00Z',
+        },
+        {
+          actor: { account: { homePage: 'test', name: 'user1' } },
+          verb: { id: 'test' },
+          object: { id: 'test' },
+          result: { completion: false },
+          timestamp: '2025-11-15T11:00:00Z',
+        },
+      ];
+
+      const best = selectBestAttempt(statements);
+
+      expect(best).not.toBeNull();
+      expect(best?.timestamp).toBe('2025-11-15T11:00:00Z');
+    });
+
+    it('should prefer most recent completed attempt when no scores exist', () => {
       const statements: xAPIStatement[] = [
         {
           actor: { account: { homePage: 'test', name: 'user1' } },
@@ -89,7 +113,7 @@ describe('attempt-helpers (REQ-FN-004)', () => {
           actor: { account: { homePage: 'test', name: 'user1' } },
           verb: { id: 'test' },
           object: { id: 'test' },
-          result: { completion: true },
+          result: { completion: false },
           timestamp: '2025-11-15T11:00:00Z',
         },
       ];
@@ -97,7 +121,7 @@ describe('attempt-helpers (REQ-FN-004)', () => {
       const best = selectBestAttempt(statements);
 
       expect(best).not.toBeNull();
-      expect(best?.timestamp).toBe('2025-11-15T11:00:00Z');
+      expect(best?.timestamp).toBe('2025-11-15T10:00:00Z');
     });
 
     it('should handle single statement', () => {

@@ -37,21 +37,46 @@ export function selectBestAttempt(
 ): xAPIStatement | null {
   if (statements.length === 0) return null;
 
-  // Sort by score (desc), then timestamp (desc)
-  const sorted = [...statements].sort((a, b) => {
-    // Extract scores: prefer raw over scaled
-    const scoreA = a.result?.score?.raw ?? a.result?.score?.scaled ?? -Infinity;
-    const scoreB = b.result?.score?.raw ?? b.result?.score?.scaled ?? -Infinity;
+  const getTimestamp = (statement: xAPIStatement): number => {
+    const time = new Date(statement.timestamp ?? 0).getTime();
+    return Number.isNaN(time) ? 0 : time;
+  };
 
-    if (scoreA !== scoreB) return scoreB - scoreA;
+  const sortByScoreThenTime = (items: xAPIStatement[]): xAPIStatement[] => {
+    return [...items].sort((a, b) => {
+      const scoreA =
+        a.result?.score?.raw ??
+        a.result?.score?.scaled ??
+        Number.NEGATIVE_INFINITY;
+      const scoreB =
+        b.result?.score?.raw ??
+        b.result?.score?.scaled ??
+        Number.NEGATIVE_INFINITY;
 
-    // Tie-break by timestamp (most recent first)
-    const timeA = new Date(a.timestamp || 0).getTime();
-    const timeB = new Date(b.timestamp || 0).getTime();
-    return timeB - timeA;
-  });
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return getTimestamp(b) - getTimestamp(a);
+    });
+  };
 
-  return sorted[0];
+  const sortByMostRecent = (items: xAPIStatement[]): xAPIStatement[] =>
+    [...items].sort((a, b) => getTimestamp(b) - getTimestamp(a));
+
+  const hasScores = statements.some(
+    (statement) => extractScore(statement) !== null,
+  );
+
+  if (hasScores) {
+    return sortByScoreThenTime(statements)[0];
+  }
+
+  const completedStatements = statements.filter((statement) =>
+    isCompleted(statement),
+  );
+  if (completedStatements.length > 0) {
+    return sortByMostRecent(completedStatements)[0];
+  }
+
+  return sortByMostRecent(statements)[0];
 }
 
 /**
