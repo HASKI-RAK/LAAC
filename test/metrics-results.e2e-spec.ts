@@ -448,5 +448,212 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
         expect(response.body.computationTime).toBeLessThan(10000); // Less than 10 seconds
       });
     });
+
+    describe('CSV-Compliant Course Metrics (REQ-FN-004, Story 14.1)', () => {
+      // Mock xAPI statements with scores and durations for course metrics
+      const courseMetricStatements: xAPIStatement[] = [
+        {
+          id: 'stmt-score-1',
+          actor: {
+            objectType: 'Agent',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/scored',
+            display: { 'en-US': 'scored' },
+          },
+          object: {
+            id: 'element-1',
+            objectType: 'Activity',
+            definition: { name: { 'en-US': 'Quiz 1' } },
+          },
+          result: {
+            score: { raw: 85, max: 100 },
+            duration: 'PT15M',
+          },
+          timestamp: '2025-11-13T10:00:00Z',
+        },
+        {
+          id: 'stmt-score-2',
+          actor: {
+            objectType: 'Agent',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/scored',
+            display: { 'en-US': 'scored' },
+          },
+          object: {
+            id: 'element-2',
+            objectType: 'Activity',
+            definition: { name: { 'en-US': 'Quiz 2' } },
+          },
+          result: {
+            score: { raw: 92, max: 100 },
+            duration: 'PT20M',
+          },
+          timestamp: '2025-11-14T10:00:00Z',
+        },
+        {
+          id: 'stmt-completion-1',
+          actor: {
+            objectType: 'Agent',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-1',
+            objectType: 'Activity',
+            definition: { name: { 'en-US': 'Quiz 1' } },
+          },
+          result: { completion: true },
+          timestamp: '2025-11-13T10:15:00Z',
+        },
+      ];
+
+      it('should compute course-total-score metric (CO-001)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body).toMatchObject({
+          metricId: 'course-total-score',
+          value: 177, // 85 + 92
+          fromCache: false,
+          metadata: expect.objectContaining({
+            unit: 'points',
+            elementCount: 2,
+          }),
+        });
+      });
+
+      it('should compute course-max-score metric (CO-002)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-max-score/results')
+          .query({ courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body).toMatchObject({
+          metricId: 'course-max-score',
+          value: 200, // 100 + 100 (2 elements with max 100 each)
+          fromCache: false,
+          metadata: expect.objectContaining({
+            unit: 'points',
+            elementCount: 2,
+          }),
+        });
+      });
+
+      it('should compute course-time-spent metric (CO-003)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-time-spent/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body).toMatchObject({
+          metricId: 'course-time-spent',
+          value: 2100, // PT15M (900s) + PT20M (1200s) = 2100s
+          fromCache: false,
+          metadata: expect.objectContaining({
+            unit: 'seconds',
+            activityCount: 2,
+          }),
+        });
+      });
+
+      it('should compute course-last-elements metric (CO-004)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-last-elements/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('course-last-elements');
+        expect(Array.isArray(response.body.value)).toBe(true);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('count');
+      });
+
+      it('should compute course-completion-dates metric (CO-005)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-completion-dates/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('course-completion-dates');
+        expect(Array.isArray(response.body.value)).toBe(true);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.value.length).toBeGreaterThanOrEqual(0);
+        expect(response.body.metadata).toHaveProperty('count');
+      });
+
+      it('should validate required parameters for course metrics', async () => {
+        // CO-001 requires userId and courseId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-total-score/results')
+          .query({ courseId: 'course-123' }) // Missing userId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        // CO-002 requires courseId only
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-max-score/results')
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+      });
+
+      it('should cache course metric results', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(courseMetricStatements);
+
+        // First request - cache miss
+        const firstResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(firstResponse.body.fromCache).toBe(false);
+
+        // Second request - cache hit
+        const secondResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/course-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(secondResponse.body.fromCache).toBe(true);
+        expect(secondResponse.body.value).toBe(firstResponse.body.value);
+      });
+    });
   });
 });

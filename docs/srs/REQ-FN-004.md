@@ -25,6 +25,31 @@ Delivers the core value of the service: turning LRS statements into learning ana
 - Missing data or gaps in xAPI statements result in well-defined empty/zero outputs rather than failures, with explanatory metadata.
 - All computations return a normalized `MetricResult` object as their API surface (see API/Interface Impact) to ensure consistency across metrics and providers.
 
+### CSV Verification Checkpoint
+
+**MANDATORY for all implementations of this requirement:**
+
+Before implementation begins:
+
+- [ ] Generate traceability table mapping each CSV row to a provider ID (CO-XXX, TO-XXX, EO-XXX format)
+- [ ] Wait for human approval of the mapping before writing code
+- [ ] Provider IDs must match CSV line items systematically
+- [ ] Output schema must match CSV "Metric Description" column exactly as written
+- [ ] No derived/computed metrics (percentages, averages, scores) beyond CSV specification unless explicitly documented as separate metrics
+
+During implementation:
+
+- [ ] Provider naming follows systematic pattern: CSV row → provider file (e.g., CO-001 → `course-total-score.provider.ts`)
+- [ ] Each provider includes JSDoc comment: "Implements CSV row X: [exact metric description from CSV]"
+- [ ] Test data validates CSV-described data points exactly as written (no interpretation or abstraction)
+
+Before marking story complete:
+
+- [ ] AI/Developer confirms: "This provider implements CSV row X, Dashboard Level: [level], Metric Description: [exact CSV text]"
+- [ ] Verification: If calculating percentages, rates, or averages not in CSV → STOP and create separate requirement ID
+
+**Red Flag Check:** Derived metrics require explicit specification. The CSV defines raw data aggregations (totals, counts, lists). If your implementation computes analytics beyond simple aggregation, verify this is intentional and documented.
+
 ## Verification
 
 - Unit tests with seeded/mock xAPI statements validate the computations for representative metrics across the three dashboard levels (course, topic, element).

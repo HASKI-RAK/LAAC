@@ -9,7 +9,7 @@ import { generateCacheKey } from '../src/data-access/utils/cache-key.util';
 import { authenticatedPost, getTestHttpServer } from './helpers/request.helper';
 import { generateTokenWithoutScopes } from './helpers/auth.helper';
 
-const TEST_INSTANCE_ID = 'test-instance';
+const TEST_INSTANCE_ID = 'admin-cache-test';
 const API_PREFIX = process.env.API_PREFIX ?? 'api/v1';
 const ADMIN_CACHE_ENDPOINT = `/${API_PREFIX}/admin/cache/invalidate`;
 const GLOBAL_PREFIX_EXCLUDE = [
@@ -18,6 +18,9 @@ const GLOBAL_PREFIX_EXCLUDE = [
   'health/liveness',
   'health/readiness',
 ] as const;
+
+// Use a unique prefix for this test suite to avoid collisions with other tests
+const TEST_KEY_PREFIX = 'admin-cache-e2e';
 
 describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
   let app: INestApplication;
@@ -49,13 +52,13 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
 
   afterAll(async () => {
     // Clean up all test keys
-    await cacheService.invalidatePattern('cache:test-*');
+    await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
     await app.close();
   });
 
   afterEach(async () => {
     // Clean up test keys after each test
-    await cacheService.invalidatePattern('cache:test-*');
+    await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
   });
 
   describe('POST /admin/cache/invalidate', () => {
@@ -93,7 +96,9 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { key: 'cache:test:nonexistent' },
+          {
+            key: `cache:${TEST_KEY_PREFIX}-nonexistent:${TEST_INSTANCE_ID}:test:v1`,
+          },
           { scopes: ['admin:cache'] },
         );
 
@@ -104,7 +109,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
     describe('Single Key Invalidation', () => {
       it('should invalidate a single cache key', async () => {
         const key = generateCacheKey({
-          metricId: 'test-invalidate-single',
+          metricId: `${TEST_KEY_PREFIX}-invalidate-single`,
           instanceId: TEST_INSTANCE_ID,
           scope: 'course',
           filters: { id: '123' },
@@ -139,7 +144,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
       });
 
       it('should return count 0 for non-existent key', async () => {
-        const key = 'cache:test-nonexistent:key';
+        const key = `cache:${TEST_KEY_PREFIX}-nonexistent:${TEST_INSTANCE_ID}:test:v1`;
 
         const response = await authenticatedPost(
           app,
@@ -162,25 +167,25 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         // Create multiple test keys
         const keys = [
           generateCacheKey({
-            metricId: 'test-pattern-metrics',
+            metricId: `${TEST_KEY_PREFIX}-pattern-metrics`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '1' },
           }),
           generateCacheKey({
-            metricId: 'test-pattern-metrics',
+            metricId: `${TEST_KEY_PREFIX}-pattern-metrics`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '2' },
           }),
           generateCacheKey({
-            metricId: 'test-pattern-metrics',
+            metricId: `${TEST_KEY_PREFIX}-pattern-metrics`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'topic',
             filters: { id: '3' },
           }),
           generateCacheKey({
-            metricId: 'test-other',
+            metricId: `${TEST_KEY_PREFIX}-other`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '4' },
@@ -193,7 +198,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         }
 
         // Invalidate pattern
-        const pattern = 'cache:test-pattern-metrics:*';
+        const pattern = `cache:${TEST_KEY_PREFIX}-pattern-metrics:*`;
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
@@ -220,7 +225,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
       });
 
       it('should return count 0 for pattern with no matches', async () => {
-        const pattern = 'cache:test-nonexistent-pattern:*';
+        const pattern = `cache:${TEST_KEY_PREFIX}-nonexistent-pattern:*`;
 
         const response = await authenticatedPost(
           app,
@@ -243,7 +248,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         // Create test keys
         await cacheService.set(
           generateCacheKey({
-            metricId: 'test-all-1',
+            metricId: `${TEST_KEY_PREFIX}-all-1`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
           }),
@@ -251,7 +256,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         );
         await cacheService.set(
           generateCacheKey({
-            metricId: 'test-all-2',
+            metricId: `${TEST_KEY_PREFIX}-all-2`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'topic',
           }),
@@ -291,7 +296,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { pattern: 'cache:test:invalid!@#' },
+          { pattern: `cache:${TEST_KEY_PREFIX}:invalid!@#` },
           { scopes: ['admin:cache'] },
         );
 
@@ -304,7 +309,10 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { key: 'cache:test:key', pattern: 'cache:test:*' },
+          {
+            key: `cache:${TEST_KEY_PREFIX}:key:${TEST_INSTANCE_ID}:test:v1`,
+            pattern: `cache:${TEST_KEY_PREFIX}:*`,
+          },
           { scopes: ['admin:cache'] },
         );
 
@@ -317,7 +325,9 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { key: 'cache:test:format' },
+          {
+            key: `cache:${TEST_KEY_PREFIX}:format:${TEST_INSTANCE_ID}:test:v1`,
+          },
           { scopes: ['admin:cache'] },
         );
 
@@ -337,7 +347,9 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { key: 'cache:test:timestamp' },
+          {
+            key: `cache:${TEST_KEY_PREFIX}:timestamp:${TEST_INSTANCE_ID}:test:v1`,
+          },
           { scopes: ['admin:cache'] },
         );
 
@@ -351,12 +363,12 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
     describe('Integration with Cache Service', () => {
       it('should actually delete keys from Redis', async () => {
         const key1 = generateCacheKey({
-          metricId: 'test-redis-integration-1',
+          metricId: `${TEST_KEY_PREFIX}-redis-integration-1`,
           instanceId: TEST_INSTANCE_ID,
           scope: 'course',
         });
         const key2 = generateCacheKey({
-          metricId: 'test-redis-integration-2',
+          metricId: `${TEST_KEY_PREFIX}-redis-integration-2`,
           instanceId: TEST_INSTANCE_ID,
           scope: 'course',
         });
@@ -373,7 +385,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { pattern: 'cache:test-redis-integration-*' },
+          { pattern: `cache:${TEST_KEY_PREFIX}-redis-integration-*` },
           { scopes: ['admin:cache'] },
         );
 
@@ -386,19 +398,19 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         // Create exactly 3 keys
         const keys = [
           generateCacheKey({
-            metricId: 'test-count-accuracy',
+            metricId: `${TEST_KEY_PREFIX}-count-accuracy`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '1' },
           }),
           generateCacheKey({
-            metricId: 'test-count-accuracy',
+            metricId: `${TEST_KEY_PREFIX}-count-accuracy`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '2' },
           }),
           generateCacheKey({
-            metricId: 'test-count-accuracy',
+            metricId: `${TEST_KEY_PREFIX}-count-accuracy`,
             instanceId: TEST_INSTANCE_ID,
             scope: 'course',
             filters: { id: '3' },
@@ -412,7 +424,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
         const response = await authenticatedPost(
           app,
           ADMIN_CACHE_ENDPOINT,
-          { pattern: 'cache:test-count-accuracy:*' },
+          { pattern: `cache:${TEST_KEY_PREFIX}-count-accuracy:*` },
           { scopes: ['admin:cache'] },
         );
 

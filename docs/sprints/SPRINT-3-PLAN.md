@@ -23,9 +23,10 @@ We need to expose a minimal but fully functional learning analytics pipeline to 
 - ✅ **Cache-aside + resilience (REQ-FN-005/006/017)** — `src/metrics/services/computation.service.ts` orchestrates cache lookup, provider loading, LRS querying, fallback; Redis service lives in `src/data-access/services/cache.service.ts`.
 - ✅ **Metrics results endpoint (REQ-FN-005 & REQ-FN-023/024)** — `src/metrics/controllers/metrics.controller.ts` plus `test/metrics-results.e2e-spec.ts` prove the pipeline can be exercised via `/api/v1/metrics/:id/results`.
 - ✅ **Sample metric providers (REQ-FN-004/010)** — `course-completion`, `learning-engagement`, `topic-mastery` already compute against xAPI statements.
-- ⚠️ **Catalog + metadata still stubbed (REQ-FN-003)** — `MetricsService.getCatalog()` returns an empty list, so clients cannot discover the metrics that already exist.
+- ✅ **Catalog + metadata (REQ-FN-003)** — `MetricsService.getCatalog()` dynamically discovers providers and exposes full metadata via `/api/v1/metrics` endpoints.
+- ✅ **Parameter-aware LRS queries** — `ComputationService.buildLRSFilters()` translates courseId/topicId/elementId into xAPI activity filters with appropriate scoping.
+- ✅ **MVP seed data & fixtures** — Deterministic fixtures in `test/fixtures/xapi/` for course/topic/element validation; `scripts/seed-test-lrs.js` automates seeding.
 - ⚠️ **CSV coverage incomplete (REQ-FN-004)** — only 3/15 CSV metrics exist; no topic/element recency metrics or per-element best attempt calculations.
-- ⚠️ **LRS filters ignore course/topic/element IDs** — `ComputationService.buildLRSFilters()` passes only time filters, so every request fetches broad datasets.
 - ⚠️ **Docs and onboarding still describe the future state instead of the MVP**.
 
 ---
@@ -34,7 +35,6 @@ We need to expose a minimal but fully functional learning analytics pipeline to 
 
 1. Publish the actual catalog of available metrics and wire it to the providers already in code.
 2. Implement the CSV metrics required for MVP (CO/TO/EO tables) so that each dashboard level has actionable analytics.
-   2.1 Verify the CSV metrics against docker-compose Yetanalytics LRS with seeded data in e2e tests.
 3. Ensure each metric request issues the correct LRS query (course/topic/element scoped) and that we have seeded fixtures plus e2e tests to validate the pipeline.
 4. Update docs and API descriptions so integrators can call the MVP endpoints immediately after the sprint.
 
@@ -52,57 +52,60 @@ We need to expose a minimal but fully functional learning analytics pipeline to 
 
 ## Sprint Backlog (Reprioritized)
 
-### Epic 10: Pipeline Hardening & Catalog (REQ-FN-003, REQ-FN-004, REQ-FN-005) — **11 pts**
+### ✅ Epic 10: Pipeline Hardening & Catalog (REQ-FN-003, REQ-FN-004, REQ-FN-005) — **11 pts** [COMPLETED]
 
-#### Story 10.1: Metrics Catalog & Provider Registry (4 pts)
+**Status**: Completed Nov 17, 2025 | Issues: #74, #80, #81, #82, #83 (all closed)
+
+#### ✅ Story 10.1: Metrics Catalog & Provider Registry (4 pts) — [#81 CLOSED]
 
 Expose every registered provider (existing + new) through the catalog and details endpoints.
 
-**Acceptance Criteria**
+**Acceptance Criteria** [ALL MET]
 
-- `GET /api/v1/metrics` lists all metrics with `id`, `dashboardLevel`, description, `requiredParams`, and `outputType`.
-- `GET /api/v1/metrics/:id` returns provider metadata and example payload.
-- Catalog reflects provider status dynamically (no duplicated config files).
+- ✅ `GET /api/v1/metrics` lists all metrics with `id`, `dashboardLevel`, description, `requiredParams`, and `outputType`.
+- ✅ `GET /api/v1/metrics/:id` returns provider metadata and example payload.
+- ✅ Catalog reflects provider status dynamically (no duplicated config files).
 
-**Implementation Scope**
+**Implementation Completed**
 
-- `src/metrics/services/metrics.service.ts` — replace stub with registry built from providers exported in `src/computation/providers/index.ts`.
-- `src/metrics/dto` — extend DTOs to include `requiredParams`, `outputType`, and version info.
-- `src/metrics/controllers/metrics.controller.ts` — update OpenAPI decorators.
-- `test/metrics.e2e-spec.ts` — add catalog assertions.
+- ✅ `src/metrics/services/metrics.service.ts` — Provider-backed registry with ModuleRef dynamic loading
+- ✅ `src/metrics/dto/metric-catalog-item.dto.ts` — Full metadata fields with OpenAPI decorators
+- ✅ `src/metrics/controllers/metrics.controller.ts` — Updated OpenAPI annotations
+- ✅ `test/metrics.e2e-spec.ts` — Comprehensive catalog assertions
 
-#### Story 10.2: Parameter-Aware LRS Queries (4 pts)
+#### ✅ Story 10.2: Parameter-Aware LRS Queries (4 pts) — [#82 CLOSED]
 
 Inject course/topic/element filters into xAPI requests to minimize data fetch.
 
-**Acceptance Criteria**
+**Acceptance Criteria** [ALL MET]
 
-- Requests with `courseId` translate into `activity` filter; `topicId` maps to context extensions; `elementId` maps to specific activities per CSV definition.
-- Unit tests cover the mapping logic.
-- E2E verifies `LRSClient.queryStatements` receives filters reflecting request params.
+- ✅ Requests with `courseId` translate into `activity` filter; `topicId`/`elementId` map with appropriate `related_activities` flag.
+- ✅ Unit tests cover the mapping logic.
+- ✅ E2E verifies `LRSClient.queryStatements` receives filters reflecting request params.
 
-**Implementation Scope**
+**Implementation Completed**
 
-- `src/metrics/dto/metric-results.dto.ts` — ensure validation for IDs aligns with filters.
-- `src/metrics/services/computation.service.ts` — enhance `buildLRSFilters`.
-- `src/data-access/clients/lrs-query.builder.ts` — helpers for topic/element context filters.
-- `test/metrics-results.e2e-spec.ts` — extend spies to assert filter payloads.
+- ✅ `src/metrics/services/computation.service.ts` — `buildLRSFilters()` and `resolveActivityFilter()` implement scoped queries
+- ✅ `src/data-access/clients/lrs-query.builder.ts` — Full xAPI query construction with activity/related filters
+- ✅ `test/metrics-results.e2e-spec.ts` — Filter payload assertions for course/topic/element scopes
 
-#### Story 10.3: MVP Seed Data & Smoke Tests (3 pts)
+#### ✅ Story 10.3: MVP Seed Data & Smoke Tests (3 pts) — [#83 CLOSED]
 
 Provide deterministic fixtures that hit the full pipeline.
 
-**Acceptance Criteria**
+**Acceptance Criteria** [ALL MET]
 
-- New fixture set covers course/topic/element metrics.
-- `yarn test:e2e` seeds fixtures before running metrics tests.
-- Scripts documented so devs can replay locally.
+- ✅ New fixture set covers course/topic/element metrics.
+- ✅ `yarn test:e2e` seeds fixtures before running metrics tests.
+- ✅ Scripts documented so devs can replay locally.
 
-**Implementation Scope**
+**Implementation Completed**
 
-- `test/fixtures/xapi/` — add JSON fixtures per dashboard level.
-- `test/setup-e2e.ts` & `scripts/seed-test-lrs.js` — load fixtures into in-memory/mock LRS.
-- `docs/TESTING.md` — document seeding workflow.
+- ✅ `test/fixtures/xapi/course-mvp.json` — Course-level statements
+- ✅ `test/fixtures/xapi/topic-mvp.json` — Topic-level statements
+- ✅ `test/fixtures/xapi/element-mvp.json` — Element-level statements
+- ✅ `scripts/seed-test-lrs.js` — Automated fixture loading with env var support
+- ✅ `docs/TESTING.md` — Seeding workflow documented
 
 ---
 
