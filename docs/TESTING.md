@@ -91,10 +91,35 @@ test/
 ├── fixtures/             # Test data fixtures
 │   └── users.fixture.ts  # Sample user data
 ├── constants.ts          # Test configuration constants
-├── setup-e2e.ts         # Global E2E test setup
+├── setup-e2e.ts         # Global E2E test setup (with auto environment detection)
 ├── jest-e2e.json        # Jest E2E configuration
 └── *.e2e-spec.ts        # E2E test files
 ```
+
+### Automatic Environment Detection
+
+**File**: `test/setup-e2e.ts`
+
+The test setup automatically detects whether tests are running locally or in CI/CD:
+
+```typescript
+// Automatically detects environment based on LRS_URL
+const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
+const isCI = !lrsUrl.includes('localhost');
+
+// CI/CD: Uses GitHub secrets (external LRS)
+// Local: Uses localhost defaults (containerized LRS)
+```
+
+**Environment Configurations**:
+
+| Environment               | LRS Configuration               | Auto-detected              |
+| ------------------------- | ------------------------------- | -------------------------- |
+| **CI/CD**                 | External LRS via GitHub secrets | ✅ Yes (non-localhost URL) |
+| **Local (containerized)** | `http://localhost:8090/xapi`    | ✅ Yes (localhost URL)     |
+| **Local (external)**      | User-provided external URL      | ✅ Yes (non-localhost URL) |
+
+**See**: [docs/CI-TESTING-WITH-LRS.md](CI-TESTING-WITH-LRS.md) for detailed configuration.
 
 ### Test Setup Flow
 

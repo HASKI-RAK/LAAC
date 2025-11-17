@@ -48,6 +48,7 @@ describe('REQ-FN-002: LRSClient', () => {
           return {
             url: 'https://lrs.example.com/xapi',
             apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
             timeout: 10000,
           };
         }

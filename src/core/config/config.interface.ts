@@ -45,12 +45,13 @@ export interface RedisConfig {
  * Implements REQ-FN-026: Multi-LRS Configuration Schema
  *
  * Supports both legacy single-instance and multi-instance configurations:
- * - Single instance: url, apiKey, timeout (backward compatible)
+ * - Single instance: url, apiKey, apiSecret, timeout (backward compatible)
  * - Multi-instance: instances array (REQ-FN-026)
  */
 export interface LrsConfig {
   url: string;
   apiKey: string;
+  apiSecret: string;
   timeout: number;
   instances: LRSInstance[]; // REQ-FN-026: Multi-LRS support
 }

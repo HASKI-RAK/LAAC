@@ -4,24 +4,58 @@
 // Set up required environment variables before any imports
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long-for-testing';
 
-// LRS configuration - matches docker-compose.test.yml
-// CI will provide LRS_URL, LRS_API_KEY, and LRS_API_SECRET via environment
-// For local testing, these match the docker-compose.test.yml LRS service
-process.env.LRS_INSTANCES =
-  process.env.LRS_INSTANCES ||
-  JSON.stringify([
+// LRS configuration with environment-aware defaults
+// REQ-FN-026: Multi-instance LRS support
+//
+// IMPORTANT - Environment Variable Naming:
+// Application code uses: LRS_URL, LRS_API_KEY, LRS_API_SECRET
+// GitHub secrets use: LRS_DOMAIN, LRS_API_USER, LRS_API_SECRET
+// Workflows map secrets → env vars automatically (see .github/workflows/*.yml)
+//
+// Priority order:
+// 1. LRS_INSTANCES (if already set) - for custom multi-instance configurations
+// 2. LRS_URL + LRS_API_KEY + LRS_API_SECRET (single-instance, from GitHub secrets in CI/CD)
+// 3. Local defaults (for local development with docker-compose.test.yml)
+//
+// CI/CD (GitHub Actions) provides:
+//   - LRS_URL ← secrets.LRS_DOMAIN
+//   - LRS_API_KEY ← secrets.LRS_API_USER
+//   - LRS_API_SECRET ← secrets.LRS_API_SECRET
+//
+// Local development falls back to:
+//   - LRS_URL: http://localhost:8090/xapi (docker-compose.test.yml)
+//   - LRS_API_KEY: test-api-key
+//   - LRS_API_SECRET: test-api-secret
+//
+// See docs/LRS-CONFIGURATION.md for complete configuration guide
+
+if (!process.env.LRS_INSTANCES) {
+  const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
+  const lrsApiKey = process.env.LRS_API_KEY || 'test-api-key';
+  const lrsApiSecret = process.env.LRS_API_SECRET || 'test-api-secret';
+
+  // Detect environment: CI uses secrets (URL won't be localhost), local uses defaults
+  const isCI = !lrsUrl.includes('localhost');
+  const instanceName = isCI ? 'External LRS (CI/CD)' : 'Local Development LRS';
+  const instanceId = isCI ? 'ci-external' : 'local-dev';
+
+  process.env.LRS_INSTANCES = JSON.stringify([
     {
-      id: 'local-dev',
-      name: 'Local Development LRS',
-      endpoint: process.env.LRS_URL || 'http://localhost:8090/xapi',
+      id: instanceId,
+      name: instanceName,
+      endpoint: lrsUrl,
       timeoutMs: 10000,
       auth: {
         type: 'basic',
-        username: process.env.LRS_API_KEY || 'test-api-key',
-        password: process.env.LRS_API_SECRET || 'test-api-secret',
+        username: lrsApiKey,
+        password: lrsApiSecret,
       },
     },
   ]);
+
+  // Log which environment is being used (without credentials)
+  console.log(`[E2E Setup] Using LRS: ${instanceName} at ${lrsUrl}`);
+}
 
 process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
 process.env.NODE_ENV = 'test';

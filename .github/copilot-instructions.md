@@ -14,25 +14,66 @@ NestJS-based intermediary between Learning Record Store (LRS) and Adaptive Learn
 
 ### Key Modules
 
-- **MetricsModule**: API, catalog, orchestration (REQ-FN-001, 003, 005)
+- **MetricsModule**: API, catalog, orchestration, instances endpoint (REQ-FN-001, 003, 005, 017)
+  - `MetricsController`: Catalog and results endpoints
+  - `InstancesController`: LRS instance metadata (REQ-FN-017)
+  - `MetricsService`: Catalog management
+  - `ComputationService`: Orchestration and cache-aside pattern
+  - `InstancesService`: Instance health and metadata
 - **ComputationModule**: Metric logic via `IMetricComputation` (REQ-FN-004, 010)
+  - Providers: `CourseCompletionProvider`, `TopicMasteryProvider`, `LearningEngagementProvider`
+  - Each provider implements `IMetricComputation` interface
 - **DataAccessModule**: Redis (`ICacheService`) + LRS (`ILRSClient`) (REQ-FN-002, 006, 007)
-- **AuthModule**: JWT auth, scope authorization, rate limiting (REQ-FN-023, 024)
-- **CoreModule**: Logging (correlation IDs), config, health checks (REQ-FN-020)
-- **AdminModule**: Cache invalidation (REQ-FN-007, 021)
+  - `CacheService`: Redis cache implementation
+  - `LRSClient`: xAPI statement retrieval with circuit breaker protection
+- **AuthModule**: JWT auth, scope authorization (REQ-FN-023)
+  - `JwtAuthGuard`: JWT token validation
+  - `ScopesGuard`: Scope-based authorization
+  - `JwtStrategy`: Passport JWT strategy
+  - `@Public()` and `@RequireScopes()` decorators
+- **CoreModule**: Logging, config, health checks, resilience (REQ-FN-020, REQ-NF-003, REQ-FN-017)
+  - `LoggerService`: Structured logging with correlation IDs
+  - `CorrelationIdMiddleware`: Request tracking
+  - `CircuitBreaker`: Fault tolerance for external services
+  - `FallbackHandler`: Graceful degradation strategies
+  - `CustomThrottlerGuard`: Rate limiting (REQ-FN-024)
+  - Health: `HealthController`, `RedisHealthIndicator`
+- **AdminModule**: Cache invalidation, metrics registry (REQ-FN-007, 021)
+  - `CacheController`: Admin cache management
+  - `MetricsRegistryService`: System-wide metrics tracking
 
 ### IMetricComputation Interface
 
-```
+```typescript
 export interface IMetricComputation {
-  id: string;
-  dashboardLevel: 'course' | 'topic' | 'element';
-  description: string;
-  version?: string;
-  compute(params: MetricParams, lrsData: xAPIStatement[]): Promise<MetricResult>;
+  // Required metadata
+  readonly id: string;
+  readonly dashboardLevel: 'course' | 'topic' | 'element';
+  readonly description: string;
+
+  // Optional metadata
+  readonly version?: string;
+  readonly title?: string;
+  readonly requiredParams?: (keyof MetricParams)[];
+  readonly optionalParams?: (keyof MetricParams)[];
+  readonly outputType?: 'scalar' | 'object' | 'array';
+  readonly example?: MetricExample;
+
+  // Core computation logic
+  compute(
+    params: MetricParams,
+    lrsData: xAPIStatement[],
+  ): Promise<MetricResult>;
   validateParams?(params: MetricParams): void;
 }
 ```
+
+**Implementation Notes:**
+
+- Use `@Injectable()` decorator for dependency injection
+- `compute()` must be stateless (REQ-NF-004)
+- `title` defaults to title-cased `id` if omitted
+- Metadata powers catalog endpoints (REQ-FN-003)
 
 ## API Design
 
@@ -40,35 +81,69 @@ export interface IMetricComputation {
 - **OpenAPI decorators** (`@nestjs/swagger`) on all endpoints (REQ-FN-008, 009)
 - **DTO validation** with `class-validator` (REQ-FN-024)
 - **Auth guards**: `JwtAuthGuard`, `ScopesGuard` (REQ-FN-023)
+- **Rate limiting**: `CustomThrottlerGuard` with Redis backend (REQ-FN-024)
 
 ### Key Endpoints
 
 ```
-GET /api/v1/metrics                   # Catalog
-GET /api/v1/metrics/:id               # Metric details
-GET /api/v1/metrics/:id/results       # Compute/retrieve
-POST /admin/cache/invalidate          # Admin only
-GET /health/liveness|readiness        # Health checks
+GET /api/v1/metrics                   # Catalog (all metrics metadata)
+GET /api/v1/metrics/:id               # Metric details with examples
+GET /api/v1/metrics/:id/results       # Compute/retrieve results
+GET /api/v1/instances                 # LRS instance metadata (REQ-FN-017)
+POST /admin/cache/invalidate          # Admin only (admin:cache scope)
+GET /health/liveness                  # Liveness probe (public)
+GET /health/readiness                 # Readiness probe (public)
 ```
+
+### Controller Structure
+
+- `MetricsController`: Catalog and results endpoints
+- `InstancesController`: Multi-instance LRS metadata
+- `CacheController`: Admin cache invalidation
+- `HealthController`: Liveness/readiness probes (public, skip rate limiting)
 
 ## Caching (REQ-FN-006)
 
 - **Pattern**: Cache-aside with Redis
 - **Keys**: `cache:{metricId}:{scope}:{filters}:{version}`
 - **Invalidation**: Single key or pattern-based via admin API (REQ-FN-007)
+- **Service**: `CacheService` implements `ICacheService` interface
+- **Admin**: `CacheController` provides `/admin/cache/invalidate` endpoint
+
+## Resilience & Fault Tolerance (REQ-FN-017, REQ-NF-003)
+
+- **Circuit Breaker**: `CircuitBreaker` service with CLOSED/OPEN/HALF_OPEN states
+  - Protects LRS calls from cascading failures
+  - Configurable threshold, timeout, and recovery attempts
+  - State transitions tracked by `MetricsRegistryService`
+- **Graceful Degradation**: `FallbackHandler` service
+  - Strategy 1: Serve stale cache data when LRS unavailable
+  - Strategy 2: Return default/null values with degraded indicator
+- **Health Checks**: Liveness (app running) vs. Readiness (dependencies ready)
 
 ## Security
 
-- **No secrets in repo** (pre-commit hooks enforce)
+- **No secrets in repo** (pre-commit hooks with husky/lint-staged enforce)
 - **Env vars** for config (REQ-FN-014)
-- **Input validation** on all DTOs
-- **Rate limiting** on public endpoints
+- **JWT authentication** with `JwtAuthGuard` (REQ-FN-023)
+- **Scope-based authorization** with `@RequireScopes()` decorator
+  - `analytics:read`: Read metrics catalog and results
+  - `admin:cache`: Cache invalidation operations
+- **Input validation** on all DTOs via `class-validator`
+- **Rate limiting** on public endpoints (REQ-FN-024)
+  - Redis-backed throttling with `@nest-lab/throttler-storage-redis`
+  - Health endpoints bypass rate limiting
 - **Log security events** without PII (REQ-FN-020, REQ-NF-019)
 
 ## Observability
 
-- **Structured logging** with correlation IDs via `LoggerService`
-- **CorrelationIdMiddleware** for `X-Correlation-ID` propagation
+- **Structured logging** with correlation IDs via `LoggerService` (nest-winston)
+- **CorrelationIdMiddleware** for `X-Correlation-ID` propagation across requests
+- **Metrics tracking** via `MetricsRegistryService`
+  - Circuit breaker state transitions
+  - Authentication failures
+  - Cache hit/miss ratios
+  - Request performance
 
 ## Testing
 
@@ -82,8 +157,9 @@ GET /health/liveness|readiness        # Health checks
 
 - **TypeScript strict mode**, avoid `any`
 - **Naming**: `*Controller`, `*Service`, `*Provider`, `I*` (interfaces), `*Dto`
-- **Path aliases** from `tsconfig.json`
-- **Format**: Prettier | **Lint**: ESLint (`yarn lint`)
+- **Path aliases**: None configured (use relative imports)
+- **Format**: Prettier | **Lint**: ESLint v9 with flat config (`eslint.config.mjs`)
+- **Pre-commit hooks**: Husky + lint-staged (auto-format and lint)
 
 ## Documentation
 
@@ -96,20 +172,29 @@ Update when changed:
 
 ## Commands
 
-```
-yarn install            # Setup
-yarn start:dev          # Dev with watch
+```bash
+yarn install            # Install dependencies
+yarn start:dev          # Dev with watch mode
 yarn test               # Unit tests
 yarn test:e2e           # E2E tests
-yarn test:cov           # Coverage
-yarn lint               # ESLint
+yarn test:cov           # Coverage report
+yarn lint               # ESLint with auto-fix
 yarn build              # Production build
+yarn start:prod         # Run production build
+
+# Security & Setup
+yarn setup:secrets      # Generate JWT secrets
+yarn generate:jwt       # Generate dev JWT token
+yarn generate:jwt:admin # Generate admin JWT token
 ```
 
 ## Deployment
 
-- **Docker Compose**: `docker-compose.dev.yml` (dev), `docker-compose.prod.yml` (prod with Traefik)
+- **Docker Compose**: `docker-compose.dev.yml` (dev), `docker-compose.yml` (prod)
+- **Additional**: `docker-compose.lrs-local.yml`, `docker-compose.test.yml` for testing
 - **CI/CD**: GitHub Actions (REQ-FN-015)
+  - `production-deploy.yml`: Docker image build and publish
+  - `security-scan.yml`: Security validation
 - **Rollback**: Tagged Docker images (REQ-NF-012)
 
 ## Success Checklist

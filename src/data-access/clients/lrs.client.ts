@@ -61,8 +61,8 @@ export class LRSClient implements ILRSClient, OnModuleInit {
       endpoint: lrsConfig.url,
       auth: {
         type: 'basic',
-        key: lrsConfig.apiKey,
-        secret: lrsConfig.apiKey, // Yetanalytics uses same key for both (REQ-FN-002)
+        username: lrsConfig.apiKey,
+        password: lrsConfig.apiSecret,
       },
       timeoutMs: lrsConfig.timeout,
       maxRetries: 3,
