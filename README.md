@@ -42,36 +42,33 @@ yarn start:dev
 
 ---
 
-## Project setup
+## Local development
 
 ```bash
-$ yarn install
-```
+# install dependencies
+yarn install
 
-## Compile and run the project
+# run in watch mode
+yarn start:dev
 
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
+# run once (no watch)
+yarn start
 
 # production mode
-$ yarn run start:prod
+yarn start:prod
 ```
 
-## Run tests
+### Testing
 
 ```bash
 # unit tests
-$ yarn run test
+yarn test
 
 # e2e tests
-$ yarn run test:e2e
+yarn test:e2e
 
 # test coverage
-$ yarn run test:cov
+yarn test:cov
 ```
 
 For detailed testing documentation, see:
@@ -282,29 +279,7 @@ docker compose down -v
 
 ### Environment Variables Reference
 
-See `.env.example` for a complete list of required environment variables. Key variables:
-
-#### Application Configuration
-
-- `NODE_ENV`: Environment mode (development/production)
-- `PORT`: Application port (default: 3000)
-- `LOG_LEVEL`: Logging verbosity (error/warn/log/debug/verbose)
-
-#### Security
-
-- `JWT_SECRET`: JWT signing secret (min 32 chars, **CRITICAL**)
-- `AUTH_ENABLED`: Enable/disable authentication (default: true)
-
-#### Redis Cache
-
-- `REDIS_HOST`: Redis hostname (default: localhost for dev, redis for Docker)
-- `REDIS_PORT`: Redis port (default: 6379)
-- `REDIS_PASSWORD`: Redis password (optional, recommended for production)
-
-#### LRS Integration
-
-- `LRS_URL`: Learning Record Store xAPI endpoint (**REQUIRED**)
-- `LRS_API_KEY`: LRS authentication key (**CRITICAL**)
+See `.env.example` and the [Configuration and Secrets Management](#configuration-and-secrets-management) section for a complete list of environment variables and security guidance. For Docker/Traefik-specific deployment settings:
 
 #### Docker & Traefik (Production Only)
 
@@ -313,24 +288,6 @@ See `.env.example` for a complete list of required environment variables. Key va
 - `SUBDOMAIN`: Application subdomain (e.g., laac)
 - `DOMAIN_NAME`: Base domain (e.g., example.com)
 - `GENERIC_TIMEZONE`: Container timezone (e.g., Europe/Berlin)
-
-### Health Checks
-
-Both environments include health checks for monitoring:
-
-```bash
-# Check application health
-curl http://localhost:3000/health/liveness
-
-# Check application + dependencies (Redis, LRS)
-curl http://localhost:3000/health/readiness
-```
-
-Health checks are used by:
-
-- Docker Compose: Auto-restart unhealthy containers
-- Portainer: Dashboard monitoring and alerting
-- Traefik: Load balancer health-based routing
 
 ### Troubleshooting
 
@@ -711,6 +668,20 @@ For more details, see:
 ## Health and Readiness Endpoints
 
 > **REQ-NF-002**: The application provides health check endpoints for container orchestration and monitoring.
+
+### Quick Checks
+
+Run simple curl checks against the health endpoints:
+
+```bash
+# Check application health
+curl http://localhost:3000/health/liveness
+
+# Check application + dependencies (Redis, LRS)
+curl http://localhost:3000/health/readiness
+```
+
+These checks are commonly used by Docker Compose, Portainer, and Traefik for monitoring and automated restarts.
 
 ### Liveness Probe
 
