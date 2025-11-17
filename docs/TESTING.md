@@ -103,8 +103,8 @@ test/
 The test setup automatically detects whether tests are running locally or in CI/CD:
 
 ```typescript
-// Automatically detects environment based on LRS_URL
-const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
+// Automatically detects environment based on LRS_DOMAIN
+const lrsUrl = process.env.LRS_DOMAIN || 'http://localhost:8090/xapi';
 const isCI = !lrsUrl.includes('localhost');
 
 // CI/CD: Uses GitHub secrets (external LRS)
@@ -643,8 +643,8 @@ E2E tests use the following environment variables (configured in `test/setup-e2e
 ```bash
 NODE_ENV=test
 JWT_SECRET=test-jwt-secret-min-32-characters-long-for-testing
-LRS_URL=https://test-lrs.example.com/xapi
-LRS_API_KEY=test-lrs-api-key
+LRS_DOMAIN=https://test-lrs.example.com/xapi
+LRS_SECRET=test-lrs-api-key
 LOG_LEVEL=error
 AUTH_ENABLED=true
 RATE_LIMIT_TTL=60

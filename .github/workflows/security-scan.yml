@@ -43,8 +43,8 @@ jobs:
             "REDIS_HOST"
             "REDIS_PORT"
             "REDIS_TTL"
-            "LRS_URL"
-            "LRS_API_KEY"
+            "LRS_DOMAIN"
+            "LRS_USER"
             "LRS_TIMEOUT"
             "LOG_LEVEL"
           )

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Dev convenience script to generate required secrets in `.env`.
- * - Ensures JWT_SECRET (>=32 chars), LRS_URL, and LRS_API_KEY exist
+ * - Ensures JWT_SECRET (>=32 chars), LRS_DOMAIN, and LRS_USER exist
  * - Creates `.env` from `.env.example` if missing
  * - Appends only missing keys by default; use `--force` to overwrite
  */
@@ -13,11 +13,11 @@ const crypto = require('crypto');
 const ENV_FILE = path.resolve(process.cwd(), '.env');
 const ENV_EXAMPLE_FILE = path.resolve(process.cwd(), '.env.example');
 
-const REQUIRED_KEYS = ['JWT_SECRET', 'LRS_URL', 'LRS_API_KEY'];
+const REQUIRED_KEYS = ['JWT_SECRET', 'LRS_DOMAIN', 'LRS_USER'];
 const PLACEHOLDERS = {
   JWT_SECRET: new Set(['your-secret-key-min-32-chars-replace-in-production']),
-  LRS_URL: new Set(['https://lrs.example.com/xapi']),
-  LRS_API_KEY: new Set(['your-lrs-api-key-replace-in-production']),
+  LRS_DOMAIN: new Set(['https://lrs.example.com/xapi']),
+  LRS_USER: new Set(['your-lrs-api-key-replace-in-production']),
 };
 
 const argv = new Set(process.argv.slice(2));
@@ -104,7 +104,7 @@ function main() {
   console.log('Updated .env with:');
   for (const [k] of toAdd) {
     // Do not print secret values
-    if (k === 'JWT_SECRET' || k === 'LRS_API_KEY') {
+    if (k === 'JWT_SECRET' || k === 'LRS_USER') {
       console.log(`- ${k}=<generated>`);
     } else {
       console.log(`- ${k}=${toAdd.get(k)}`);

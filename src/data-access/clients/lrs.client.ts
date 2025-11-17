@@ -458,13 +458,13 @@ export class LRSClient implements ILRSClient, OnModuleInit {
 
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
       return new Error(
-        `LRS connection error: ${err.message} (${operation}). Check LRS_URL configuration and network connectivity.`,
+        `LRS connection error: ${err.message} (${operation}). Check LRS_DOMAIN configuration and network connectivity.`,
       );
     }
 
     if (err.response?.status === 401) {
       return new Error(
-        `LRS authentication failed (${operation}). Check LRS_API_KEY credentials.`,
+        `LRS authentication failed (${operation}). Check LRS_USER and LRS_SECRET credentials.`,
       );
     }
 

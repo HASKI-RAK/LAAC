@@ -10,8 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 const LRS_URL = process.env.LRS_URL || 'http://localhost:8090/xapi';
-const LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
-const LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
+const LRS_SECRET = process.env.LRS_SECRET || 'test-api-key';
+const LRS_SECRET = process.env.LRS_SECRET || 'test-api-secret';
 const PAGES = parseInt(process.argv[2] || '5', 10);
 const OUTPUT_FILE = path.join(
   __dirname,
@@ -26,9 +26,7 @@ function makeRequest(url) {
     const urlObj = new URL(url);
     const isHttps = urlObj.protocol === 'https:';
     const client = isHttps ? https : http;
-    const auth = Buffer.from(`${LRS_API_KEY}:${LRS_API_SECRET}`).toString(
-      'base64',
-    );
+    const auth = Buffer.from(`${LRS_SECRET}:${LRS_SECRET}`).toString('base64');
 
     const options = {
       hostname: urlObj.hostname,
@@ -78,13 +76,11 @@ async function fetchMultiplePages() {
 
         // Get next page URL if available
         nextUrl = response.more
-          ? (
-              response.more.startsWith('http')
-                ? response.more
-                : response.more.includes('?')
-                  ? `${LRS_URL}/statements?${response.more.split('?')[1]}`
-                  : `${LRS_URL}/statements${response.more}`
-            )
+          ? response.more.startsWith('http')
+            ? response.more
+            : response.more.includes('?')
+              ? `${LRS_URL}/statements?${response.more.split('?')[1]}`
+              : `${LRS_URL}/statements${response.more}`
           : null;
       } else {
         console.log(`   ℹ️  No more statements available`);

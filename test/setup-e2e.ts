@@ -7,32 +7,13 @@ process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long-for-testing';
 // LRS configuration with environment-aware defaults
 // REQ-FN-026: Multi-instance LRS support
 //
-// IMPORTANT - Environment Variable Naming:
-// Application code uses: LRS_URL, LRS_API_KEY, LRS_API_SECRET
-// GitHub secrets use: LRS_DOMAIN, LRS_API_USER, LRS_API_SECRET
-// Workflows map secrets → env vars automatically (see .github/workflows/*.yml)
-//
-// Priority order:
-// 1. LRS_INSTANCES (if already set) - for custom multi-instance configurations
-// 2. LRS_URL + LRS_API_KEY + LRS_API_SECRET (single-instance, from GitHub secrets in CI/CD)
-// 3. Local defaults (for local development with docker-compose.test.yml)
-//
-// CI/CD (GitHub Actions) provides:
-//   - LRS_URL ← secrets.LRS_DOMAIN
-//   - LRS_API_KEY ← secrets.LRS_API_USER
-//   - LRS_API_SECRET ← secrets.LRS_API_SECRET
-//
-// Local development falls back to:
-//   - LRS_URL: http://localhost:8090/xapi (docker-compose.test.yml)
-//   - LRS_API_KEY: test-api-key
-//   - LRS_API_SECRET: test-api-secret
 //
 // See docs/LRS-CONFIGURATION.md for complete configuration guide
 
 if (!process.env.LRS_INSTANCES) {
-  const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
-  const lrsApiKey = process.env.LRS_API_KEY || 'test-api-key';
-  const lrsApiSecret = process.env.LRS_API_SECRET || 'test-api-secret';
+  const lrsUrl = process.env.LRS_DOMAIN || 'http://localhost:8090/xapi';
+  const lrsApiKey = process.env.LRS_USER || 'test-api-key';
+  const lrsApiSecret = process.env.LRS_SECRET || 'test-api-secret';
 
   // Detect environment: CI uses secrets (URL won't be localhost), local uses defaults
   const isCI = !lrsUrl.includes('localhost');

@@ -196,7 +196,7 @@ The production environment uses pre-built Docker images with Traefik reverse pro
 
    # Set secure secrets (NEVER commit these!)
    JWT_SECRET=<generated-secure-secret>
-   LRS_API_KEY=<your-lrs-api-key>
+   LRS_USER=<your-lrs-api-key>
    REDIS_PASSWORD=<optional-redis-password>
    METRICS_DEBUG=false # Set true to emit telemetry logs
    ```
@@ -442,7 +442,7 @@ Clients should update to the latest version before the deprecation date to avoid
 
 3. **Configure your local `.env` file** with actual values:
    - Set `JWT_SECRET` to a secure random string (minimum 32 characters)
-   - Configure `LRS_URL` and `LRS_API_KEY` from your LRS provider
+   - Configure `LRS_DOMAIN` and `LRS_USER` from your LRS provider
    - Adjust `REDIS_*` settings if using a non-default Redis configuration
    - Set `NODE_ENV=development` for local development
 
@@ -458,7 +458,7 @@ For production deployments, **never use `.env` files**. Instead:
 
    ```bash
    echo "your-jwt-secret" | docker secret create laac_jwt_secret -
-   echo "your-lrs-api-key" | docker secret create laac_lrs_api_key -
+   echo "your-lrs-api-key" | docker secret create laac_LRS_SECRET -
    ```
 
 2. Reference secrets in your `docker-compose.yml`:
@@ -467,10 +467,10 @@ For production deployments, **never use `.env` files**. Instead:
      laac:
        environment:
          JWT_SECRET_FILE: /run/secrets/laac_jwt_secret
-         LRS_API_KEY_FILE: /run/secrets/laac_lrs_api_key
+         LRS_USER_FILE: /run/secrets/laac_LRS_SECRET
        secrets:
          - laac_jwt_secret
-         - laac_lrs_api_key
+         - laac_LRS_SECRET
    ```
 
 #### Option 2: Environment Variables (Portainer/Kubernetes)
@@ -496,8 +496,8 @@ See `.env.example` for a complete list of required environment variables. Key va
 | Variable         | Required | Description                   | Security Level                      |
 | ---------------- | -------- | ----------------------------- | ----------------------------------- |
 | `JWT_SECRET`     | Yes      | JWT signing secret            | **CRITICAL** - Never commit         |
-| `LRS_API_KEY`    | Yes      | LRS authentication key        | **CRITICAL** - Never commit         |
-| `LRS_URL`        | Yes      | LRS xAPI endpoint URL         | Sensitive                           |
+| `LRS_USER`       | Yes      | LRS authentication key        | **CRITICAL** - Never commit         |
+| `LRS_DOMAIN`     | Yes      | LRS xAPI endpoint URL         | Sensitive                           |
 | `REDIS_PASSWORD` | No       | Redis authentication password | **CRITICAL** - Never commit if used |
 | `NODE_ENV`       | No       | Application environment       | Public                              |
 | `PORT`           | No       | Application port              | Public                              |
@@ -505,7 +505,7 @@ See `.env.example` for a complete list of required environment variables. Key va
 **Note:** For LRS configuration, see [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md) which explains:
 
 - Single-instance vs multi-instance LRS setup
-- GitHub secret naming (`LRS_DOMAIN`, `LRS_API_USER`) vs environment variables (`LRS_URL`, `LRS_API_KEY`)
+- GitHub secret naming (`LRS_DOMAIN`, `LRS_USER`) vs environment variables (`LRS_DOMAIN`, `LRS_USER`)
 - Configuration priority and fallback logic
 
 ### Security Checklist

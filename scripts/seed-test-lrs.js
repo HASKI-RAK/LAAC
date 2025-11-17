@@ -9,9 +9,9 @@
  *   node scripts/seed-test-lrs.js
  *
  * Environment Variables:
- *   LRS_URL: LRS endpoint URL (default: http://localhost:8090/xapi)
- *   LRS_API_KEY: LRS API key (default: test-api-key)
- *   LRS_API_SECRET: LRS API secret (default: test-api-secret)
+ *   LRS_DOMAIN: LRS endpoint URL (default: http://localhost:8090/xapi)
+ *   LRS_USER: LRS API key (default: test-api-key)
+ *   LRS_SECRET: LRS API secret (default: test-api-secret)
  *   LRS_FIXTURES: Comma-separated list of fixture files to load (optional)
  *   LRS_POST_READY_DELAY_MS: Delay after /about readiness before seeding
  */
@@ -22,14 +22,14 @@ const https = require('https');
 const http = require('http');
 
 // Configuration from environment variables
-const LRS_URL = process.env.LRS_URL || 'http://localhost:8090/xapi';
-const LRS_API_KEY = process.env.LRS_API_KEY || 'test-api-key';
-const LRS_API_SECRET = process.env.LRS_API_SECRET || 'test-api-secret';
+const LRS_DOMAIN = process.env.LRS_DOMAIN || 'http://localhost:8090/xapi';
+const LRS_USER = process.env.LRS_USER || 'test-api-key';
+const LRS_SECRET = process.env.LRS_SECRET || 'test-api-secret';
 const MAX_RETRIES = 9; // Wait up to 40 seconds for LRS to be ready (9 attempts with 8 delays)
 const RETRY_DELAY = 5000; // 5 seconds between retries
 const POST_READY_DELAY_MS = Number(process.env.LRS_POST_READY_DELAY_MS || 5000);
 const BASIC_AUTH_HEADER = `Basic ${Buffer.from(
-  `${LRS_API_KEY}:${LRS_API_SECRET}`,
+  `${LRS_USER}:${LRS_SECRET}`,
 ).toString('base64')}`;
 const REPO_ROOT = path.join(__dirname, '..');
 const FIXTURES_DIR = path.join(REPO_ROOT, 'test', 'fixtures', 'xapi');
@@ -145,7 +145,7 @@ function loadFixtureStatements(fixtureFiles = []) {
  * @param {string} pathSuffix Suffix to append (e.g., '/about')
  */
 function buildXapiUrl(pathSuffix = '') {
-  const normalized = LRS_URL.replace(/\/+$/, '');
+  const normalized = LRS_DOMAIN.replace(/\/+$/, '');
   const base = normalized.endsWith('/xapi') ? normalized : `${normalized}/xapi`;
   return `${base}${pathSuffix}`;
 }
@@ -233,7 +233,7 @@ async function waitForLRS() {
  */
 async function seedStatements(statements) {
   console.log(
-    `📤 Seeding ${statements.length} xAPI statements to ${LRS_URL}...`,
+    `📤 Seeding ${statements.length} xAPI statements to ${LRS_DOMAIN}...`,
   );
 
   const statementsUrl = buildXapiUrl('/statements');
@@ -313,8 +313,8 @@ async function seedTestLRS() {
 async function main() {
   console.log('🚀 LAAC Test LRS Seeding Script');
   console.log('================================\n');
-  console.log(`LRS URL: ${LRS_URL}`);
-  console.log(`API Key: ${LRS_API_KEY}`);
+  console.log(`LRS URL: ${LRS_DOMAIN}`);
+  console.log(`API Key: ${LRS_USER}`);
   if (process.env.LRS_FIXTURES) {
     console.log(`Fixtures Override: ${process.env.LRS_FIXTURES}`);
   } else {

@@ -34,8 +34,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         REDIS_PORT: 6379,
         REDIS_PASSWORD: 'redis-password',
         REDIS_TTL: 3600,
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
         LRS_TIMEOUT: 10000,
         LOG_LEVEL: 'log',
       };
@@ -53,8 +53,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
     it('should apply default values for optional fields', () => {
       const minimalConfig = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const result = configValidationSchema.validate(minimalConfig);
@@ -74,8 +74,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
     it('should accept optional REDIS_PASSWORD as empty string', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
         REDIS_PASSWORD: '',
       };
 
@@ -91,8 +91,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         const config = {
           NODE_ENV: env,
           JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-          LRS_URL: 'https://lrs.example.com/xapi',
-          LRS_API_KEY: 'test-lrs-api-key',
+          LRS_DOMAIN: 'https://lrs.example.com/xapi',
+          LRS_USER: 'test-lrs-api-key',
         };
 
         const { error } = configValidationSchema.validate(config);
@@ -108,8 +108,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         const config = {
           LOG_LEVEL: level,
           JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-          LRS_URL: 'https://lrs.example.com/xapi',
-          LRS_API_KEY: 'test-lrs-api-key',
+          LRS_DOMAIN: 'https://lrs.example.com/xapi',
+          LRS_USER: 'test-lrs-api-key',
         };
 
         const { error } = configValidationSchema.validate(config);
@@ -125,8 +125,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         const config = {
           JWT_EXPIRATION: pattern,
           JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-          LRS_URL: 'https://lrs.example.com/xapi',
-          LRS_API_KEY: 'test-lrs-api-key',
+          LRS_DOMAIN: 'https://lrs.example.com/xapi',
+          LRS_USER: 'test-lrs-api-key',
         };
 
         const { error } = configValidationSchema.validate(config);
@@ -139,8 +139,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
   describe('Invalid Configuration - Required Fields', () => {
     it('should reject missing JWT_SECRET', () => {
       const config = {
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -150,9 +150,9 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       expect(error?.message).toContain('required');
     });
 
-    // REQ-FN-026: LRS_URL and LRS_API_KEY are now optional (backward compatible)
+    // REQ-FN-026: LRS_DOMAIN and LRS_USER are now optional (backward compatible)
     // Multi-LRS config takes precedence via LRS_INSTANCES
-    it('should accept missing LRS_URL when using multi-LRS config', () => {
+    it('should accept missing LRS_DOMAIN when using multi-LRS config', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
         LRS_INSTANCES: JSON.stringify([
@@ -170,7 +170,7 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       expect(error).toBeUndefined();
     });
 
-    it('should accept missing LRS_API_KEY when using multi-LRS config', () => {
+    it('should accept missing LRS_USER when using multi-LRS config', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
         LRS_INSTANCES: JSON.stringify([
@@ -193,8 +193,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
     it('should reject JWT_SECRET shorter than 32 characters', () => {
       const config = {
         JWT_SECRET: 'short-secret',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -208,8 +208,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         NODE_ENV: 'invalid-env',
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -222,8 +222,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         LOG_LEVEL: 'invalid-level',
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -232,17 +232,17 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       expect(error?.message).toContain('LOG_LEVEL');
     });
 
-    it('should reject invalid LRS_URL format', () => {
+    it('should reject invalid LRS_DOMAIN format', () => {
       const config = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'not-a-valid-url',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'not-a-valid-url',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
 
       expect(error).toBeDefined();
-      expect(error?.message).toContain('LRS_URL');
+      expect(error?.message).toContain('LRS_DOMAIN');
       expect(error?.message).toContain('uri');
     });
 
@@ -250,8 +250,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         PORT: 99999, // Invalid port number (> 65535)
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -264,8 +264,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         REDIS_PORT: -1,
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -278,8 +278,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         JWT_EXPIRATION: 'invalid-pattern',
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -292,8 +292,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         LRS_TIMEOUT: 500,
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -306,8 +306,8 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
       const config = {
         REDIS_TTL: -100,
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-lrs-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-lrs-api-key',
       };
 
       const { error } = configValidationSchema.validate(config);
@@ -329,8 +329,9 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         REDIS_PORT: '6380',
         REDIS_PASSWORD: 'test-password',
         REDIS_TTL: '7200',
-        LRS_URL: 'https://test-lrs.example.com/xapi',
-        LRS_API_KEY: 'test-api-key',
+        LRS_DOMAIN: 'https://test-lrs.example.com/xapi',
+        LRS_USER: 'test-api-key',
+        LRS_SECRET: 'test-api-secret',
         LRS_TIMEOUT: '15000',
         LOG_LEVEL: 'debug',
       };
@@ -355,8 +356,9 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
     it('should use default values when environment variables are not set', () => {
       process.env = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-api-key',
+        LRS_SECRET: 'test-api-secret',
       };
 
       const config = configFactory();
@@ -374,8 +376,9 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
     it('should handle optional REDIS_PASSWORD correctly', () => {
       process.env = {
         JWT_SECRET: 'test-secret-key-with-min-32-chars-long',
-        LRS_URL: 'https://lrs.example.com/xapi',
-        LRS_API_KEY: 'test-api-key',
+        LRS_DOMAIN: 'https://lrs.example.com/xapi',
+        LRS_USER: 'test-api-key',
+        LRS_SECRET: 'test-api-secret',
       };
 
       const config = configFactory();
@@ -391,7 +394,7 @@ describe('REQ-FN-014: Configuration Validation Schema', () => {
         PORT: 99999,
         JWT_SECRET: 'short', // Too short
         LOG_LEVEL: 'invalid',
-        // Missing required: LRS_URL, LRS_API_KEY
+        // Missing required: LRS_DOMAIN, LRS_USER
       };
 
       const { error } = configValidationSchema.validate(config, {

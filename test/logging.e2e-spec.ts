@@ -153,7 +153,7 @@ describe('REQ-FN-020: Logging (e2e)', () => {
         const logMessage = JSON.stringify(call);
         expect(logMessage).not.toMatch(/JWT_SECRET/);
         expect(logMessage).not.toMatch(/REDIS_PASSWORD/);
-        expect(logMessage).not.toMatch(/LRS_API_KEY/);
+        expect(logMessage).not.toMatch(/LRS_SECRET/);
       });
     });
   });

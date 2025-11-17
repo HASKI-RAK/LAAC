@@ -33,8 +33,8 @@ Yet Analytics SQL LRS (lrsql) uses **HTTP Basic Authentication** for xAPI endpoi
 // ILRSClient configuration (REQ-FN-002)
 const config = {
   baseUrl: process.env.LRS_BASE_URL, // e.g., https://lrs.example.org
-  apiKey: process.env.LRS_API_KEY,
-  apiSecret: process.env.LRS_API_SECRET,
+  apiKey: process.env.LRS_USER,
+  apiSecret: process.env.LRS_SECRET,
   timeout: 10000, // 10s per REQ-NF-018
 };
 

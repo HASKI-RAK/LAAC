@@ -132,9 +132,9 @@ describe('REQ-FN-026: Multi-LRS Configuration Integration', () => {
       process.env.JWT_SECRET = 'test-secret-key-with-min-32-chars-long';
       delete process.env.LRS_INSTANCES;
       delete process.env.LRS_HS_KE_ENDPOINT;
-      process.env.LRS_URL = 'https://lrs.example.com/xapi';
-      process.env.LRS_API_KEY = 'legacy-api-key';
-      process.env.LRS_API_SECRET = 'legacy-api-secret';
+      process.env.LRS_DOMAIN = 'https://lrs.example.com/xapi';
+      process.env.LRS_USER = 'legacy-api-key';
+      process.env.LRS_SECRET = 'legacy-api-secret';
       process.env.LRS_TIMEOUT = '12000';
 
       const module: TestingModule = await Test.createTestingModule({

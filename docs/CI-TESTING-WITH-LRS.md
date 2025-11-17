@@ -43,11 +43,11 @@ When GitHub Copilot or any CI/CD runner executes tests, they now run against:
 
 | GitHub Secret Name | Maps to Environment Variable | Purpose                                    |
 | ------------------ | ---------------------------- | ------------------------------------------ |
-| `LRS_DOMAIN`       | `LRS_URL`                    | Full URL to your external LRS endpoint     |
-| `LRS_API_USER`     | `LRS_API_KEY`                | LRS API username/key for authentication    |
-| `LRS_API_SECRET`   | `LRS_API_SECRET`             | LRS API password/secret for authentication |
+| `LRS_DOMAIN`       | `LRS_DOMAIN`                 | Full URL to your external LRS endpoint     |
+| `LRS_USER`         | `LRS_USER`                   | LRS API username/key for authentication    |
+| `LRS_SECRET`       | `LRS_SECRET`                 | LRS API password/secret for authentication |
 
-**Important:** GitHub secrets use different names (`LRS_DOMAIN`, `LRS_API_USER`) to distinguish them from local environment variables. Workflows automatically map these to standard application variables (`LRS_URL`, `LRS_API_KEY`).
+**Important:** GitHub secrets use different names (`LRS_DOMAIN`, `LRS_USER`) to distinguish them from local environment variables. Workflows automatically map these to standard application variables (`LRS_DOMAIN`, `LRS_USER`).
 
 These secrets are injected into the CI/CD environment and Copilot workspace for testing.
 
@@ -105,7 +105,7 @@ These secrets are injected into the CI/CD environment and Copilot workspace for 
 
 **File:** `test/setup-e2e.ts`
 
-- Automatically detects environment (CI vs local) based on LRS_URL
+- Automatically detects environment (CI vs local) based on LRS_DOMAIN
 - CI/CD: Uses environment variables from GitHub secrets
 - Local: Falls back to localhost defaults for docker-compose.test.yml
 - Logs which environment is being used for transparency
@@ -114,7 +114,7 @@ These secrets are injected into the CI/CD environment and Copilot workspace for 
 **Environment Detection Logic:**
 
 ```typescript
-// CI detected when LRS_URL doesn't contain 'localhost'
+// CI detected when LRS_DOMAIN doesn't contain 'localhost'
 const isCI = !lrsUrl.includes('localhost');
 ```
 
@@ -128,9 +128,9 @@ When code is pushed to `main` or a PR is opened:
 
 1. **GitHub Actions** spins up Redis service container
 2. **Environment variables** injected from repository secrets:
-   - `LRS_URL=${{ secrets.LRS_DOMAIN }}`
-   - `LRS_API_KEY=${{ secrets.LRS_API_USER }}`
-   - `LRS_API_SECRET=${{ secrets.LRS_API_SECRET }}`
+   - `LRS_DOMAIN=${{ secrets.LRS_DOMAIN }}`
+   - `LRS_USER=${{ secrets.LRS_USER }}`
+   - `LRS_SECRET=${{ secrets.LRS_SECRET }}`
 3. **Tests run** against your pre-populated external LRS
 4. **Services terminate** after test completion
 
@@ -173,9 +173,9 @@ To test against the same external LRS used in CI/CD:
 
 ```bash
 # Method 1: Set environment variables
-export LRS_URL="https://your-lrs-domain.com/xapi"
-export LRS_API_KEY="your-api-user"
-export LRS_API_SECRET="your-api-secret"
+export LRS_DOMAIN="https://your-lrs-domain.com/xapi"
+export LRS_USER="your-api-user"
+export LRS_SECRET="your-api-secret"
 yarn test:e2e
 # Output: [E2E Setup] Using LRS: External LRS (CI/CD) at https://your-lrs-domain.com/xapi
 
@@ -196,9 +196,9 @@ yarn test:e2e
 **Automatically injected from GitHub secrets:**
 
 ```yaml
-LRS_URL: ${{ secrets.LRS_DOMAIN }}
-LRS_API_KEY: ${{ secrets.LRS_API_USER }}
-LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}
+LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }}
+LRS_USER: ${{ secrets.LRS_USER }}
+LRS_SECRET: ${{ secrets.LRS_SECRET }}
 REDIS_HOST: localhost
 REDIS_PORT: 6379
 ```
@@ -212,17 +212,17 @@ The test setup (`test/setup-e2e.ts`) automatically detects whether tests are run
 ### Detection Logic
 
 ```typescript
-const lrsUrl = process.env.LRS_URL || 'http://localhost:8090/xapi';
+const lrsUrl = process.env.LRS_DOMAIN || 'http://localhost:8090/xapi';
 const isCI = !lrsUrl.includes('localhost');
 ```
 
 ### Environment Configurations
 
-| Environment               | LRS_URL                         | Credentials                                       | Detection                          |
-| ------------------------- | ------------------------------- | ------------------------------------------------- | ---------------------------------- |
-| **CI/CD**                 | `secrets.LRS_DOMAIN` (external) | `secrets.LRS_API_USER` / `secrets.LRS_API_SECRET` | URL doesn't contain "localhost"    |
-| **Local (containerized)** | `http://localhost:8090/xapi`    | `test-api-key` / `test-api-secret`                | URL contains "localhost" (default) |
-| **Local (external)**      | User-provided external URL      | User-provided credentials                         | URL doesn't contain "localhost"    |
+| Environment               | LRS_DOMAIN                      | Credentials                               | Detection                          |
+| ------------------------- | ------------------------------- | ----------------------------------------- | ---------------------------------- |
+| **CI/CD**                 | `secrets.LRS_DOMAIN` (external) | `secrets.LRS_USER` / `secrets.LRS_SECRET` | URL doesn't contain "localhost"    |
+| **Local (containerized)** | `http://localhost:8090/xapi`    | `test-api-key` / `test-api-secret`        | URL contains "localhost" (default) |
+| **Local (external)**      | User-provided external URL      | User-provided credentials                 | URL doesn't contain "localhost"    |
 
 ### Console Output
 
@@ -265,8 +265,8 @@ These are real statements extracted from production LRS and anonymized, ensuring
 
 ```
 URL: ${{ secrets.LRS_DOMAIN }}
-API User: ${{ secrets.LRS_API_USER }}
-API Secret: ${{ secrets.LRS_API_SECRET }}
+API User: ${{ secrets.LRS_USER }}
+API Secret: ${{ secrets.LRS_SECRET }}
 ```
 
 Your external LRS should be pre-populated with test data for reliable testing.
@@ -319,7 +319,7 @@ docker exec laac-redis-test redis-cli ping
 
 - **Check:** GitHub secrets are configured correctly:
   - `LRS_DOMAIN` should be full URL (e.g., `https://lrs.example.com/xapi`)
-  - `LRS_API_USER` and `LRS_API_SECRET` match your LRS credentials
+  - `LRS_USER` and `LRS_SECRET` match your LRS credentials
 - **Check:** External LRS is accessible from GitHub Actions runners
 - **Check:** LRS has proper CORS/authentication configuration
 
@@ -359,21 +359,21 @@ To configure the repository secrets:
 
 | GitHub Secret Name | Maps to Env Variable | Example Value                  | Purpose                 |
 | ------------------ | -------------------- | ------------------------------ | ----------------------- |
-| `LRS_DOMAIN`       | `LRS_URL`            | `https://lrs.example.com/xapi` | Full LRS endpoint URL   |
-| `LRS_API_USER`     | `LRS_API_KEY`        | `4876c54d1677...`              | LRS API username/key    |
-| `LRS_API_SECRET`   | `LRS_API_SECRET`     | `61d14e51a4a6...`              | LRS API password/secret |
+| `LRS_DOMAIN`       | `LRS_DOMAIN`         | `https://lrs.example.com/xapi` | Full LRS endpoint URL   |
+| `LRS_USER`         | `LRS_USER`           | `4876c54d1677...`              | LRS API username/key    |
+| `LRS_SECRET`       | `LRS_SECRET`         | `61d14e51a4a6...`              | LRS API password/secret |
 
 **Important:**
 
 - GitHub secrets use different names to avoid confusion with local `.env` files
 - Workflows automatically map these to standard application variables
-- Application code always uses `LRS_URL`, `LRS_API_KEY`, `LRS_API_SECRET`
+- Application code always uses `LRS_DOMAIN`, `LRS_USER`, `LRS_SECRET`
 
 ### Why Different Names?
 
-- **`LRS_DOMAIN`** vs `LRS_URL`: Distinguishes secret name from environment variable
-- **`LRS_API_USER`** vs `LRS_API_KEY`: Clarifies it's a username/key, not just any key
-- **`LRS_API_SECRET`**: Same name in both contexts for consistency
+- **`LRS_DOMAIN`** vs `LRS_DOMAIN`: Distinguishes secret name from environment variable
+- **`LRS_USER`** vs `LRS_USER`: Clarifies it's a username/key, not just any key
+- **`LRS_SECRET`**: Same name in both contexts for consistency
 
 This naming convention makes it clear when you're configuring secrets (in GitHub UI) vs setting environment variables (in code/configs).
 
@@ -398,9 +398,9 @@ To refresh or update test data in local LRS:
 
 1. **Fetch fresh statements** from your LRS:
    ```bash
-   LRS_URL=http://localhost:8090/xapi \
-   LRS_API_KEY=your-api-key \
-   LRS_API_SECRET=your-api-secret \
+   LRS_DOMAIN=http://localhost:8090/xapi \
+   LRS_USER=your-api-key \
+   LRS_SECRET=your-api-secret \
    node scripts/fetch-lrs-statements.js 10  # 10 pages = 500 statements
    ```
 2. **Anonymize the data** (remove PII):

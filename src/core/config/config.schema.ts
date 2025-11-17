@@ -98,18 +98,22 @@ export const configValidationSchema = Joi.object({
 
   // LRS Configuration (REQ-FN-002, REQ-FN-026)
   // Legacy single-instance config (backward compatible)
-  LRS_URL: Joi.string()
+  LRS_DOMAIN: Joi.string()
     .uri()
     .optional()
     .description('Learning Record Store xAPI endpoint URL (single-instance)'),
 
-  LRS_API_KEY: Joi.string()
+  LRS_USER: Joi.string()
     .optional()
-    .description('LRS API authentication key/username (single-instance)'),
+    .description(
+      'LRS API authentication username (single-instance, basic auth)',
+    ),
 
-  LRS_API_SECRET: Joi.string()
+  LRS_SECRET: Joi.string()
     .optional()
-    .description('LRS API authentication secret/password (single-instance)'),
+    .description(
+      'LRS API authentication password (single-instance, basic auth)',
+    ),
 
   LRS_TIMEOUT: Joi.number()
     .integer()
@@ -220,7 +224,7 @@ export const configFactory = () => {
     );
   } catch (error) {
     // Backward compatibility: Fall back to legacy single-instance config if available
-    if (process.env.LRS_URL && process.env.LRS_API_KEY) {
+    if (process.env.LRS_DOMAIN && process.env.LRS_USER) {
       console.log(
         '[ConfigService] Using legacy single-instance LRS configuration',
       );
@@ -229,14 +233,14 @@ export const configFactory = () => {
       const legacyInstance = {
         id: 'default',
         name: 'Default LRS',
-        endpoint: process.env.LRS_URL,
+        endpoint: process.env.LRS_DOMAIN,
         timeoutMs: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
         auth: {
           type: 'basic' as const,
-          // Use LRS_API_KEY as username and LRS_API_SECRET as password
-          // If LRS_API_SECRET is not provided, fall back to LRS_API_KEY for backward compatibility
-          username: process.env.LRS_API_KEY,
-          password: process.env.LRS_API_SECRET || process.env.LRS_API_KEY,
+          // Use LRS_USER as username and LRS_SECRET as password
+          // If LRS_SECRET is not provided, use empty string (will fail validation if required)
+          username: process.env.LRS_USER,
+          password: process.env.LRS_SECRET || '',
         },
       };
 
@@ -294,10 +298,10 @@ export const configFactory = () => {
     lrs: {
       // Legacy single-instance support (backward compatible)
       url:
-        process.env.LRS_URL ||
+        process.env.LRS_DOMAIN ||
         (lrsInstances.length > 0 ? lrsInstances[0].endpoint : ''),
-      apiKey: process.env.LRS_API_KEY || '',
-      apiSecret: process.env.LRS_API_SECRET || process.env.LRS_API_KEY || '',
+      apiKey: process.env.LRS_USER || '',
+      apiSecret: process.env.LRS_SECRET || '',
       timeout: parseInt(process.env.LRS_TIMEOUT || '10000', 10),
       // REQ-FN-026: Multi-LRS instances
       instances: lrsInstances,

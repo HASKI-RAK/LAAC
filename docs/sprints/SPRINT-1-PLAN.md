@@ -170,8 +170,8 @@ REDIS_PORT=6379
 REDIS_PASSWORD=
 
 # LRS Connection
-LRS_URL=http://localhost:8080
-LRS_API_KEY=
+LRS_DOMAIN=http://localhost:8080
+LRS_USER=
 
 # Logging
 LOG_LEVEL=debug

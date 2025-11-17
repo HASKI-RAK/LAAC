@@ -55,9 +55,9 @@ jobs:
         env:
           # Configure build/tests to use external LRS via GitHub secrets
           # GitHub Secret Name → Environment Variable (used by application)
-          LRS_URL: ${{ secrets.LRS_DOMAIN }}              # LRS_DOMAIN → LRS_URL
-          LRS_API_KEY: ${{ secrets.LRS_API_USER }}        # LRS_API_USER → LRS_API_KEY
-          LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}   # LRS_API_SECRET → LRS_API_SECRET
+          LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }}              # secrets.LRS_DOMAIN → LRS_DOMAIN (endpoint)
+          LRS_USER: ${{ secrets.LRS_USER }}              # secrets.LRS_USER → LRS_USER (username)
+          LRS_SECRET: ${{ secrets.LRS_SECRET }}          # secrets.LRS_SECRET → LRS_SECRET (password)
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: yarn build

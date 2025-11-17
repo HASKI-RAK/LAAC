@@ -1,11 +1,20 @@
 'use strict';
 
+// Load environment variables from .env.test
+require('dotenv').config({ path: '.env.test' });
+
 // Reuse the deterministic seeding helper without spawning a child process
 const { seedTestLRS } = require('../scripts/seed-test-lrs');
 
-// Print LRS_DOMAIN and LRS_API_USER env vars for debugging
-console.log('LRS_DOMAIN:', process.env.LRS_DOMAIN);
-console.log('LRS_API_USER:', process.env.LRS_API_USER);
+if (process.env.LRS_DOMAIN && !process.env.LRS_DOMAIN) {
+  process.env.LRS_DOMAIN = process.env.LRS_DOMAIN;
+}
+
+// Print LRS configuration for debugging
+console.log('LRS_DOMAIN:', process.env.LRS_DOMAIN || process.env.LRS_DOMAIN);
+console.log('LRS_USER:', process.env.LRS_USER || process.env.LRS_USER);
+console.log('LRS_SECRET:', process.env.LRS_SECRET);
+console.log('LRS_SEED:', process.env.LRS_SEED);
 
 function shouldSeed() {
   const flag = process.env.LRS_SEED;

@@ -8,11 +8,11 @@ This document explains the LRS (Learning Record Store) configuration for LAAC, i
 
 | Context              | URL Variable           | Username/Key Variable | Password/Secret Variable |
 | -------------------- | ---------------------- | --------------------- | ------------------------ |
-| **Application Code** | `LRS_URL`              | `LRS_API_KEY`         | `LRS_API_SECRET`         |
-| **GitHub Secrets**   | `LRS_DOMAIN`           | `LRS_API_USER`        | `LRS_API_SECRET`         |
+| **Application Code** | `LRS_DOMAIN`           | `LRS_USER`            | `LRS_SECRET`             |
+| **GitHub Secrets**   | `LRS_DOMAIN`           | `LRS_USER`            | `LRS_SECRET`             |
 | **Multi-Instance**   | `LRS_INSTANCES` (JSON) | N/A                   | N/A                      |
 
-**Important:** GitHub secrets use different names (`LRS_DOMAIN`, `LRS_API_USER`) but workflows map them to the standard application variables (`LRS_URL`, `LRS_API_KEY`).
+**Important:** GitHub secrets use different names (`LRS_DOMAIN`, `LRS_USER`) but workflows map them to the standard application variables (`LRS_DOMAIN`, `LRS_USER`).
 
 ---
 
@@ -67,9 +67,9 @@ For development, testing, or single-LRS deployments.
 **Environment Variables:**
 
 ```bash
-LRS_URL=https://lrs.example.com/xapi
-LRS_API_KEY=your-api-key
-LRS_API_SECRET=your-api-secret
+LRS_DOMAIN=https://lrs.example.com/xapi
+LRS_USER=your-api-key
+LRS_SECRET=your-api-secret
 ```
 
 **When to use:**
@@ -92,12 +92,12 @@ Configure these in your GitHub repository under **Settings** → **Secrets and v
 | GitHub Secret Name | Purpose                 | Example Value                  |
 | ------------------ | ----------------------- | ------------------------------ |
 | `LRS_DOMAIN`       | LRS endpoint URL        | `https://lrs.example.com/xapi` |
-| `LRS_API_USER`     | LRS API username/key    | `4876c54d1677...`              |
-| `LRS_API_SECRET`   | LRS API password/secret | `61d14e51a4a6...`              |
+| `LRS_USER`         | LRS API username/key    | `4876c54d1677...`              |
+| `LRS_SECRET`       | LRS API password/secret | `61d14e51a4a6...`              |
 
 ### Why Different Names?
 
-GitHub secrets use `LRS_DOMAIN` and `LRS_API_USER` instead of `LRS_URL` and `LRS_API_KEY` to:
+GitHub secrets use `LRS_DOMAIN` and `LRS_USER` instead of `LRS_DOMAIN` and `LRS_USER` to:
 
 1. **Avoid confusion** with local environment variables
 2. **Clearly identify** these as repository-level secrets
@@ -110,12 +110,12 @@ Workflows automatically map GitHub secrets to standard environment variables:
 ```yaml
 # .github/workflows/ci-cd.yml
 env:
-  LRS_URL: ${{ secrets.LRS_DOMAIN }} # Secret → Env var
-  LRS_API_KEY: ${{ secrets.LRS_API_USER }} # Secret → Env var
-  LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }} # Same name
+  LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }} # Secret → Env var
+  LRS_USER: ${{ secrets.LRS_USER }} # Secret → Env var
+  LRS_SECRET: ${{ secrets.LRS_SECRET }} # Same name
 ```
 
-**Result:** Application code always uses `LRS_URL`, `LRS_API_KEY`, `LRS_API_SECRET` regardless of source.
+**Result:** Application code always uses `LRS_DOMAIN`, `LRS_USER`, `LRS_SECRET` regardless of source.
 
 ---
 
@@ -125,9 +125,9 @@ The application resolves LRS configuration in this order:
 
 1. **`LRS_INSTANCES`** (highest priority)
    - If set, used directly for multi-instance configuration
-   - Ignores `LRS_URL`, `LRS_API_KEY`, etc.
+   - Ignores `LRS_DOMAIN`, `LRS_USER`, etc.
 
-2. **Single-instance variables** (`LRS_URL` + `LRS_API_KEY`)
+2. **Single-instance variables** (`LRS_DOMAIN` + `LRS_USER`)
    - Converted internally to single-instance `LRS_INSTANCES`
    - Used if `LRS_INSTANCES` is not set
 
@@ -144,9 +144,9 @@ The application resolves LRS configuration in this order:
 **.env file:**
 
 ```bash
-LRS_URL=http://localhost:8090/xapi
-LRS_API_KEY=test-api-key
-LRS_API_SECRET=test-api-secret
+LRS_DOMAIN=http://localhost:8090/xapi
+LRS_USER=test-api-key
+LRS_SECRET=test-api-secret
 ```
 
 **What happens:**
@@ -162,16 +162,16 @@ LRS_API_SECRET=test-api-secret
 **GitHub Secrets:**
 
 - `LRS_DOMAIN`: `https://test.lrs.example.com/xapi`
-- `LRS_API_USER`: `ci-test-key`
-- `LRS_API_SECRET`: `ci-test-secret`
+- `LRS_USER`: `ci-test-key`
+- `LRS_SECRET`: `ci-test-secret`
 
 **Workflow:**
 
 ```yaml
 env:
-  LRS_URL: ${{ secrets.LRS_DOMAIN }}
-  LRS_API_KEY: ${{ secrets.LRS_API_USER }}
-  LRS_API_SECRET: ${{ secrets.LRS_API_SECRET }}
+  LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }}
+  LRS_USER: ${{ secrets.LRS_USER }}
+  LRS_SECRET: ${{ secrets.LRS_SECRET }}
 ```
 
 **What happens:**
@@ -219,13 +219,13 @@ curl http://localhost:3000/api/v1/instances
 
 **Issue:** Tests fail with "No LRS instances configured"
 
-- **Cause:** Neither `LRS_INSTANCES` nor `LRS_URL`+`LRS_API_KEY` set
-- **Fix:** Set `LRS_URL`, `LRS_API_KEY`, `LRS_API_SECRET` for single-instance
+- **Cause:** Neither `LRS_INSTANCES` nor `LRS_DOMAIN`+`LRS_USER` set
+- **Fix:** Set `LRS_DOMAIN`, `LRS_USER`, `LRS_SECRET` for single-instance
 
 **Issue:** CI/CD fails with connection errors
 
 - **Cause:** GitHub secrets not configured or incorrect
-- **Fix:** Verify `LRS_DOMAIN`, `LRS_API_USER`, `LRS_API_SECRET` in repository settings
+- **Fix:** Verify `LRS_DOMAIN`, `LRS_USER`, `LRS_SECRET` in repository settings
 
 **Issue:** Local tests fail but CI passes
 
@@ -259,7 +259,7 @@ curl http://localhost:3000/api/v1/instances
 If you encounter configuration issues:
 
 1. Check application logs for LRS instance detection
-2. Verify environment variables are set: `echo $LRS_URL`
-3. Test LRS connectivity: `curl -u "$LRS_API_KEY:$LRS_API_SECRET" "$LRS_URL/statements"`
+2. Verify environment variables are set: `echo $LRS_DOMAIN`
+3. Test LRS connectivity: `curl -u "$LRS_USER:$LRS_SECRET" "$LRS_DOMAIN/statements"`
 4. Review this documentation
 5. Check related issues in the repository
