@@ -198,6 +198,7 @@ The production environment uses pre-built Docker images with Traefik reverse pro
    JWT_SECRET=<generated-secure-secret>
    LRS_API_KEY=<your-lrs-api-key>
    REDIS_PASSWORD=<optional-redis-password>
+   METRICS_DEBUG=false # Set true to emit telemetry logs
    ```
 
 #### Start Production Environment
@@ -217,7 +218,7 @@ docker compose ps
 
 - **Application**: `https://laac.example.com` (via Traefik)
 - **Health Check**: `https://laac.example.com/health/liveness`
-- **Prometheus Metrics**: `https://laac.example.com/metrics`
+- **Telemetry Logs**: enable via `METRICS_DEBUG=true` to stream metrics events through application logs
 
 **Note**: Replace `laac.example.com` with your configured `${SUBDOMAIN}.${DOMAIN_NAME}`.
 

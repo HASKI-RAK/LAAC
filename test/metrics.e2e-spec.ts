@@ -37,13 +37,7 @@ describe('REQ-FN-003: Metrics Catalog Endpoints (e2e)', () => {
     // Set global API prefix (e.g., /api/v1)
     const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
     app.setGlobalPrefix(apiPrefix, {
-      exclude: [
-        '/',
-        'health',
-        'health/liveness',
-        'health/readiness',
-        'prometheus', // Prometheus metrics controller
-      ], // Exclude public routes from prefix
+      exclude: ['/', 'health', 'health/liveness', 'health/readiness'], // Exclude public routes from prefix
     });
 
     await app.init();

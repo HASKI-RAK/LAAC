@@ -39,7 +39,7 @@ import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
  * - Implements cache-aside pattern per REQ-FN-006
  * - Implements graceful degradation per REQ-NF-003
  * - Loads metric providers dynamically via NestJS ModuleRef
- * - Records Prometheus metrics for observability
+ * - Emits telemetry hooks for observability
  * - Handles errors gracefully with descriptive messages
  * - Propagates correlation IDs through pipeline
  *
@@ -141,7 +141,7 @@ export class ComputationService {
       });
 
       // Step 3: Load metric provider (REQ-FN-010: Dynamic provider loading)
-      const provider = await this.loadProvider(metricId);
+      const provider = this.loadProvider(metricId);
 
       // Step 4: Validate parameters (REQ-FN-010: Provider validates params)
       if (provider.validateParams) {
@@ -280,7 +280,7 @@ export class ComputationService {
    * @throws NotFoundException if provider not found
    * @private
    */
-  private async loadProvider(metricId: string): Promise<IMetricComputation> {
+  private loadProvider(metricId: string): IMetricComputation {
     try {
       const providerClasses = [...METRIC_PROVIDER_CLASSES];
 

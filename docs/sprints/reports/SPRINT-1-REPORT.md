@@ -30,13 +30,13 @@ Sprint 1 exceeded expectations, delivering complete implementation of all planne
 
 ### Sprint Breakdown by Epic
 
-| Epic                 | Story Points | Status      | Issues             | Notes                                       |
-| -------------------- | ------------ | ----------- | ------------------ | ------------------------------------------- |
-| Epic 1: Foundation   | 8 pts        | ✅ Complete | #3, #8, #10, #12   | NestJS setup, logging, config, health       |
-| Epic 2: Auth & Authz | 13 pts       | ✅ Complete | #19, #32, #33      | JWT, scopes, rate limiting, validation      |
-| Epic 3: Core API     | 8 pts        | ✅ Complete | #25, #26, #27, #31 | Metrics catalog, admin, Prometheus, Swagger |
-| Epic 4: CI/CD        | 5 pts        | ✅ Complete | #34, #35           | GitHub Actions, Docker Compose              |
-| Epic 5: Testing      | 3 pts        | ✅ Complete | #41, #42           | Unit & E2E infrastructure                   |
+| Epic                 | Story Points | Status      | Issues             | Notes                                             |
+| -------------------- | ------------ | ----------- | ------------------ | ------------------------------------------------- |
+| Epic 1: Foundation   | 8 pts        | ✅ Complete | #3, #8, #10, #12   | NestJS setup, logging, config, health             |
+| Epic 2: Auth & Authz | 13 pts       | ✅ Complete | #19, #32, #33      | JWT, scopes, rate limiting, validation            |
+| Epic 3: Core API     | 8 pts        | ✅ Complete | #25, #26, #27, #31 | Metrics catalog, admin, log-based telemetry, Swagger |
+| Epic 4: CI/CD        | 5 pts        | ✅ Complete | #34, #35           | GitHub Actions, Docker Compose                    |
+| Epic 5: Testing      | 3 pts        | ✅ Complete | #41, #42           | Unit & E2E infrastructure                         |
 
 ### Wave Delivery
 
@@ -70,7 +70,7 @@ Sprint 1 exceeded expectations, delivering complete implementation of all planne
 
 - ✅ Metrics catalog endpoints (`GET /api/v1/metrics`, `GET /api/v1/metrics/:id`)
 - ✅ Admin cache invalidation endpoint (`POST /admin/cache/invalidate`)
-- ✅ Prometheus metrics exporter (`GET /metrics`, public)
+- ✅ Telemetry logging instrumentation controlled by `METRICS_DEBUG`
 - ✅ OpenAPI/Swagger documentation at `/api/docs`
 
 ### CI/CD & Infrastructure (Epic 4)
@@ -175,7 +175,7 @@ Sprint 1 exceeded expectations, delivering complete implementation of all planne
 | --- | ----- | --------------------------- | --------- |
 | #29 | 3.2   | Metrics Catalog Endpoints   | ✅ Merged |
 | #28 | 3.3   | Admin Cache Invalidation    | ✅ Merged |
-| #30 | 3.4   | Prometheus Metrics Endpoint | ✅ Merged |
+| #30 | 3.4   | Telemetry Log Instrumentation | ✅ Merged |
 | #37 | 3.1   | OpenAPI/Swagger Setup       | ✅ Merged |
 | #39 | 2.3   | Rate Limiting Guard         | ✅ Merged |
 | #36 | 2.4   | Input Validation Pipeline   | ✅ Merged |
@@ -388,7 +388,7 @@ Based on original plan, Sprint 2 will focus on:
 - [#19] Sprint 1 - Stories 2.1 & 2.2: JWT & Scopes Authorization
 - [#25] Sprint 1 - Story 3.2: Metrics Catalog Endpoints
 - [#26] Sprint 1 - Story 3.3: Admin Cache Invalidation
-- [#27] Sprint 1 - Story 3.4: Prometheus Metrics Endpoint
+- [#27] Sprint 1 - Story 3.4: Telemetry Log Instrumentation
 - [#31] Sprint 1 - Story 3.1: OpenAPI/Swagger Setup
 - [#32] Sprint 1 - Story 2.3: Rate Limiting Guard
 - [#33] Sprint 1 - Story 2.4: Input Validation Pipeline

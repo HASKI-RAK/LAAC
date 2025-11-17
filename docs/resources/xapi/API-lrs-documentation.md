@@ -817,40 +817,27 @@ const client = axios.create({
 ### 7.2 Performance Metrics (REQ-FN-021)
 
 ```typescript
-// Prometheus metrics for LRS queries
-import { Histogram, Counter } from 'prom-client';
+// Telemetry logs for LRS queries (emits only when METRICS_DEBUG=true)
+async function queryStatements(query: QueryParams) {
+  const startedAt = performance.now();
 
-const lrsQueryDuration = new Histogram({
-  name: 'lrs_query_duration_seconds',
-  help: 'Duration of LRS queries',
-  labelNames: ['instanceId', 'queryType', 'status'],
-  buckets: [0.1, 0.5, 1, 2, 5, 10],
-});
+  try {
+    const result = await client.getStatements(query);
 
-const lrsQueryErrors = new Counter({
-  name: 'lrs_query_errors_total',
-  help: 'Total LRS query errors',
-  labelNames: ['instanceId', 'errorType', 'statusCode'],
-});
+    metricsRegistry.recordLrsQuery(
+      (performance.now() - startedAt) / 1000,
+    );
 
-// Usage
-const timer = lrsQueryDuration.startTimer({
-  instanceId,
-  queryType: 'statements',
-});
-try {
-  const result = await client.getStatements(query);
-  timer({ status: 'success' });
-  return result;
-} catch (error) {
-  timer({ status: 'error' });
-  lrsQueryErrors.inc({
-    instanceId,
-    errorType: error.name,
-    statusCode: error.statusCode,
-  });
-  throw error;
+    return result;
+  } catch (error) {
+    metricsRegistry.recordLrsError(error.name ?? 'unknown');
+    throw error;
+  }
 }
+
+// metricsRegistry is an instance of MetricsRegistryService that logs
+// "Telemetry event: lrs.query" / "Telemetry event: lrs.error" entries
+// to the shared LoggerService for ingestion by the log pipeline.
 ```
 
 ### 7.3 Caching Decision Tree (REQ-FN-006)
@@ -1481,7 +1468,7 @@ curl https://lrs.example.org/xapi/about \
 | Health Checks   | REQ-FN-025             | `/xapi/about` polling                      |
 | Timeouts        | REQ-NF-018             | 10s query, 5s health check                 |
 | Security        | REQ-FN-023, REQ-NF-019 | Secrets in env vars, no PII logging        |
-| Observability   | REQ-FN-020, 021        | Structured logging, Prometheus metrics     |
+| Observability   | REQ-FN-020, 021        | Structured logging + log-based telemetry   |
 
 ### 12.7 Validated Findings (HASKI Production LRS)
 

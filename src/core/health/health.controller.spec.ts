@@ -66,7 +66,7 @@ describe('REQ-NF-002: HealthController', () => {
       expect(result.status).toBe('ok');
       expect(result).toHaveProperty('version');
       expect(result).toHaveProperty('timestamp');
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       const checkSpy = healthCheckService.check as jest.Mock;
       expect(checkSpy).toHaveBeenCalledWith([]);
     });
@@ -91,7 +91,7 @@ describe('REQ-NF-002: HealthController', () => {
       await controller.checkLiveness();
 
       expect(checkSpy).toHaveBeenCalled();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       const redisHealthySpy = redisHealthIndicator.isHealthy as jest.Mock;
       expect(redisHealthySpy).not.toHaveBeenCalled();
     });

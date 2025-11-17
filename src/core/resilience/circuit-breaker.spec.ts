@@ -1,8 +1,6 @@
 // REQ-FN-017: Unit tests for Circuit Breaker
 // Tests state machine logic, failure tracking, and recovery behavior
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { ConfigService } from '@nestjs/config';
 import { CircuitBreaker } from './circuit-breaker';
 import {

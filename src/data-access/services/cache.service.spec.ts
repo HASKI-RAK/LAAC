@@ -1,8 +1,6 @@
 // REQ-FN-006: Unit tests for CacheService
 // Tests Redis cache operations with mocked Redis client
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';

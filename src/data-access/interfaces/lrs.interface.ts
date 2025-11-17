@@ -219,7 +219,7 @@ export interface LRSInstanceConfig {
  * - Implements pagination with `more` link following
  * - Propagates correlation IDs for distributed tracing
  * - Implements retry logic with exponential backoff
- * - Exports Prometheus metrics for monitoring
+ * - Emits telemetry hooks for monitoring
  */
 export interface ILRSClient {
   /**
@@ -240,7 +240,7 @@ export interface ILRSClient {
    * - Handles pagination by following `more` links
    * - Implements retry logic with exponential backoff (3 retries)
    * - Logs query details at DEBUG level
-   * - Records Prometheus metrics: lrs_query_duration_seconds, lrs_errors_total
+   * - Records telemetry hooks (duration + error categorization)
    */
   queryStatements(
     filters: xAPIQueryFilters,

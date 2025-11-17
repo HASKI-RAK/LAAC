@@ -56,7 +56,7 @@ package "LAAC Service" {
   ' Admin Module
   package "AdminModule" {
     component [CacheController] as CacheCtrl
-    component [MetricsExporter] as PrometheusExporter
+    component [TelemetryHooks] as Telemetry
   }
 }
 
@@ -88,7 +88,10 @@ LRSClient -down-> LRS : xAPI queries
 
 ' Admin flow
 CacheCtrl -down-> CacheSvc : invalidate
-PrometheusExporter -down-> MetricsSvc : collect metrics
+Telemetry -down-> Logger : emit events
+MetricsSvc -down-> Telemetry : cache/compute metrics
+CacheSvc -down-> Telemetry : hit/miss stats
+LRSClient -down-> Telemetry : query stats
 
 ' Cross-cutting concerns
 Logger ..> MetricsCtrl : logs

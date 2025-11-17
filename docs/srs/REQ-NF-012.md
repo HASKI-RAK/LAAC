@@ -84,11 +84,11 @@ Production systems require the ability to quickly recover from failed deployment
 
 ## Observability
 
-- **Deployment Metrics** (Prometheus):
-  - `deployment_version_info{version, sha}` — Gauge indicating current deployed version
-  - `deployment_rollback_total` — Counter of rollback events
-  - `deployment_rollback_duration_seconds` — Histogram of rollback completion times
-  - `deployment_health_check_failures_total` — Counter of failed health checks during rollout
+- **Deployment Telemetry** (logs when `METRICS_DEBUG=true`):
+  - `deployment.version` event with `version` and `sha`
+  - `deployment.rollback` events with success/failure metadata
+  - `deployment.rollback.duration` events capturing elapsed seconds
+  - `deployment.health.failure` events for failed readiness probes during rollout
 - **Logs**:
   - Structured log entry on application startup with version and SHA: `{"level":"info","message":"Application started","version":"v1.2.3","sha":"a1b2c3d"}`
   - Log entry on health check transitions: `{"level":"info","message":"Readiness check passed","endpoint":"/health/readiness"}`

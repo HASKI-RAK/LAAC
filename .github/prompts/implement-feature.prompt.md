@@ -193,7 +193,6 @@ ${input:advisory:Any special wishes how the implementation should be approached?
 - Apply OpenAPI/Swagger decorators (REQ-FN-008, 009)
 - Implement authentication guards (JwtAuthGuard, ScopesGuard) if needed (REQ-FN-023)
 - Use structured logging with correlation IDs (REQ-FN-020)
-- Add Prometheus metrics if applicable (REQ-FN-021)
 - Document environment variables in .env.example (REQ-FN-014)
 - Write unit tests in src/\*_/_.spec.ts with ${input:requirementId} traceability
 - Write E2E tests in test/\*_/_.e2e-spec.ts if API changes
@@ -243,7 +242,6 @@ ${input:advisory:Any special wishes how the implementation should be approached?
    - Are DTOs validated with class-validator decorators?
    - Are OpenAPI/Swagger decorators applied to endpoints?
    - Does logging use correlation IDs via LoggerService?
-   - Are Prometheus metrics exported if applicable?
    - Is documentation updated (JSDoc comments, README if needed)?
    - Are environment variables documented in .env.example?
 
@@ -256,7 +254,6 @@ ${input:advisory:Any special wishes how the implementation should be approached?
 
 4. **Check Observability**:
    - Verify structured logs include correlation IDs and ${input:requirementId} context
-   - Confirm Prometheus metrics are exported if applicable (GET /metrics)
    - Test health checks at /health/liveness and /health/readiness
 
 5. **Security Validation**:
@@ -286,7 +283,7 @@ Throughout the process, ensure:
 - **Testing**: Comprehensive test coverage (80% target) with proper requirement references in describe blocks
 - **Architecture**: Respect the NestJS modular monolith + TypeScript + Redis + Docker architecture
 - **Security**: Apply authentication guards, input validation, rate limiting per requirements
-- **Observability**: Use structured logging with correlation IDs, export Prometheus metrics
+- **Observability**: Use structured logging with correlation IDs
 - **Interfaces**: Implement architecture-defined interfaces (IMetricComputation, ICacheService, ILRSClient)
 - **Principles**: Apply SOLID/CUPID principles (ARCHITECTURE.md Section 12)
 

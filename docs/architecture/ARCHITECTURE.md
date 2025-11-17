@@ -287,14 +287,14 @@ This architecture covers:
 - `LRSHealthMonitor`: Periodic health checks for all LRS instances (REQ-FN-025)
   - Polls each LRS every 30s, updates health status
   - Will drive circuit breaker state transitions (Phase 2, ADR-007)
-  - Exposes health metrics to Prometheus
+  - Emits telemetry events (logged when `METRICS_DEBUG=true`) for downstream log processing
 
 #### **AdminModule** (Operational APIs)
 
 - `CacheController`: Cache management endpoints (admin scope required)
   - `POST /admin/cache/invalidate` — Invalidate specific cache keys or patterns
-- `MetricsExporter`: Prometheus metrics endpoint
-  - `GET /metrics` (at root level, separate from API metrics catalog)
+- `MetricsRegistryService`: Telemetry shim invoked by cache/LRS/circuit breaker code
+  - Logs structured events when `METRICS_DEBUG=true` for offline analysis
 
 ### 4.3 Data Flow (Typical Request)
 
@@ -550,18 +550,17 @@ Example: cache:course-completion:course:123:v1
 - **Levels**: error, warn, info, debug
 - **Content**: No PII, no secrets, sanitized errors
 
-### 10.2 Metrics (REQ-FN-021)
+### 10.2 Telemetry Hooks (REQ-FN-021)
 
-- **Exporter**: Prometheus-format endpoint at `GET /metrics` (root level, separate from `/api/v1/metrics` catalog)
-- **Library**: `@willsoto/nestjs-prometheus` or `prom-client`
-- **Public Access**: `/metrics` endpoint is public (no authentication) to allow Prometheus scraping
-- **Key Metrics**:
-  - `http_request_duration_seconds` (histogram, p50/p95/p99)
-  - `cache_hit_ratio` (gauge)
-  - `lrs_query_duration_seconds` (histogram)
-  - `metric_computation_duration_seconds` (histogram, per metricId)
-  - `auth_failures_total` (counter)
-  - `rate_limit_rejections_total` (counter)
+- **Delivery**: Structured log events emitted via `MetricsRegistryService` when `METRICS_DEBUG=true`
+- **Format**: JSON logs tagged with `Telemetry event: <name>`
+- **Access**: Same log pipeline as application logs (no separate endpoint); aggregators can scrape logs instead of HTTP
+- **Key Events**:
+  - `http.request`, `http.duration`, `http.error`
+  - `cache.hit`, `cache.miss`, `cache.operation`
+  - `lrs.query`, `lrs.error`, `lrs.health.*`
+  - `metric.computation`, `metric.error`
+  - `circuit.*` transitions and health
 
 ### 10.3 Health Checks
 

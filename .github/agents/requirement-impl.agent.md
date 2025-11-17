@@ -23,7 +23,7 @@ Implement the feature described in this issue according to the Software Requirem
 - ✅ **Complete**: Address all acceptance criteria with checkboxes
 - ✅ **Tested**: Achieve >80% test coverage with unit and E2E tests
 - ✅ **Secure**: Apply auth guards, input validation, and rate limiting as specified
-- ✅ **Observable**: Add structured logging, correlation IDs, and Prometheus metrics
+- ✅ **Observable**: Add structured logging, correlation IDs
 - ✅ **Documented**: Update API docs, architecture, and traceability matrix
 
 ## Workflow
@@ -110,8 +110,6 @@ this.logger.log('Action completed', {
   correlationId,
 });
 ```
-
-- Add Prometheus metrics if applicable (counters, histograms)
 
 **Health Checks** (if adding new dependencies):
 
@@ -261,7 +259,7 @@ src/
 ├── metrics/      # Catalog, orchestration (REQ-FN-001, 003, 005)
 ├── computation/  # Metric logic (REQ-FN-004, 010)
 ├── data-access/  # Cache, LRS client (REQ-FN-002, 006, 007)
-├── admin/        # Cache invalidation, Prometheus (REQ-FN-007, 021)
+├── admin/        # Cache invalidation (REQ-FN-007, 021)
 └── common/       # Shared utilities
 ```
 
@@ -270,7 +268,6 @@ src/
 - Versioning: `/api/v1/`
 - Metrics: `GET /api/v1/metrics`, `GET /api/v1/metrics/:id`, `GET /api/v1/metrics/:id/results`
 - Admin: `POST /admin/cache/invalidate`
-- Prometheus: `GET /metrics` (public)
 - Health: `GET /health/liveness`, `GET /health/readiness`
 
 ### Cache Key Structure

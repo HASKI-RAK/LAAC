@@ -19,7 +19,7 @@ NestJS-based intermediary between Learning Record Store (LRS) and Adaptive Learn
 - **DataAccessModule**: Redis (`ICacheService`) + LRS (`ILRSClient`) (REQ-FN-002, 006, 007)
 - **AuthModule**: JWT auth, scope authorization, rate limiting (REQ-FN-023, 024)
 - **CoreModule**: Logging (correlation IDs), config, health checks (REQ-FN-020)
-- **AdminModule**: Cache invalidation, Prometheus metrics (REQ-FN-007, 021)
+- **AdminModule**: Cache invalidation (REQ-FN-007, 021)
 
 ### IMetricComputation Interface
 
@@ -40,7 +40,6 @@ export interface IMetricComputation {
 - **OpenAPI decorators** (`@nestjs/swagger`) on all endpoints (REQ-FN-008, 009)
 - **DTO validation** with `class-validator` (REQ-FN-024)
 - **Auth guards**: `JwtAuthGuard`, `ScopesGuard` (REQ-FN-023)
-- **Prometheus**: `/metrics` (root, public access)
 
 ### Key Endpoints
 
@@ -49,7 +48,6 @@ GET /api/v1/metrics                   # Catalog
 GET /api/v1/metrics/:id               # Metric details
 GET /api/v1/metrics/:id/results       # Compute/retrieve
 POST /admin/cache/invalidate          # Admin only
-GET /metrics                          # Prometheus (public)
 GET /health/liveness|readiness        # Health checks
 ```
 
@@ -71,13 +69,6 @@ GET /health/liveness|readiness        # Health checks
 
 - **Structured logging** with correlation IDs via `LoggerService`
 - **CorrelationIdMiddleware** for `X-Correlation-ID` propagation
-- **Prometheus metrics** (REQ-FN-021):
-  - `http_request_duration_seconds`
-  - `cache_hit_ratio`
-  - `metric_computation_duration_seconds`
-  - `lrs_query_duration_seconds`
-  - `auth_failures_total`
-  - `rate_limit_rejections_total`
 
 ## Testing
 
@@ -124,10 +115,11 @@ yarn build              # Production build
 ## Success Checklist
 
 - ✅ Traceable to `docs/SRS.md` requirements
-- ✅ Tests written with REQ-\* IDs, 80% coverage
+- ✅ Tests written with REQ-\* IDs, >80% coverage
 - ✅ Documentation updated
 - ✅ Security controls applied (auth, validation, no secrets)
 - ✅ Observability instrumented (logging, metrics, health)
 - ✅ All tests pass: `yarn test && yarn test:e2e`
+- ✅ Code linted and formatted: `yarn lint` & Prettier
 
-**Docs**: `docs/architecture/`, `docs/SRS.md`, `AGENTS.md`, `.github/instructions/`
+**Docs**: `docs/architecture/`, `docs/SRS.md`

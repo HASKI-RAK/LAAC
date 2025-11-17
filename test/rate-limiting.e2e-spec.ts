@@ -187,21 +187,6 @@ describe('REQ-FN-024: Rate Limiting (e2e)', () => {
         expect(res.status).not.toBe(429);
       });
     }, 15000);
-
-    it('should not rate limit /metrics endpoint', async () => {
-      // Make many requests to Prometheus metrics endpoint
-      const requests = [];
-      for (let i = 0; i < 50; i++) {
-        requests.push(request(app.getHttpServer()).get('/metrics'));
-      }
-
-      const responses = await Promise.all(requests);
-
-      // All should succeed
-      responses.forEach((res) => {
-        expect(res.status).toBe(200);
-      });
-    }, 15000);
   });
 
   describe('Error Response Format', () => {

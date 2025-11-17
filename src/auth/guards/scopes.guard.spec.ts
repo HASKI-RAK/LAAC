@@ -127,7 +127,7 @@ describe('REQ-FN-023: ScopesGuard', () => {
         });
 
       expect(() => guard.canActivate(mockContext)).toThrow(ForbiddenException);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(logger.warn).toHaveBeenCalledWith(
         'Authorization failed: insufficient scopes',
         expect.objectContaining({
@@ -188,7 +188,7 @@ describe('REQ-FN-023: ScopesGuard', () => {
       expect(() => guard.canActivate(contextWithoutUser)).toThrow(
         ForbiddenException,
       );
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(logger.warn).toHaveBeenCalledWith(
         'Authorization check failed: no user or scopes',
         expect.anything(),

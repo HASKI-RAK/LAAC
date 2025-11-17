@@ -1,8 +1,6 @@
 // REQ-FN-007: Unit tests for Cache Admin Service
 // Tests cache invalidation service logic with mocked dependencies
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheAdminService } from './cache.admin.service';
 import { CacheService } from '../../data-access/services/cache.service';

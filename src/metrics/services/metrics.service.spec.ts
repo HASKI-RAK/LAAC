@@ -47,7 +47,6 @@ describe('REQ-FN-003: MetricsService', () => {
     it('should log catalog request', () => {
       service.getCatalog();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.log).toHaveBeenCalledWith(
         'Metrics catalog requested',
         expect.objectContaining({
@@ -93,7 +92,6 @@ describe('REQ-FN-003: MetricsService', () => {
 
       expect(() => service.getMetricById(metricId)).toThrow(NotFoundException);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(logger.warn).toHaveBeenCalledWith(
         'Metric detail lookup failed',
         expect.objectContaining({

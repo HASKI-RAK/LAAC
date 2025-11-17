@@ -1,8 +1,6 @@
 // Unit tests for ComputationService
 // Implements REQ-FN-005: Metric computation pipeline with cache-aside pattern
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
@@ -500,7 +498,7 @@ describe('REQ-FN-005: ComputationService', () => {
     });
   });
 
-  describe('Prometheus Metrics', () => {
+  describe('Telemetry hooks', () => {
     it('should record metric computation duration', async () => {
       const params: MetricParams = { courseId: 'course-123' };
       const statements: xAPIStatement[] = [];
