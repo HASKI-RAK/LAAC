@@ -15,6 +15,12 @@ import { TopicMaxScoreProvider } from './topic-max-score.provider';
 import { TopicTimeSpentProvider } from './topic-time-spent.provider';
 import { TopicLastElementsProvider } from './topic-last-elements.provider';
 import { TopicCompletionDatesProvider } from './topic-completion-dates.provider';
+import { ElementCompletionStatusProvider } from './element-completion-status.provider';
+import { ElementBestAttemptDateProvider } from './element-best-attempt-date.provider';
+import { ElementBestAttemptScoreProvider } from './element-best-attempt-score.provider';
+import { ElementTimeSpentProvider } from './element-time-spent.provider';
+import { ElementLastCompletedProvider } from './element-last-completed.provider';
+import { ElementCompletionDatesProvider } from './element-completion-dates.provider';
 
 export {
   ExampleMetricProvider,
@@ -31,6 +37,12 @@ export {
   TopicTimeSpentProvider,
   TopicLastElementsProvider,
   TopicCompletionDatesProvider,
+  ElementCompletionStatusProvider,
+  ElementBestAttemptDateProvider,
+  ElementBestAttemptScoreProvider,
+  ElementTimeSpentProvider,
+  ElementLastCompletedProvider,
+  ElementCompletionDatesProvider,
 };
 
 export const METRIC_PROVIDER_CLASSES = [
@@ -48,4 +60,10 @@ export const METRIC_PROVIDER_CLASSES = [
   TopicTimeSpentProvider,
   TopicLastElementsProvider,
   TopicCompletionDatesProvider,
+  ElementCompletionStatusProvider,
+  ElementBestAttemptDateProvider,
+  ElementBestAttemptScoreProvider,
+  ElementTimeSpentProvider,
+  ElementLastCompletedProvider,
+  ElementCompletionDatesProvider,
 ] as const;

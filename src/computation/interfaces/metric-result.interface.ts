@@ -36,9 +36,10 @@ export interface MetricResult {
   /**
    * Computed metric value
    * Type depends on the metric (number, string, boolean, object, array)
-   * @example 85.5 (percentage), 42 (count), true (boolean), { min: 0, max: 100, avg: 75 }
+   * Can be null if no data available (e.g., no attempts for element metrics)
+   * @example 85.5 (percentage), 42 (count), true (boolean), { min: 0, max: 100, avg: 75 }, null
    */
-  value: number | string | boolean | Record<string, unknown> | unknown[];
+  value: number | string | boolean | Record<string, unknown> | unknown[] | null;
 
   /**
    * Timestamp when the metric was computed (ISO 8601)

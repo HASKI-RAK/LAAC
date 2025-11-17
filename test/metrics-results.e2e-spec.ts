@@ -1005,5 +1005,342 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
         expect(response.body.metadata.elementCount).toBe(3); // Only 3 from topic 5
       });
     });
+
+    // REQ-FN-004: Element-Level CSV Metrics (EO-001 to EO-006)
+    describe('Element-Level CSV Metrics (EO-001 to EO-006)', () => {
+      const elementMetricStatements: xAPIStatement[] = [
+        // Best attempt scenario: 3 attempts with different scores
+        {
+          id: 'stmt-element-attempt-1',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/attempted',
+            display: { 'en-US': 'attempted' },
+          },
+          object: {
+            id: 'element-42',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Quiz 1' },
+              type: 'http://adlnet.gov/expapi/activities/assessment',
+            },
+          },
+          result: {
+            score: { raw: 75, max: 100 },
+            completion: false,
+            duration: 'PT15M',
+          },
+          timestamp: '2025-11-15T09:00:00Z',
+        },
+        {
+          id: 'stmt-element-attempt-2',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/attempted',
+            display: { 'en-US': 'attempted' },
+          },
+          object: {
+            id: 'element-42',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Quiz 1' },
+              type: 'http://adlnet.gov/expapi/activities/assessment',
+            },
+          },
+          result: {
+            score: { raw: 92, max: 100 },
+            completion: true,
+            duration: 'PT20M',
+          },
+          timestamp: '2025-11-15T10:30:00Z',
+        },
+        {
+          id: 'stmt-element-attempt-3',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/attempted',
+            display: { 'en-US': 'attempted' },
+          },
+          object: {
+            id: 'element-42',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Quiz 1' },
+              type: 'http://adlnet.gov/expapi/activities/assessment',
+            },
+          },
+          result: {
+            score: { raw: 85, max: 100 },
+            completion: false,
+            duration: 'PT18M',
+          },
+          timestamp: '2025-11-15T12:00:00Z',
+        },
+      ];
+
+      const topicCompletionStatements: xAPIStatement[] = [
+        {
+          id: 'stmt-element-1-complete',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'https://wiki.haski.app/variables/xapi.completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-1',
+            objectType: 'Activity',
+          },
+          result: {
+            completion: true,
+          },
+          timestamp: '2025-11-15T10:00:00Z',
+        },
+        {
+          id: 'stmt-element-2-complete',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'https://wiki.haski.app/variables/xapi.completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-2',
+            objectType: 'Activity',
+          },
+          result: {
+            completion: true,
+          },
+          timestamp: '2025-11-14T09:00:00Z',
+        },
+        {
+          id: 'stmt-element-3-complete',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'https://wiki.haski.app/variables/xapi.completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-3',
+            objectType: 'Activity',
+          },
+          result: {
+            completion: true,
+          },
+          timestamp: '2025-11-13T08:00:00Z',
+        },
+      ];
+
+      beforeEach(async () => {
+        await cacheService.invalidatePattern('cache:*');
+      });
+
+      it('EO-001: should return completion status of best attempt', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(elementMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-completion-status/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-completion-status');
+        expect(response.body.value).toBe(true); // Best attempt (score 92) is completed
+        expect(response.body.metadata.attemptCount).toBe(3);
+        expect(response.body.metadata.bestScore).toBe(92);
+        expect(response.body.metadata.bestAttemptDate).toBe(
+          '2025-11-15T10:30:00Z',
+        );
+      });
+
+      it('EO-002: should return date of best attempt', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(elementMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-best-attempt-date/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-best-attempt-date');
+        expect(response.body.value).toBe('2025-11-15T10:30:00Z'); // Best attempt timestamp
+        expect(response.body.metadata.attemptCount).toBe(3);
+        expect(response.body.metadata.bestScore).toBe(92);
+      });
+
+      it('EO-003: should return score of best attempt', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(elementMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-best-attempt-score/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-best-attempt-score');
+        expect(response.body.value).toBe(92); // Best attempt score
+        expect(response.body.metadata.attemptCount).toBe(3);
+        expect(response.body.metadata.bestAttemptDate).toBe(
+          '2025-11-15T10:30:00Z',
+        );
+      });
+
+      it('EO-004: should return total time spent on element', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(elementMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-time-spent/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-time-spent');
+        // PT15M + PT20M + PT18M = 900 + 1200 + 1080 = 3180 seconds
+        expect(response.body.value).toBe(3180);
+        expect(response.body.metadata.unit).toBe('seconds');
+        expect(response.body.metadata.attemptCount).toBe(3);
+      });
+
+      it('EO-005: should return last 3 completed elements in topic', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicCompletionStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-last-completed/results')
+          .query({ userId: 'student-1', topicId: 'topic-1' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-last-completed');
+        expect(response.body.value).toHaveLength(3);
+        expect(response.body.value[0]).toEqual({
+          elementId: 'element-1',
+          completedAt: '2025-11-15T10:00:00Z',
+        });
+        expect(response.body.value[1]).toEqual({
+          elementId: 'element-2',
+          completedAt: '2025-11-14T09:00:00Z',
+        });
+        expect(response.body.value[2]).toEqual({
+          elementId: 'element-3',
+          completedAt: '2025-11-13T08:00:00Z',
+        });
+        expect(response.body.metadata.totalCompletions).toBe(3);
+      });
+
+      it('EO-006: should return completion dates of last 3 elements', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicCompletionStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-completion-dates/results')
+          .query({ userId: 'student-1', topicId: 'topic-1' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('element-completion-dates');
+        expect(response.body.value).toHaveLength(3);
+        expect(response.body.value).toEqual([
+          '2025-11-15T10:00:00Z',
+          '2025-11-14T09:00:00Z',
+          '2025-11-13T08:00:00Z',
+        ]);
+        expect(response.body.metadata.totalCompletions).toBe(3);
+      });
+
+      it('should validate required parameters for element metrics', async () => {
+        // EO-001 requires userId and elementId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-completion-status/results')
+          .query({ userId: 'student-1' }) // Missing elementId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        // EO-004 requires userId and elementId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-time-spent/results')
+          .query({ elementId: 'element-42' }) // Missing userId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        // EO-005 requires userId and topicId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-last-completed/results')
+          .query({ userId: 'student-1' }) // Missing topicId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+      });
+
+      it('should cache element metric results', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(elementMetricStatements);
+
+        // First request - cache miss
+        const firstResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-best-attempt-score/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(firstResponse.body.fromCache).toBe(false);
+
+        // Second request - cache hit
+        const secondResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-best-attempt-score/results')
+          .query({ userId: 'student-1', elementId: 'element-42' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(secondResponse.body.fromCache).toBe(true);
+        expect(secondResponse.body.value).toBe(firstResponse.body.value);
+      });
+
+      it('should handle no attempts gracefully (return null)', async () => {
+        jest.spyOn(lrsClient, 'queryStatements').mockResolvedValue([]);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/element-completion-status/results')
+          .query({ userId: 'student-1', elementId: 'element-99' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.value).toBeNull();
+        expect(response.body.metadata.status).toBe('no_attempts');
+        expect(response.body.metadata.attemptCount).toBe(0);
+      });
+    });
   });
 });
