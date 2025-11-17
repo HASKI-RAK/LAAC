@@ -655,5 +655,355 @@ describe('REQ-FN-005: Metrics Results Endpoint (e2e)', () => {
         expect(secondResponse.body.value).toBe(firstResponse.body.value);
       });
     });
+
+    describe('Topic-Level CSV Metrics (TO-001 to TO-005)', () => {
+      // Mock topic-level xAPI statements
+      const topicMetricStatements: xAPIStatement[] = [
+        {
+          id: 'stmt-topic-1',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/scored',
+            display: { 'en-US': 'scored' },
+          },
+          object: {
+            id: 'element-1',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Quiz 1' },
+              type: 'http://adlnet.gov/expapi/activities/assessment',
+            },
+          },
+          context: {
+            contextActivities: {
+              parent: [
+                {
+                  id: 'https://moodle.example.com/course/123/topic/5',
+                  objectType: 'Activity',
+                  definition: {
+                    name: { 'en-US': 'Topic 5' },
+                  },
+                },
+              ],
+            },
+          },
+          result: {
+            score: { raw: 85, max: 100 },
+            duration: 'PT30M',
+            completion: true,
+          },
+          timestamp: '2025-11-13T10:00:00Z',
+        },
+        {
+          id: 'stmt-topic-2',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-2',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Lesson 2' },
+              type: 'http://adlnet.gov/expapi/activities/lesson',
+            },
+          },
+          context: {
+            contextActivities: {
+              parent: [
+                {
+                  id: 'https://moodle.example.com/course/123/topic/5',
+                  objectType: 'Activity',
+                  definition: {
+                    name: { 'en-US': 'Topic 5' },
+                  },
+                },
+              ],
+            },
+          },
+          result: {
+            score: { raw: 92, max: 100 },
+            duration: 'PT45M',
+            completion: true,
+          },
+          timestamp: '2025-11-14T10:00:00Z',
+        },
+        {
+          id: 'stmt-topic-3',
+          actor: {
+            objectType: 'Agent',
+            name: 'Student 1',
+            account: { name: 'student-1', homePage: 'http://example.com' },
+          },
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/completed',
+            display: { 'en-US': 'completed' },
+          },
+          object: {
+            id: 'element-3',
+            objectType: 'Activity',
+            definition: {
+              name: { 'en-US': 'Assignment 3' },
+              type: 'http://adlnet.gov/expapi/activities/assessment',
+            },
+          },
+          context: {
+            contextActivities: {
+              parent: [
+                {
+                  id: 'https://moodle.example.com/course/123/topic/5',
+                  objectType: 'Activity',
+                  definition: {
+                    name: { 'en-US': 'Topic 5' },
+                  },
+                },
+              ],
+            },
+          },
+          result: {
+            score: { raw: 78, max: 100 },
+            duration: 'PT1H15M',
+            completion: true,
+          },
+          timestamp: '2025-11-15T10:00:00Z',
+        },
+      ];
+
+      it('should compute topic-total-score metric (TO-001)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('topic-total-score');
+        expect(typeof response.body.value).toBe('number');
+        expect(response.body.value).toBeGreaterThanOrEqual(0);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('unit', 'points');
+        expect(response.body.metadata).toHaveProperty('elementCount');
+        expect(response.body.metadata).toHaveProperty('avgScore');
+        expect(response.body.metadata).toHaveProperty('userId', 'student-1');
+        expect(response.body.metadata).toHaveProperty('courseId', 'course-123');
+        expect(response.body.metadata).toHaveProperty('topicId', '5');
+      });
+
+      it('should compute topic-max-score metric (TO-002)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-max-score/results')
+          .query({ courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('topic-max-score');
+        expect(typeof response.body.value).toBe('number');
+        expect(response.body.value).toBeGreaterThanOrEqual(0);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('unit', 'points');
+        expect(response.body.metadata).toHaveProperty('elementCount');
+        expect(response.body.metadata).toHaveProperty('avgMaxScore');
+        expect(response.body.metadata).toHaveProperty('courseId', 'course-123');
+        expect(response.body.metadata).toHaveProperty('topicId', '5');
+      });
+
+      it('should compute topic-time-spent metric (TO-003)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-time-spent/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('topic-time-spent');
+        expect(typeof response.body.value).toBe('number');
+        expect(response.body.value).toBeGreaterThanOrEqual(0);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('unit', 'seconds');
+        expect(response.body.metadata).toHaveProperty('activityCount');
+        expect(response.body.metadata).toHaveProperty('avgDuration');
+        expect(response.body.metadata).toHaveProperty('userId', 'student-1');
+        expect(response.body.metadata).toHaveProperty('courseId', 'course-123');
+        expect(response.body.metadata).toHaveProperty('topicId', '5');
+      });
+
+      it('should compute topic-last-elements metric (TO-004)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-last-elements/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('topic-last-elements');
+        expect(Array.isArray(response.body.value)).toBe(true);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('count');
+        expect(response.body.metadata).toHaveProperty('totalCompletions');
+        expect(response.body.metadata).toHaveProperty('userId', 'student-1');
+        expect(response.body.metadata).toHaveProperty('courseId', 'course-123');
+        expect(response.body.metadata).toHaveProperty('topicId', '5');
+
+        // Each element should have elementId and completedAt
+        if (response.body.value.length > 0) {
+          expect(response.body.value[0]).toHaveProperty('elementId');
+          expect(response.body.value[0]).toHaveProperty('completedAt');
+        }
+      });
+
+      it('should compute topic-completion-dates metric (TO-005)', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-completion-dates/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.metricId).toBe('topic-completion-dates');
+        expect(Array.isArray(response.body.value)).toBe(true);
+        expect(response.body.fromCache).toBe(false);
+        expect(response.body.metadata).toHaveProperty('count');
+        expect(response.body.metadata).toHaveProperty('totalCompletions');
+        expect(response.body.metadata).toHaveProperty('userId', 'student-1');
+        expect(response.body.metadata).toHaveProperty('courseId', 'course-123');
+        expect(response.body.metadata).toHaveProperty('topicId', '5');
+
+        // Each date should be ISO 8601 format
+        if (response.body.value.length > 0) {
+          expect(response.body.value[0]).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+        }
+      });
+
+      it('should validate required parameters for topic metrics', async () => {
+        // TO-001 requires userId, courseId, and topicId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123' }) // Missing topicId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        // TO-002 requires courseId and topicId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-max-score/results')
+          .query({ courseId: 'course-123' }) // Missing topicId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        // TO-003 requires userId, courseId, and topicId
+        await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-time-spent/results')
+          .query({ courseId: 'course-123', topicId: '5' }) // Missing userId
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+      });
+
+      it('should cache topic metric results', async () => {
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(topicMetricStatements);
+
+        // First request - cache miss
+        const firstResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(firstResponse.body.fromCache).toBe(false);
+
+        // Second request - cache hit
+        const secondResponse = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(secondResponse.body.fromCache).toBe(true);
+        expect(secondResponse.body.value).toBe(firstResponse.body.value);
+      });
+
+      it('should respect topic scoping via context.contextActivities.parent', async () => {
+        // Mix statements from different topics
+        const mixedTopicStatements: xAPIStatement[] = [
+          ...topicMetricStatements,
+          {
+            id: 'stmt-other-topic',
+            actor: {
+              objectType: 'Agent',
+              name: 'Student 1',
+              account: { name: 'student-1', homePage: 'http://example.com' },
+            },
+            verb: {
+              id: 'http://adlnet.gov/expapi/verbs/scored',
+              display: { 'en-US': 'scored' },
+            },
+            object: {
+              id: 'element-other',
+              objectType: 'Activity',
+              definition: {
+                name: { 'en-US': 'Other Topic Quiz' },
+                type: 'http://adlnet.gov/expapi/activities/assessment',
+              },
+            },
+            context: {
+              contextActivities: {
+                parent: [
+                  {
+                    id: 'https://moodle.example.com/course/123/topic/99',
+                    objectType: 'Activity',
+                    definition: {
+                      name: { 'en-US': 'Topic 99' },
+                    },
+                  },
+                ],
+              },
+            },
+            result: {
+              score: { raw: 1000, max: 1000 }, // Large score to detect if included
+            },
+            timestamp: '2025-11-16T10:00:00Z',
+          },
+        ];
+
+        jest
+          .spyOn(lrsClient, 'queryStatements')
+          .mockResolvedValue(mixedTopicStatements);
+
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/metrics/topic-total-score/results')
+          .query({ userId: 'student-1', courseId: 'course-123', topicId: '5' })
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        // Should not include the score from topic 99
+        expect(response.body.value).toBeLessThan(1000);
+        expect(response.body.metadata.elementCount).toBe(3); // Only 3 from topic 5
+      });
+    });
   });
 });
