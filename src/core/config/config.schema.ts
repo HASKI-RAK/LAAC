@@ -61,6 +61,13 @@ export const configValidationSchema = Joi.object({
     .allow('')
     .description('Redis authentication password (optional)'),
 
+  REDIS_DB: Joi.number()
+    .integer()
+    .min(0)
+    .max(15)
+    .default(0)
+    .description('Redis database number (0-15, default: 0)'),
+
   REDIS_TTL: Joi.number()
     .integer()
     .min(0)
@@ -289,6 +296,7 @@ export const configFactory = () => {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       password: process.env.REDIS_PASSWORD,
+      db: parseInt(process.env.REDIS_DB || '0', 10),
       ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
       poolSize: parseInt(process.env.REDIS_POOL_SIZE || '10', 10),
       ttlMetrics: parseInt(process.env.CACHE_TTL_METRICS || '3600', 10),
