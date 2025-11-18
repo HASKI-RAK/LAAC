@@ -56,7 +56,7 @@ services:
       - "traefik.http.routers.laac.rule=Host(`${SUBDOMAIN:-laac}.${DOMAIN_NAME}`)"
       - "traefik.http.routers.laac.entrypoints=websecure"
       - "traefik.http.routers.laac.tls=true"
-      - "traefik.http.routers.laac.tls.certresolver=le"
+      - "traefik.http.routers.laac.tls.certresolver=${CERT_RESOLVER:-le}"
       
       # Service: Backend load balancer configuration
       - "traefik.http.services.laac.loadbalancer.server.port=3000"
@@ -77,9 +77,27 @@ services:
     image: redis:7-alpine
     container_name: laac-redis-prod
     restart: always
+    # SECURITY NOTE: For production with authentication, uncomment one of the options below:
+    
+    # OPTION 1: No password (current default - OK for internal networks with firewall)
     command: ["redis-server", "--appendonly", "yes"]
+    
+    # OPTION 2: Password from environment (recommended for Portainer)
+    # Uncomment the line below and set REDIS_PASSWORD in Portainer environment variables
+    # command: sh -c 'redis-server --appendonly yes $${REDIS_PASSWORD:+--requirepass "$$REDIS_PASSWORD"}'
+    
+    # OPTION 3: Password from Docker secrets (most secure)
+    # Uncomment the lines below and create redis_password secret in Portainer
+    # command: sh -c 'redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"'
+    # secrets:
+    #   - redis_password
+    
     healthcheck:
+      # For no password (current):
       test: ["CMD", "redis-cli", "ping"]
+      # For password-protected Redis, use one of these instead:
+      # test: ["CMD", "sh", "-c", "redis-cli -a \"$$REDIS_PASSWORD\" ping || exit 1"]
+      # test: ["CMD", "sh", "-c", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" ping || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -88,12 +106,6 @@ services:
       - laac_network
     volumes:
       - redis_data:/data
-    
-    # Note: For production Redis authentication, DO NOT use environment variable substitution in the command array.
-    # Instead, use one of the following secure approaches:
-    # Option A: Mount a custom redis.conf with 'requirepass YOUR_PASSWORD' and set command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
-    # Option B: Use Docker secrets and set command: sh -c 'redis-server --appendonly yes --requirepass "$(cat /run/secrets/redis_password)"'
-    # See docs/srs/REQ-FN-014.md for details on secrets management.
 
   # LRS (Learning Record Store) - External Service Reference
   # REQ-FN-002: Configure LRS_URL in .env to point to your production LRS instance
@@ -129,3 +141,10 @@ volumes:
   # LRS persistent storage (if running LRS in Docker)
   # lrs_data:
   #   driver: local
+
+# Docker secrets for sensitive data (REQ-FN-014)
+# Uncomment when using OPTION 3 (Docker secrets) for Redis password
+# In Portainer: Create secret named 'redis_password' in the Secrets section
+# secrets:
+#   redis_password:
+#     external: true
