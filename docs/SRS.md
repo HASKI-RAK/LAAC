@@ -64,6 +64,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-024 — Input Validation and Rate Limiting → `docs/srs/REQ-FN-024.md`
 - REQ-FN-025 — LRS Instance Health Monitoring → `docs/srs/REQ-FN-025.md`
 - REQ-FN-026 — Multi-LRS Configuration Schema and Instance Auth → `docs/srs/REQ-FN-026.md`
+- REQ-FN-027 — Keycloak Integration and Token Issuance → `docs/srs/REQ-FN-027.md`
 
 ## Non-Functional Requirements
 
