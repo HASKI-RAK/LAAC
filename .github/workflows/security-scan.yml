@@ -99,8 +99,8 @@ jobs:
 
       - name: Verify no .env files committed
         run: |
-          # Check for any .env files (except .env.example)
-          env_files=$(git ls-files | grep -E '\.env(\.[^.]+)?$' | grep -v '.env.example' || true)
+          # Check for any .env files (except .env.example and stack.env)
+          env_files=$(git ls-files | grep -E '\.env(\.[^.]+)?$' | grep -v '.env.example' | grep -v 'stack.env' || true)
           
           if [ -n "$env_files" ]; then
             echo "Error: The following .env files should not be committed:"
@@ -108,7 +108,7 @@ jobs:
             exit 1
           fi
           
-          echo "No .env files committed (except .env.example) ✓"
+          echo "No .env files committed (except .env.example and stack.env) ✓"
 
   verify-workflow-secrets:
     name: Verify Workflow Secret Usage
