@@ -39,7 +39,7 @@ import { CacheInvalidateDto } from '../dto/cache-invalidate.dto';
 @ApiTags('Admin - Cache Management')
 @Controller('admin/cache')
 @UseGuards(JwtAuthGuard, ScopesGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class CacheController {
   constructor(private readonly cacheAdminService: CacheAdminService) {}
 
