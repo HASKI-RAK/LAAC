@@ -30,13 +30,8 @@ services:
     image: ${DOCKER_REGISTRY_URL:-ghcr.io/haski-rak/laac}:${IMAGE_TAG:-latest}
     container_name: laac-prod
     restart: always
-    environment:
-      - NODE_ENV=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - TZ=${GENERIC_TIMEZONE:-Europe/Berlin}
     env_file:
-      - .env
+      - stack.env
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/liveness', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 30s
@@ -77,27 +72,14 @@ services:
     image: redis:7-alpine
     container_name: laac-redis-prod
     restart: always
-    # SECURITY NOTE: For production with authentication, uncomment one of the options below:
-    
-    # OPTION 1: No password (current default - OK for internal networks with firewall)
-    command: ["redis-server", "--appendonly", "yes"]
-    
-    # OPTION 2: Password from environment (recommended for Portainer)
-    # Uncomment the line below and set REDIS_PASSWORD in Portainer environment variables
-    # command: sh -c 'redis-server --appendonly yes $${REDIS_PASSWORD:+--requirepass "$$REDIS_PASSWORD"}'
-    
-    # OPTION 3: Password from Docker secrets (most secure)
-    # Uncomment the lines below and create redis_password secret in Portainer
-    # command: sh -c 'redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"'
-    # secrets:
-    #   - redis_password
-    
+    env_file:
+      - stack.env
+    # SECURITY NOTE: For production with authentication, Redis password is configured via REDIS_PASSWORD env var
+    # The command will use REDIS_PASSWORD from stack.env if set, otherwise runs without password
+    command: sh -c 'redis-server --appendonly yes $${REDIS_PASSWORD:+--requirepass "$$REDIS_PASSWORD"}'
     healthcheck:
-      # For no password (current):
-      test: ["CMD", "redis-cli", "ping"]
-      # For password-protected Redis, use one of these instead:
-      # test: ["CMD", "sh", "-c", "redis-cli -a \"$$REDIS_PASSWORD\" ping || exit 1"]
-      # test: ["CMD", "sh", "-c", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" ping || exit 1"]
+      # Health check adapts to password configuration: uses password if REDIS_PASSWORD is set
+      test: ["CMD", "sh", "-c", "redis-cli $${REDIS_PASSWORD:+-a \"$$REDIS_PASSWORD\"} ping || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
