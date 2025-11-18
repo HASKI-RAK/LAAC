@@ -766,6 +766,46 @@ TEST_REDIS_DB=15
 - Use `beforeEach` for test-specific setup
 - Use `afterEach` for test-specific cleanup
 
+#### Cache Key Isolation
+
+To prevent test interference when tests run in parallel, use unique cache key prefixes for each test suite:
+
+```typescript
+// Use a unique prefix for this test suite to avoid collisions with other tests
+const TEST_KEY_PREFIX = 'my-feature-e2e';
+
+describe('My Feature E2E Tests', () => {
+  let cacheService: CacheService;
+
+  beforeEach(async () => {
+    // Clean up test keys before each test to ensure isolation
+    await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
+  });
+
+  afterEach(async () => {
+    // Clean up test keys after each test
+    await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
+  });
+
+  it('should test with isolated cache keys', async () => {
+    const key = generateCacheKey({
+      metricId: `${TEST_KEY_PREFIX}-test-metric`,
+      instanceId: 'test-instance',
+      scope: 'course',
+      filters: { id: '123' },
+    });
+    // Test implementation
+  });
+});
+```
+
+**Key Points**:
+
+- Use a descriptive, unique `TEST_KEY_PREFIX` for each test suite (e.g., `'admin-cache-e2e'`, `'metrics-results-e2e'`)
+- Clean up before AND after each test to handle parallel test execution
+- Prefix all cache keys with `cache:${TEST_KEY_PREFIX}-` to ensure they're cleaned up
+- This prevents race conditions when multiple test suites access Redis simultaneously
+
 ---
 
 ## CI/CD Integration

@@ -60,7 +60,4 @@ module.exports = {
 
   // Verbose output for better debugging
   verbose: true,
-
-  // Maximum number of concurrent workers (50% of available cores)
-  maxWorkers: '50%',
 };

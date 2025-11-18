@@ -4,7 +4,7 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.ts$": "ts-jest"
   },
   "setupFiles": ["<rootDir>/setup-e2e.ts"],
   "globalSetup": "<rootDir>/global-setup.js",
@@ -17,5 +17,7 @@
     "!../src/**/*.spec.ts",
     "!../src/**/*.e2e-spec.ts",
     "!../src/main.ts"
-  ]
+  ],
+  "forceExit": true,
+  "verbose": false
 }

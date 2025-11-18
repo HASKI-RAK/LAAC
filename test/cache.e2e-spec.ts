@@ -33,6 +33,11 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
     await app.close();
   });
 
+  beforeEach(async () => {
+    // Clean up test keys before each test to ensure isolation
+    await cacheService.invalidatePattern('cache:test-*');
+  });
+
   afterEach(async () => {
     // Clean up test keys after each test
     await cacheService.invalidatePattern('cache:test-*');

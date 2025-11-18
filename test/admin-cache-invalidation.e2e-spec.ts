@@ -56,6 +56,11 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
     await app.close();
   });
 
+  beforeEach(async () => {
+    // Clean up test keys before each test to ensure isolation
+    await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
+  });
+
   afterEach(async () => {
     // Clean up test keys after each test
     await cacheService.invalidatePattern(`cache:${TEST_KEY_PREFIX}-*`);
