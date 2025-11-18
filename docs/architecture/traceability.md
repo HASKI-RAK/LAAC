@@ -26,7 +26,7 @@ The traceability matrix includes implementation status for each requirement:
 - **🔵 Deferred**: Planned for future phase or contingent on external factors
 
 **Update Cadence**: Weekly during active development sprints; quarterly during maintenance phases.  
-**Last Updated**: 2025-11-10
+**Last Updated**: 2025-11-18
 
 ---
 
@@ -37,7 +37,7 @@ The traceability matrix includes implementation status for each requirement:
 | **REQ-FN-001** | Client-Facing Intermediary API                      | 🟡 In Progress          | MetricsModule, MetricsController, API Gateway Layer  | `MetricsController`, `AuthGuard`, `ValidationPipe`               | ADR-004, Section 4.2      |
 | **REQ-FN-002** | xAPI LRS Integration                                | ❌ Not Started          | DataAccessModule, LRSClient                          | `LRSClient`, HTTP client with xAPI query support                 | Section 4.2, 8.2          |
 | **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | 🟡 In Progress          | MetricsModule, MetricsRegistry                       | `MetricsRegistry`, `GET /metrics` endpoint                       | Section 4.2, 4.3          |
-| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | 🟡 In Progress          | ComputationModule, MetricProviders                   | `IMetricComputation`, CSV-compliant providers (CO-001 to CO-005) | ADR-002, Section 4.2      |
+| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ✅ Complete             | ComputationModule, MetricProviders                   | `IMetricComputation`, 16 CSV-compliant providers (CO/TO/EO-001+) | ADR-002, Section 4.2      |
 | **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | ❌ Not Started          | MetricsModule, MetricsService                        | `MetricsService.getResults()`, `GET /metrics/:id/results`        | Section 4.3               |
 | **REQ-FN-006** | Analytics Results Caching                           | ❌ Not Started          | DataAccessModule, CacheService                       | `CacheService` (Redis), cache-aside pattern                      | ADR-003, Section 8.1      |
 | **REQ-FN-007** | Cache Invalidation and Refresh                      | ❌ Not Started          | AdminModule, CacheController                         | `CacheController`, `POST /admin/cache/invalidate`                | Section 4.2               |
@@ -106,30 +106,30 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ### Topic Overview Metrics (TO-001 to TO-005)
 
-| CSV Row | Dashboard Level | Metric Description                                                                       | Provider ID              | Provider File | Implementation Status | Tests |
-| ------- | --------------- | ---------------------------------------------------------------------------------------- | ------------------------ | ------------- | --------------------- | ----- |
-| TO-001  | Topic overview  | Total score earned by a student on learning elements in each topic                       | `topic-total-score`      | TBD           | ❌ Not Started        | -     |
-| TO-002  | Topic overview  | Possible total score for all learning elements in each topic                             | `topic-max-score`        | TBD           | ❌ Not Started        | -     |
-| TO-003  | Topic overview  | Total time spent by a student in each topic in a given time period                       | `topic-time-spent`       | TBD           | ❌ Not Started        | -     |
-| TO-004  | Topic overview  | Last three learning elements of any topic in a course completed by a student             | `topic-last-elements`    | TBD           | ❌ Not Started        | -     |
-| TO-005  | Topic overview  | Completion date of the last three learning elements of any course completed by a student | `topic-completion-dates` | TBD           | ❌ Not Started        | -     |
+| CSV Row | Dashboard Level | Metric Description                                                                       | Provider ID              | Provider File                        | Implementation Status | Tests      |
+| ------- | --------------- | ---------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------ | --------------------- | ---------- |
+| TO-001  | Topic overview  | Total score earned by a student on learning elements in each topic                       | `topic-total-score`      | `topic-total-score.provider.ts`      | ✅ Complete           | Unit + E2E |
+| TO-002  | Topic overview  | Possible total score for all learning elements in each topic                             | `topic-max-score`        | `topic-max-score.provider.ts`        | ✅ Complete           | Unit + E2E |
+| TO-003  | Topic overview  | Total time spent by a student in each topic in a given time period                       | `topic-time-spent`       | `topic-time-spent.provider.ts`       | ✅ Complete           | Unit + E2E |
+| TO-004  | Topic overview  | Last three learning elements of any topic in a course completed by a student             | `topic-last-elements`    | `topic-last-elements.provider.ts`    | ✅ Complete           | Unit + E2E |
+| TO-005  | Topic overview  | Completion date of the last three learning elements of any course completed by a student | `topic-completion-dates` | `topic-completion-dates.provider.ts` | ✅ Complete           | Unit + E2E |
 
 ### Learning Element Overview Metrics (EO-001 to EO-006)
 
-| CSV Row | Dashboard Level           | Metric Description                                                                    | Provider ID                  | Provider File | Implementation Status | Tests |
-| ------- | ------------------------- | ------------------------------------------------------------------------------------- | ---------------------------- | ------------- | --------------------- | ----- |
-| EO-001  | Learning element overview | Current completion status of the best attempt by a student for each learning element  | `element-completion-status`  | TBD           | ❌ Not Started        | -     |
-| EO-002  | Learning element overview | Date of the best attempt of a student for each learning element                       | `element-best-attempt-date`  | TBD           | ❌ Not Started        | -     |
-| EO-003  | Learning element overview | Score for the best attempt of a student at each learning element                      | `element-best-attempt-score` | TBD           | ❌ Not Started        | -     |
-| EO-004  | Learning element overview | Total time spent by a student on each learning element in a given time period         | `element-time-spent`         | TBD           | ❌ Not Started        | -     |
-| EO-005  | Learning element overview | Last three learning elements of a topic completed by a student                        | `element-last-elements`      | TBD           | ❌ Not Started        | -     |
-| EO-006  | Learning element overview | Completion date of the last three learning elements of a topic completed by a student | `element-completion-dates`   | TBD           | ❌ Not Started        | -     |
+| CSV Row | Dashboard Level           | Metric Description                                                                    | Provider ID                  | Provider File                            | Implementation Status | Tests      |
+| ------- | ------------------------- | ------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------- | --------------------- | ---------- |
+| EO-001  | Learning element overview | Current completion status of the best attempt by a student for each learning element  | `element-completion-status`  | `element-completion-status.provider.ts`  | ✅ Complete           | Unit + E2E |
+| EO-002  | Learning element overview | Date of the best attempt of a student for each learning element                       | `element-best-attempt-date`  | `element-best-attempt-date.provider.ts`  | ✅ Complete           | Unit + E2E |
+| EO-003  | Learning element overview | Score for the best attempt of a student at each learning element                      | `element-best-attempt-score` | `element-best-attempt-score.provider.ts` | ✅ Complete           | Unit + E2E |
+| EO-004  | Learning element overview | Total time spent by a student on each learning element in a given time period         | `element-time-spent`         | `element-time-spent.provider.ts`         | ✅ Complete           | Unit + E2E |
+| EO-005  | Learning element overview | Last three learning elements of a topic completed by a student                        | `element-last-elements`      | `element-last-elements.provider.ts`      | ✅ Complete           | Unit + E2E |
+| EO-006  | Learning element overview | Completion date of the last three learning elements of a topic completed by a student | `element-completion-dates`   | `element-completion-dates.provider.ts`   | ✅ Complete           | Unit + E2E |
 
 ### Implementation Notes
 
-- **Story 14.1 (CO-001 to CO-005)**: Completed in Issue #87, Sprint 4
-- **Story 14.2 (TO-001 to TO-005)**: Planned for Issue #TBD
-- **Story 14.3 (EO-001 to EO-006)**: Planned for Issue #TBD
+- **Story 14.1 (CO-001 to CO-005)**: ✅ Completed in Issue #87, Sprint 3 (Nov 17, 2025)
+- **Story 14.2 (TO-001 to TO-005)**: ✅ Completed in Issue #85, Sprint 3 (Nov 17, 2025)
+- **Story 14.3 (EO-001 to EO-006)**: ✅ Completed in Issue #86, Sprint 3 (Nov 18, 2025)
 
 ### CSV Verification Checkpoint (REQ-FN-004)
 
@@ -139,7 +139,7 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 - ✅ During Implementation: JSDoc includes CSV row reference
 - ✅ During Implementation: Output schema matches CSV description literally
 - ✅ During Implementation: Test data validates raw aggregations
-- 🟡 Completion Verification: 5 of 16 metrics implemented (31%)
+- ✅ Completion Verification: 16 of 16 metrics implemented (100%)
 
 ---
 

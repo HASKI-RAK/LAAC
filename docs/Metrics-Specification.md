@@ -359,5 +359,11 @@ This specification is versioned alongside the API. Changes to metric definitions
 
 ### Change Log
 
+- v1.2 (2025-11-18): All 16 CSV metrics implemented and verified
+  - Course metrics (CO-001 to CO-005): ✅ Complete
+  - Topic metrics (TO-001 to TO-005): ✅ Complete
+  - Element metrics (EO-001 to EO-006): ✅ Complete
+  - Provider implementations: `src/computation/providers/`
+  - CSV Verification Checkpoint: 100% complete
 - v1.1 (2025-11-18): Added formal specifications for topic-level CSV metrics (TO-001 through TO-005)
 - v1.0 (2025-10-20): Initial formal specification covering all 16 CSV metrics
