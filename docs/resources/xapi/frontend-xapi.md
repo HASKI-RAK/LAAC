@@ -50,6 +50,27 @@ Durch die oben beschriebenen Bausteine enthalten alle gesendeten Statements folg
 - **Kontext**: umfasst `componentFilePath`, Projekt- und Repositoriums-URLs sowie die vom Tracker gesetzten Metadaten.【F:src/common/components/DefaultButton/DefaultButton.tsx†L24-L43】【F:src/pages/App/App.hooks.tsx†L57-L63】【F:src/pages/App/App.tsx†L45-L50】【F:node_modules/react-xapi-wrapper/dist/index.esm.js†L1-L1】
 - **Authority & Transport**: stammen aus den Konfigurationswerten `LRS`, `LRS_AUTH_USERNAME`, `LRS_AUTH_PASSWORD` und der Protokollversion 1.0.3.【F:public/config/env.development.json†L6-L13】【F:src/pages/App/App.hooks.tsx†L65-L72】
 
+### Verben des Frontends
+
+Alle im Frontend eingesetzten Verben folgen dem Schema `https://wiki.haski.app/variables/services.<verb>`. Die Anzeige im Statement (`display.en`) entspricht stets dem Verb-Schlüssel.
+
+| Verb-Key | IRI (Suffix) | Zweck |
+| :------- | :----------- | :---- |
+| `clicked` | services.clicked | Klick auf UI-Elemente (Button, Link, IconButton usw.) |
+| `changed` | services.changed | Wertänderung in Formular-/Auswahl-Elementen |
+| `closed` | services.closed | Schließen eines Dialogs/Overlays |
+| `answered` | services.answered | Beantworten einer Frage (z. B. H5P, Quiz) |
+| `started` | services.started | Start eines Vorgangs oder einer Aktivität |
+| `completed` | services.completed | Abschluss eines Vorgangs oder einer Aktivität |
+| `created` | services.created | Anlegen eines Objekts (z. B. Kommentar) |
+| `deleted` | services.deleted | Löschen eines Objekts |
+| `uploaded` | services.uploaded | Hochladen einer Datei |
+| `updated` | services.updated | Aktualisieren eines Objekts oder Uploads |
+| `selected` | services.selected | Auswahl eines Elements (Radio/Checkbox/ListItem) |
+| `pressed` | services.pressed | Tastatur-/Maus-/Gamepad-Eingabe |
+| `loggedin` | services.loggedin | Nutzer hat sich eingeloggt |
+| `loggedout` | services.loggedout | Nutzer hat sich ausgeloggt |
+
 ## Beispiel-Statements
 
 Die folgenden Beispiele zeigen reale JSON-Strukturen, wie sie der Wrapper im Browser erzeugt. Sie nutzen die Standard-Konfiguration aus `public/config/env.development.json` und demonstrieren die automatisch gesetzten Felder für unterschiedliche Ereignistypen.【F:public/config/env.development.json†L2-L13】【F:node_modules/react-xapi-wrapper/dist/index.esm.js†L1-L1】

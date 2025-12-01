@@ -6,19 +6,23 @@ title: Configuration of xAPI
 
 ## Library
 
-The frontend uses the **xAPI.js** library for xAPI statements. This is the only one that is compliant with the current version 1.3. xAPI.js can be installed as an ES module using yarn or npm.
+The frontend uses **react-xapi-wrapper**. At runtime `useApp` calls `setupXAPI` (see `src/pages/App/App.hooks.tsx`) and injects the resulting client via `XAPIProvider`, so components can emit statements without manual HTTP code.
 
 ## Setup
 
-![Setup file example]( to an LRS or custom endpoint using the xAPI.js library, the following entries are required in the setup file (`src/services/xAPI/xAPI.setup.ts`):
+On startup `src/index.tsx` loads `/config/env.<NODE_ENV>.json` into a global config store. `useApp` then calls `setupXAPI` with:
 
-- **endpoint**: URL of the endpoint. The library automatically adds "/statements" to it.
-- **auth**: The credentials that are used to log in to the endpoint. It is possible to use an encrypted string directly.
-- **version**: The current xAPI version used by the endpoint.
+- `xAPI.endpoint`, `xAPI.auth.username`, `xAPI.auth.password`, `xAPI.version` (currently `1.0.3`)
+- `currentLanguage` (from Local Storage)
+- `userID` (Moodle user id from the store)
+- `projectURL`, `projectVersion`
+- `repositories`: prefixes for activities/verbs in the HASKI wiki (`functions/common.`, `functions/pages.`, `variables/services.`)
+
+This mirrors the current frontend code; no separate setup file is required.
 
 ## Sending process
 
-When the user performs a "click", "change" or "close" action on a custom component the `onClick`, `onChange` or `onClose` event is triggered. These overwritten functions call a `sendStatement` function of the statement hook with the corresponding verb and the `onClick`, `onChange` or `onClose` method of the default component. Inside the `sendStatement` function an xAPI statement is constructed using the `getStatement` method. Afterwards the xAPI object created in the xAPI setup file with the LRS information calls another `sendStatement` function with the xAPI statement as parameter. Finally, the Learning Record Store receives the xAPI statement.
+Components are wrapped with `withXAPI(...)`. Their event handlers (`onClick`, `onChange`, `onClose`, etc.) call the wrapper’s `sendStatement`, which constructs an xAPI statement using the configured repositories (for verb/object IRIs), page name (`usePageName`), and component metadata. The statement is then sent via the `xAPI` client created by `setupXAPI`.
 
 ## Overwritten Components
 
@@ -46,6 +50,8 @@ To send xAPI statements dynamically, default components have been overwritten wi
 ## Statements
 
 An xAPI statement consists of several pieces of information that help to identify which user did what action on which page. To provide this information, the frontend statement contains an actor, a verb, an object, a context and a timestamp. More information about the properties of a statement can be found in the official [xAPI specification](https://xapi.com/specification/).
+
+Frontend verbs follow the pattern `https://wiki.haski.app/variables/services.<verb>` (full list: see `frontend-xapi.md`).
 
 ### Actor
 

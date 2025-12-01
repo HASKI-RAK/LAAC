@@ -15,3 +15,5 @@ Learning element overview,Score for the best attempt of a student at each learni
 Learning element overview,Total time spent by a student on each learning element in a given time period,LAAC
 Learning element overview,Last three learning elements of a topic completed by a student,LAAC
 Learning element overview,Completion date of the last three learning elements of a topic completed by a student,LAAC
+Learning element overview,Average clicks on learning element type (e.g. Self-Assessment-Test (SE)),LAAC
+Student,Total number of clicks by a student for a learning element type (e.g. Self-Assessment-Test (SE)),LAAC
