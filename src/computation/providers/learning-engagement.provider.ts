@@ -112,6 +112,11 @@ export class LearningEngagementProvider implements IMetricComputation {
       'https://wiki.haski.app/variables/xapi.interacted',
       'http://adlnet.gov/expapi/verbs/attempted',
       'https://wiki.haski.app/variables/xapi.clicked',
+      'https://wiki.haski.app/variables/services.clicked',
+      'https://wiki.haski.app/variables/services.changed',
+      'https://wiki.haski.app/variables/services.selected',
+      'https://wiki.haski.app/variables/services.pressed',
+      'https://wiki.haski.app/variables/services.started',
     ];
 
     // Filter statements by engagement verbs
