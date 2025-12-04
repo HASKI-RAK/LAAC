@@ -1,3 +1,5 @@
+// Implements REQ-FN-029: CSV Row EO-008 (element-type time allocation)
+
 import { Injectable } from '@nestjs/common';
 import { IMetricComputation } from '../interfaces/metric.interface';
 import { MetricParams } from '../interfaces/metric-params.interface';
@@ -18,6 +20,9 @@ interface TypeTimeAggregate {
 
 /**
  * Element Type Time Spent Provider
+ *
+ * Implements CSV row EO-008: "Total and average time spent per learning element type"
+ * within the learning element overview dashboard.
  *
  * - Computes total and average time spent per learning element type
  * - Implements "proportional average for time spent" from Concept 2025

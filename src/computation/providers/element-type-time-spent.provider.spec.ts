@@ -1,8 +1,10 @@
+// Unit tests for ElementTypeTimeSpentProvider (REQ-FN-029, CSV EO-008)
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ElementTypeTimeSpentProvider } from './element-type-time-spent.provider';
 import { xAPIStatement } from '../../data-access';
 
-describe('ElementTypeTimeSpentProvider', () => {
+describe('ElementTypeTimeSpentProvider (REQ-FN-029, CSV EO-008)', () => {
   let provider: ElementTypeTimeSpentProvider;
 
   beforeEach(async () => {

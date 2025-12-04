@@ -1,3 +1,6 @@
+// Implements REQ-FN-028: CSV Rows EO-007 & ST-001 (element-type click distribution)
+// Applies Concept 2025 weighting for CT/CO priority slots
+
 import { Injectable } from '@nestjs/common';
 import { IMetricComputation } from '../interfaces/metric.interface';
 import { MetricParams } from '../interfaces/metric-params.interface';
@@ -21,6 +24,11 @@ interface TypeAggregate {
 
 /**
  * Element Clicks Metric Provider
+ *
+ * Implements CSV rows EO-007 (element overview) and ST-001 (student view).
+ * Dashboard Level: Learning element overview / student aggregate
+ * Metric Descriptions: "Average clicks on learning element type" and
+ * "Total number of clicks by a student for a learning element type"
  *
  * - Counts clicks (opening of learning elements) per element type
  * - Applies sequence-based priority weighting (earliest accessed types rank higher)

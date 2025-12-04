@@ -394,6 +394,53 @@ To disable Swagger UI and OpenAPI spec endpoints in production:
 
 The Swagger UI and spec endpoints will return 404 when disabled.
 
+## Accessing Metrics via JWT Bearer (REST)
+
+All metrics endpoints live under the global prefix (`/api/v1/...`) and are protected by the `JwtAuthGuard` + `ScopesGuard`. Every request must include a JWT whose `scopes` claim contains `analytics:read`.
+
+### 1. Obtain a JWT
+
+- **Production**: Request a token from your identity provider (e.g., Keycloak or another OpenID Connect server) that LAAC trusts. Make sure the issued token includes the `analytics:read` scope/role and is signed with the shared `JWT_SECRET`.
+- **Local development**: Generate a token with the supplied helper script:
+
+  ```bash
+  yarn setup:secrets       # only needed once to create JWT_SECRET
+  yarn generate:jwt        # creates a read-only token in .env as DEV_JWT
+  source .env              # optional: exports DEV_JWT for your shell session
+  ```
+
+  The script prints the token to stdout and writes `DEV_JWT="<token>"` into `.env` so you can reference it in examples.
+
+### 2. Call the REST endpoints with the Bearer token
+
+Set the `Authorization` header on every request:
+
+```bash
+curl -H "Authorization: Bearer $DEV_JWT" \
+     http://localhost:3000/api/v1/metrics
+```
+
+Typical requests:
+
+| Purpose | HTTP call |
+| ------- | --------- |
+| List catalog | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics` |
+| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion` |
+| Compute results | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
+
+#### Supported query parameters for `/metrics/:id/results`
+
+All parameters are optional at the transport level—individual metrics validate the subset they require:
+
+- `courseId`, `topicId`, `elementId`: scope the computation
+- `userId`, `groupId`: learner or cohort filters
+- `since`, `until`: ISO‑8601 timestamps for time ranges
+- `instanceId`: single ID (`hs-ke`), comma-separated IDs (`hs-ke,hs-rv`), or `*` for all instances
+
+Responses include the computed value, metadata, cache status, and the timestamp of computation. The API returns **401** for missing/invalid tokens and **403** if the token lacks `analytics:read`.
+
+You can also test the secured endpoints via Swagger UI (`/api/docs`) by clicking “Authorize”, pasting your JWT, and running the `Metrics` operations directly in the browser.
+
 ## API Versioning & Deprecation (REQ‑FN‑016)
 
 The public API is versioned using **URI path versioning**:

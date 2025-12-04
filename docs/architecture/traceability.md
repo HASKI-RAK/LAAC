@@ -58,6 +58,11 @@ The traceability matrix includes implementation status for each requirement:
 | **REQ-FN-022** | Performance Testing and SLO Validation              | 🔵 Deferred             | Testing strategy, observability                      | Load tests (k6/Artillery), SLO dashboards                        | Section 7.2, 10.2         |
 | **REQ-FN-023** | Authentication and Authorization Framework          | ✅ Complete             | AuthModule, JWT strategy                             | `JwtAuthGuard`, `ScopesGuard`, JWT validation                    | ADR-005, Section 9.1, 9.2 |
 | **REQ-FN-024** | Input Validation and Rate Limiting                  | 🟡 In Progress          | API Gateway Layer                                    | `ValidationPipe` (class-validator), `RateLimitGuard`             | Section 4.2, 9.3, 9.4     |
+| **REQ-FN-025** | LRS Instance Health Monitoring                      | 🟡 In Progress          | CoreModule, HealthController                         | `HealthController`, `RedisHealthIndicator`, circuit breaker hook | Section 10.3, ADR-007     |
+| **REQ-FN-026** | Multi-LRS Configuration Schema and Instance Auth    | 🟡 In Progress          | CoreModule, ConfigService                            | `ConfigSchema`, `InstancesService`, secrets loaders              | Section 4.2, 5.4          |
+| **REQ-FN-027** | Keycloak Integration and Token Issuance             | ❌ Not Started          | AuthModule, Identity provider adapters               | Keycloak strategy (planned), token issuance bridge               | Section 9.1, ADR-005      |
+| **REQ-FN-028** | Learning Element Type Click Distribution            | ✅ Complete             | ComputationModule, MetricsModule                     | `ElementClicksProvider`, `element-type-helpers.ts`               | ADR-002, Section 4.2      |
+| **REQ-FN-029** | Learning Element Type Time Allocation               | ✅ Complete             | ComputationModule, MetricsModule                     | `ElementTypeTimeSpentProvider`, `duration-helpers.ts`            | ADR-002, Section 4.2      |
 
 ---
 
@@ -124,6 +129,14 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 | EO-004  | Learning element overview | Total time spent by a student on each learning element in a given time period         | `element-time-spent`         | `element-time-spent.provider.ts`         | ✅ Complete           | Unit + E2E |
 | EO-005  | Learning element overview | Last three learning elements of a topic completed by a student                        | `element-last-elements`      | `element-last-elements.provider.ts`      | ✅ Complete           | Unit + E2E |
 | EO-006  | Learning element overview | Completion date of the last three learning elements of a topic completed by a student | `element-completion-dates`   | `element-completion-dates.provider.ts`   | ✅ Complete           | Unit + E2E |
+| EO-007  | Learning element overview | Average clicks on learning element type (e.g. Self-Assessment-Test (SE))              | `element-clicks`             | `element-clicks.provider.ts`             | ✅ Complete           | Unit + E2E |
+| EO-008  | Learning element overview | Total and average time spent per learning element type                                | `element-type-time-spent`    | `element-type-time-spent.provider.ts`    | ✅ Complete           | Unit + E2E |
+
+### Student Metrics (ST-001)
+
+| CSV Row | Dashboard Level | Metric Description                                                                   | Provider ID        | Provider File                     | Implementation Status | Tests      |
+| ------- | --------------- | ------------------------------------------------------------------------------------ | ------------------ | --------------------------------- | --------------------- | ---------- |
+| ST-001  | Student         | Total number of clicks by a student for a learning element type (e.g. SE, EX, CT)    | `element-clicks`   | `element-clicks.provider.ts`      | ✅ Complete           | Unit + E2E |
 
 ### Implementation Notes
 
@@ -139,7 +152,7 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 - ✅ During Implementation: JSDoc includes CSV row reference
 - ✅ During Implementation: Output schema matches CSV description literally
 - ✅ During Implementation: Test data validates raw aggregations
-- ✅ Completion Verification: 16 of 16 metrics implemented (100%)
+- ✅ Completion Verification: 19 of 19 metrics implemented (100%)
 
 ---
 

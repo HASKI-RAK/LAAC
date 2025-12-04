@@ -1,8 +1,10 @@
+// Unit tests for ElementClicksProvider (REQ-FN-028, CSV EO-007/ST-001)
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ElementClicksProvider } from './element-clicks.provider';
 import { xAPIStatement } from '../../data-access';
 
-describe('ElementClicksProvider', () => {
+describe('ElementClicksProvider (REQ-FN-028, CSV EO-007/ST-001)', () => {
   let provider: ElementClicksProvider;
 
   beforeEach(async () => {

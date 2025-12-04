@@ -65,6 +65,8 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-025 — LRS Instance Health Monitoring → `docs/srs/REQ-FN-025.md`
 - REQ-FN-026 — Multi-LRS Configuration Schema and Instance Auth → `docs/srs/REQ-FN-026.md`
 - REQ-FN-027 — Keycloak Integration and Token Issuance → `docs/srs/REQ-FN-027.md`
+- REQ-FN-028 — Learning Element Type Click Distribution → `docs/srs/REQ-FN-028.md`
+- REQ-FN-029 — Learning Element Type Time Allocation → `docs/srs/REQ-FN-029.md`
 
 ## Non-Functional Requirements
 
