@@ -134,9 +134,9 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ### Student Metrics (ST-001)
 
-| CSV Row | Dashboard Level | Metric Description                                                                   | Provider ID        | Provider File                     | Implementation Status | Tests      |
-| ------- | --------------- | ------------------------------------------------------------------------------------ | ------------------ | --------------------------------- | --------------------- | ---------- |
-| ST-001  | Student         | Total number of clicks by a student for a learning element type (e.g. SE, EX, CT)    | `element-clicks`   | `element-clicks.provider.ts`      | ✅ Complete           | Unit + E2E |
+| CSV Row | Dashboard Level | Metric Description                                                                | Provider ID      | Provider File                | Implementation Status | Tests      |
+| ------- | --------------- | --------------------------------------------------------------------------------- | ---------------- | ---------------------------- | --------------------- | ---------- |
+| ST-001  | Student         | Total number of clicks by a student for a learning element type (e.g. SE, EX, CT) | `element-clicks` | `element-clicks.provider.ts` | ✅ Complete           | Unit + E2E |
 
 ### Implementation Notes
 
