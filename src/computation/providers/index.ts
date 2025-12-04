@@ -22,6 +22,7 @@ import { ElementTimeSpentProvider } from './element-time-spent.provider';
 import { ElementLastCompletedProvider } from './element-last-completed.provider';
 import { ElementCompletionDatesProvider } from './element-completion-dates.provider';
 import { ElementClicksProvider } from './element-clicks.provider';
+import { ElementTypeTimeSpentProvider } from './element-type-time-spent.provider';
 
 export {
   ExampleMetricProvider,
@@ -45,6 +46,7 @@ export {
   ElementLastCompletedProvider,
   ElementCompletionDatesProvider,
   ElementClicksProvider,
+  ElementTypeTimeSpentProvider,
 };
 
 export const METRIC_PROVIDER_CLASSES = [
@@ -69,4 +71,5 @@ export const METRIC_PROVIDER_CLASSES = [
   ElementLastCompletedProvider,
   ElementCompletionDatesProvider,
   ElementClicksProvider,
+  ElementTypeTimeSpentProvider,
 ] as const;
