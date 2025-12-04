@@ -21,6 +21,7 @@ import { ElementBestAttemptScoreProvider } from './element-best-attempt-score.pr
 import { ElementTimeSpentProvider } from './element-time-spent.provider';
 import { ElementLastCompletedProvider } from './element-last-completed.provider';
 import { ElementCompletionDatesProvider } from './element-completion-dates.provider';
+import { ElementClicksProvider } from './element-clicks.provider';
 
 export {
   ExampleMetricProvider,
@@ -43,6 +44,7 @@ export {
   ElementTimeSpentProvider,
   ElementLastCompletedProvider,
   ElementCompletionDatesProvider,
+  ElementClicksProvider,
 };
 
 export const METRIC_PROVIDER_CLASSES = [
@@ -66,4 +68,5 @@ export const METRIC_PROVIDER_CLASSES = [
   ElementTimeSpentProvider,
   ElementLastCompletedProvider,
   ElementCompletionDatesProvider,
+  ElementClicksProvider,
 ] as const;
