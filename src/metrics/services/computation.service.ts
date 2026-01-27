@@ -349,6 +349,12 @@ export class ComputationService {
 
     const activityFilter = this.resolveActivityFilter(params);
     if (activityFilter) {
+      if (!this.isValidActivityIri(activityFilter.id)) {
+        throw new BadRequestException(
+          `${activityFilter.source} must be a valid IRI (e.g., https://... or urn:...). Received: ${activityFilter.id}`,
+        );
+      }
+
       filters.activity = activityFilter.id;
       if (activityFilter.related !== undefined) {
         filters.related_activities = activityFilter.related;
@@ -395,22 +401,28 @@ export class ComputationService {
     return Array.from(merged.values());
   }
 
-  private resolveActivityFilter(
-    params: MetricParams,
-  ): { id: string; related?: boolean } | null {
+  private resolveActivityFilter(params: MetricParams): {
+    id: string;
+    related?: boolean;
+    source: 'courseId' | 'topicId' | 'elementId';
+  } | null {
     if (params.elementId) {
-      return { id: params.elementId, related: false };
+      return { id: params.elementId, related: false, source: 'elementId' };
     }
 
     if (params.topicId) {
-      return { id: params.topicId, related: true };
+      return { id: params.topicId, related: true, source: 'topicId' };
     }
 
     if (params.courseId) {
-      return { id: params.courseId, related: true };
+      return { id: params.courseId, related: true, source: 'courseId' };
     }
 
     return null;
+  }
+
+  private isValidActivityIri(value: string): boolean {
+    return /^(https?:\/\/|urn:)/i.test(value);
   }
 
   /**
