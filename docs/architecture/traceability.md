@@ -41,6 +41,7 @@ The traceability matrix includes implementation status for each requirement:
 | **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | ❌ Not Started          | MetricsModule, MetricsService                        | `MetricsService.getResults()`, `GET /metrics/:id/results`        | Section 4.3               |
 | **REQ-FN-006** | Analytics Results Caching                           | ❌ Not Started          | DataAccessModule, CacheService                       | `CacheService` (Redis), cache-aside pattern                      | ADR-003, Section 8.1      |
 | **REQ-FN-007** | Cache Invalidation and Refresh                      | ❌ Not Started          | AdminModule, CacheController                         | `CacheController`, `POST /admin/cache/invalidate`                | Section 4.2               |
+| **REQ-FN-030** | Incremental Metrics Cache Refresh                   | ❌ Not Started          | MetricsModule, DataAccessModule                      | `ComputationService`, `CacheService`, `LRSClient`                | ADR-003, Section 8.1      |
 | **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | ❌ Not Started          | NestJS Swagger integration                           | `@nestjs/swagger` decorators, auto-generated spec                | ADR-004, Section 10.1     |
 | **REQ-FN-009** | Interactive API Documentation UI                    | ❌ Not Started          | Swagger UI integration                               | Swagger UI served at `/api/docs`                                 | ADR-004                   |
 | **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ❌ Not Started          | ComputationModule, IMetricComputation interface      | `IMetricComputation`, plugin-based registration                  | ADR-002, Section 11.1     |
@@ -158,21 +159,21 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ## Stakeholder Needs Traceability
 
-| Stakeholder Need                                | Requirements Covered                                       | Architecture Components                                           |
-| ----------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| **SG-4-003** (Developers: Analytics Metrics)    | REQ-FN-003, REQ-FN-004, REQ-FN-005, REQ-NF-003, REQ-NF-004 | MetricsModule, ComputationModule, LRSClient                       |
-| **SG-4-004** (Developers: Results Caching)      | REQ-FN-006, REQ-FN-007, REQ-NF-005, REQ-NF-006, REQ-NF-007 | CacheService, Redis, cache-aside pattern                          |
-| **SG-4-005** (Developers: API Specification)    | REQ-FN-001, REQ-FN-008, REQ-FN-009, REQ-NF-008             | Swagger integration, MetricsController                            |
-| **SG-4-006** (Developers: Extensibility)        | REQ-FN-010, REQ-FN-011, REQ-NF-009, REQ-NF-010             | IMetricComputation interface, plugin architecture                 |
-| **SG-4-007** (DevOps: Deployment Automation)    | REQ-FN-012, REQ-FN-013, REQ-FN-015, REQ-NF-011, REQ-NF-012 | Docker Compose, GitHub Actions, Traefik                           |
-| **SG-4-008** (DevOps: Configuration Management) | REQ-FN-014                                                 | ConfigService, environment variables, Docker secrets              |
-| **SG-4-009** (API Consumers: Versioning)        | REQ-FN-016                                                 | API versioning strategy, deprecation headers                      |
-| **SG-4-010** (DevOps: Multi-Instance Support)   | REQ-FN-017, REQ-NF-013                                     | Shared Redis, load balancing via Traefik                          |
-| **SG-4-011** (Architecture Team: Documentation) | REQ-FN-018, REQ-NF-014, REQ-NF-015                         | ARCHITECTURE.md, PlantUML diagrams, traceability.md               |
-| **SG-4-012** (Developers: Design Principles)    | REQ-FN-019                                                 | SOLID/CUPID patterns, module boundaries, DI                       |
-| **SG-1-001** (Operators: Observability)         | REQ-FN-020, REQ-FN-021, REQ-NF-016                         | LoggerService, MetricsExporter, health checks                     |
-| **SG-1-002** (Performance Testing)              | REQ-FN-022, REQ-NF-017, REQ-NF-018                         | Caching, SLO monitoring, timeout handling                         |
-| **SG-5-001** (Security Baseline)                | REQ-FN-023, REQ-FN-024, REQ-NF-019, REQ-NF-020             | AuthModule, security guards, input validation, CI security checks |
+| Stakeholder Need                                | Requirements Covered                                                   | Architecture Components                                           |
+| ----------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **SG-4-003** (Developers: Analytics Metrics)    | REQ-FN-003, REQ-FN-004, REQ-FN-005, REQ-NF-003, REQ-NF-004             | MetricsModule, ComputationModule, LRSClient                       |
+| **SG-4-004** (Developers: Results Caching)      | REQ-FN-006, REQ-FN-007, REQ-FN-030, REQ-NF-005, REQ-NF-006, REQ-NF-007 | CacheService, Redis, cache-aside pattern                          |
+| **SG-4-005** (Developers: API Specification)    | REQ-FN-001, REQ-FN-008, REQ-FN-009, REQ-NF-008                         | Swagger integration, MetricsController                            |
+| **SG-4-006** (Developers: Extensibility)        | REQ-FN-010, REQ-FN-011, REQ-NF-009, REQ-NF-010                         | IMetricComputation interface, plugin architecture                 |
+| **SG-4-007** (DevOps: Deployment Automation)    | REQ-FN-012, REQ-FN-013, REQ-FN-015, REQ-NF-011, REQ-NF-012             | Docker Compose, GitHub Actions, Traefik                           |
+| **SG-4-008** (DevOps: Configuration Management) | REQ-FN-014                                                             | ConfigService, environment variables, Docker secrets              |
+| **SG-4-009** (API Consumers: Versioning)        | REQ-FN-016                                                             | API versioning strategy, deprecation headers                      |
+| **SG-4-010** (DevOps: Multi-Instance Support)   | REQ-FN-017, REQ-NF-013                                                 | Shared Redis, load balancing via Traefik                          |
+| **SG-4-011** (Architecture Team: Documentation) | REQ-FN-018, REQ-NF-014, REQ-NF-015                                     | ARCHITECTURE.md, PlantUML diagrams, traceability.md               |
+| **SG-4-012** (Developers: Design Principles)    | REQ-FN-019                                                             | SOLID/CUPID patterns, module boundaries, DI                       |
+| **SG-1-001** (Operators: Observability)         | REQ-FN-020, REQ-FN-021, REQ-NF-016                                     | LoggerService, MetricsExporter, health checks                     |
+| **SG-1-002** (Performance Testing)              | REQ-FN-022, REQ-NF-017, REQ-NF-018                                     | Caching, SLO monitoring, timeout handling                         |
+| **SG-5-001** (Security Baseline)                | REQ-FN-023, REQ-FN-024, REQ-NF-019, REQ-NF-020                         | AuthModule, security guards, input validation, CI security checks |
 
 ---
 
@@ -194,8 +195,8 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ### Coverage Summary
 
-- **Total Requirements**: 44 (24 functional + 20 non-functional)
-- **Mapped to Architecture**: 44 (100%)
+- **Total Requirements**: 45 (25 functional + 20 non-functional)
+- **Mapped to Architecture**: 45 (100%)
 - **Unmapped Requirements**: 0
 - **Orphan Components**: 0
 
@@ -203,9 +204,9 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 | Component             | Requirements Addressed                               | Coverage       |
 | --------------------- | ---------------------------------------------------- | -------------- |
-| **MetricsModule**     | REQ-FN-001, 003, 004, 005                            | 4 requirements |
+| **MetricsModule**     | REQ-FN-001, 003, 004, 005, 030                       | 5 requirements |
 | **ComputationModule** | REQ-FN-004, 010, 011, REQ-NF-009, 010                | 5 requirements |
-| **DataAccessModule**  | REQ-FN-002, 006, 007, REQ-NF-005, 006, 007           | 6 requirements |
+| **DataAccessModule**  | REQ-FN-002, 006, 007, 030, REQ-NF-005, 006, 007      | 7 requirements |
 | **AuthModule**        | REQ-FN-023, 024, REQ-NF-019, 020                     | 4 requirements |
 | **CoreModule**        | REQ-FN-014, 020, REQ-NF-016                          | 3 requirements |
 | **AdminModule**       | REQ-FN-007, 021                                      | 2 requirements |
