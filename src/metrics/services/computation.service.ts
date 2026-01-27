@@ -34,6 +34,12 @@ import { generateCacheKey } from '../../data-access/utils/cache-key.util';
 import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
 import { METRIC_VERB_MAP } from '../constants/metric-verbs';
 
+interface MetricCacheEntry {
+  response: MetricResultResponseDto;
+  statements: xAPIStatement[];
+  cursor?: string;
+}
+
 /**
  * Computation Service
  * Implements REQ-FN-005: Metric computation pipeline with cache-aside pattern
@@ -115,10 +121,25 @@ export class ComputationService {
       const cacheKey = this.generateCacheKey(metricId, params);
 
       // Step 2: Check cache (REQ-FN-006: Cache-aside pattern)
-      const cached =
-        await this.cacheService.get<MetricResultResponseDto>(cacheKey);
+      const cached = await this.cacheService.get<
+        MetricResultResponseDto | MetricCacheEntry
+      >(cacheKey);
 
       if (cached) {
+        // REQ-FN-005: Record cache hit for metric computation
+        this.metricsRegistry.recordCacheHit(metricId);
+
+        if (this.isMetricCacheEntry(cached)) {
+          // REQ-FN-030: Incrementally refresh cached metrics on cache hit
+          return this.refreshCachedMetric({
+            metricId,
+            params,
+            cacheKey,
+            cached,
+            startTime,
+          });
+        }
+
         const computationTime = Date.now() - startTime;
 
         this.logger.log('Metric result served from cache', {
@@ -126,9 +147,6 @@ export class ComputationService {
           cacheKey,
           computationTime,
         });
-
-        // REQ-FN-005: Record cache hit for metric computation
-        this.metricsRegistry.recordCacheHit(metricId);
 
         return {
           ...cached,
@@ -252,7 +270,13 @@ export class ComputationService {
         instanceId, // REQ-FN-017: Single instance identifier
       };
 
-      await this.cacheService.set(cacheKey, response, undefined, 'results');
+      const cacheEntry: MetricCacheEntry = {
+        response,
+        statements,
+        cursor: this.resolveLatestCursor(statements) ?? undefined,
+      };
+
+      await this.cacheService.set(cacheKey, cacheEntry, undefined, 'results');
 
       this.logger.log('Metric result cached', { metricId, cacheKey });
 
@@ -662,5 +686,241 @@ export class ComputationService {
       until: params.until,
       hasFilters: !!params.filters,
     };
+  }
+
+  private isMetricCacheEntry(
+    cached: MetricResultResponseDto | MetricCacheEntry,
+  ): cached is MetricCacheEntry {
+    return (
+      typeof cached === 'object' &&
+      cached !== null &&
+      'response' in cached &&
+      'statements' in cached
+    );
+  }
+
+  private async refreshCachedMetric({
+    metricId,
+    params,
+    cacheKey,
+    cached,
+    startTime,
+  }: {
+    metricId: string;
+    params: MetricParams;
+    cacheKey: string;
+    cached: MetricCacheEntry;
+    startTime: number;
+  }): Promise<MetricResultResponseDto> {
+    const cachedResponse = cached.response;
+    const cachedStatements = cached.statements ?? [];
+    const cursor = cached.cursor ?? this.resolveLatestCursor(cachedStatements);
+
+    const computationTime = Date.now() - startTime;
+
+    if (!cursor) {
+      this.logger.debug('Cache entry missing cursor; serving cached result', {
+        metricId,
+        cacheKey,
+      });
+      return {
+        ...cachedResponse,
+        fromCache: true,
+        computationTime,
+      };
+    }
+
+    if (params.until && !this.isCursorBeforeUntil(cursor, params.until)) {
+      this.logger.debug('Cursor beyond until range; serving cached result', {
+        metricId,
+        cacheKey,
+        cursor,
+        until: params.until,
+      });
+      return {
+        ...cachedResponse,
+        fromCache: true,
+        computationTime,
+      };
+    }
+
+    const baseFilters = this.buildLRSFilters(params);
+    const incrementalFilters = this.buildIncrementalFilters(
+      baseFilters,
+      cursor,
+    );
+
+    if (!incrementalFilters) {
+      return {
+        ...cachedResponse,
+        fromCache: true,
+        computationTime,
+      };
+    }
+
+    let newStatements: xAPIStatement[] = [];
+    try {
+      newStatements = await this.circuitBreaker.execute(() =>
+        this.queryStatementsForMetric(metricId, incrementalFilters),
+      );
+    } catch (error) {
+      this.logger.warn('Incremental LRS query failed; serving cached result', {
+        metricId,
+        cacheKey,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        ...cachedResponse,
+        fromCache: true,
+        computationTime,
+      };
+    }
+
+    if (newStatements.length === 0) {
+      await this.cacheService.set(cacheKey, cached, undefined, 'results');
+      return {
+        ...cachedResponse,
+        fromCache: true,
+        computationTime,
+      };
+    }
+
+    // REQ-FN-030: Merge cached statements with incremental updates
+    const mergedStatements = this.mergeStatements(
+      cachedStatements,
+      newStatements,
+    );
+
+    const provider = this.loadProvider(metricId);
+
+    const computeStartTime = Date.now();
+    let result;
+    try {
+      result = await provider.compute(params, mergedStatements);
+    } catch (error) {
+      this.logger.error('Metric computation failed', error as Error);
+      throw new InternalServerErrorException(
+        `Failed to compute metric: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+
+    const computeDuration = (Date.now() - computeStartTime) / 1000;
+    this.metricsRegistry.recordMetricComputation(metricId, computeDuration);
+
+    const instanceId = params.instanceId || this.lrsClient.instanceId;
+    const response: MetricResultResponseDto = {
+      metricId: result.metricId,
+      value: result.value,
+      timestamp: result.computed,
+      computationTime: Date.now() - startTime,
+      fromCache: false,
+      metadata: result.metadata,
+      instanceId,
+    };
+
+    const updatedEntry: MetricCacheEntry = {
+      response,
+      statements: mergedStatements,
+      cursor: this.resolveLatestCursor(mergedStatements) ?? undefined,
+    };
+
+    await this.cacheService.set(cacheKey, updatedEntry, undefined, 'results');
+
+    return response;
+  }
+
+  private buildIncrementalFilters(
+    baseFilters: xAPIQueryFilters,
+    cursor: string,
+  ): xAPIQueryFilters | null {
+    if (!cursor) {
+      return null;
+    }
+
+    const baseSince = baseFilters.since;
+    const baseSinceTime = baseSince ? Date.parse(baseSince) : NaN;
+    const cursorTime = Date.parse(cursor);
+
+    const effectiveSince =
+      !Number.isNaN(baseSinceTime) &&
+      !Number.isNaN(cursorTime) &&
+      baseSinceTime > cursorTime
+        ? baseSince
+        : cursor;
+
+    return {
+      ...baseFilters,
+      since: effectiveSince,
+    };
+  }
+
+  private isCursorBeforeUntil(cursor: string, until: string): boolean {
+    const cursorTime = Date.parse(cursor);
+    const untilTime = Date.parse(until);
+
+    if (Number.isNaN(cursorTime) || Number.isNaN(untilTime)) {
+      return true;
+    }
+
+    return cursorTime < untilTime;
+  }
+
+  private resolveLatestCursor(statements: xAPIStatement[]): string | null {
+    let latest: string | null = null;
+
+    for (const statement of statements) {
+      const candidate = this.getStatementCursor(statement);
+      if (!candidate) {
+        continue;
+      }
+
+      if (!latest) {
+        latest = candidate;
+        continue;
+      }
+
+      const candidateTime = Date.parse(candidate);
+      const latestTime = Date.parse(latest);
+      if (!Number.isNaN(candidateTime) && !Number.isNaN(latestTime)) {
+        if (candidateTime > latestTime) {
+          latest = candidate;
+        }
+      }
+    }
+
+    return latest;
+  }
+
+  private getStatementCursor(statement: xAPIStatement): string | null {
+    return statement.stored ?? statement.timestamp ?? null;
+  }
+
+  private mergeStatements(
+    cachedStatements: xAPIStatement[],
+    newStatements: xAPIStatement[],
+  ): xAPIStatement[] {
+    const merged = new Map<string, xAPIStatement>();
+
+    for (const statement of cachedStatements) {
+      const key = statement.id ?? this.fallbackStatementKey(statement, merged);
+      merged.set(key, statement);
+    }
+
+    for (const statement of newStatements) {
+      const key = statement.id ?? this.fallbackStatementKey(statement, merged);
+      merged.set(key, statement);
+    }
+
+    return Array.from(merged.values());
+  }
+
+  private fallbackStatementKey(
+    statement: xAPIStatement,
+    merged: Map<string, xAPIStatement>,
+  ): string {
+    const verbId = statement.verb?.id ?? 'unknown';
+    const objectId = statement.object?.id ?? 'unknown';
+    const time = statement.stored ?? statement.timestamp ?? 'no-time';
+    return `${verbId}:${objectId}:${time}:${merged.size}`;
   }
 }

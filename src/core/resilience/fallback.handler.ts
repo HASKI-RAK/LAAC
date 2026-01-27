@@ -11,10 +11,12 @@ import { Configuration } from '../config/config.interface';
 /**
  * Cache entry structure for stale data retrieval
  * REQ-NF-003: Standardized cache entry format
+ * REQ-FN-030: Supports metric cache entries with response payload
  */
 interface CacheEntry<T> {
   timestamp?: string;
   value?: T;
+  response?: T;
 }
 
 /**
@@ -161,11 +163,14 @@ export class FallbackHandler {
         ageSeconds,
       });
 
-      // Extract value with clear precedence: cached.value if present, otherwise treat cached as value
+      // Extract value with clear precedence: cached.value → cached.response → cached itself
       let resultValue: T | null = null;
       if (typeof cached.value !== 'undefined') {
         // Cached data has explicit value property
         resultValue = cached.value;
+      } else if (typeof cached.response !== 'undefined') {
+        // Cached data has response wrapper (REQ-FN-030)
+        resultValue = cached.response;
       } else if (
         typeof cached === 'object' &&
         cached !== null &&
