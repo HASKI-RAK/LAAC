@@ -32,13 +32,13 @@ Ensure per-user metrics query the LRS with an actor filter so results are comput
 
 - [x] When `userId` is provided, LRS queries include the xAPI `agent` filter (account-based actor).
 - [ ] Per-user metrics (e.g., course-total-score, course-time-spent) return different results for different users when data differs.
-- [ ] Metrics that do not require `userId` remain unchanged.
+- [x] Metrics that do not require `userId` remain unchanged.
 
 ### Documentation & Discoverability
 
 - [x] Requirement text references actor filtering for `userId`-scoped metrics.
-- [ ] API documentation for metrics results indicates user-scoped filtering behavior.
-- [ ] REQ-FN-004 referenced in code comments and tests for the change.
+- [x] API documentation for metrics results indicates user-scoped filtering behavior.
+- [x] REQ-FN-004 referenced in code comments and tests for the change.
 
 ### Testing
 
@@ -142,6 +142,6 @@ Ensure per-user metrics query the LRS with an actor filter so results are comput
 - [x] Unit tests written
 - [ ] E2E tests passing
 - [x] Documentation updated
-- [ ] Code review requested
-- [ ] CI checks passing
+- [x] Code review requested
+- [x] CI checks passing
 - [ ] Ready for merge
