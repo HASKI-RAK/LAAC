@@ -108,6 +108,8 @@ export class TopicMasteryProvider implements IMetricComputation {
       'http://adlnet.gov/expapi/verbs/passed',
       'http://adlnet.gov/expapi/verbs/failed',
       'https://wiki.haski.app/variables/xapi.answered',
+      'https://wiki.haski.app/variables/services.answered',
+      'https://wiki.haski.app/variables/services.completed',
     ];
 
     // Filter statements with scores

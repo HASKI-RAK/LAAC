@@ -21,13 +21,17 @@ import {
 } from '../../core/resilience';
 import { CacheService } from '../../data-access/services/cache.service';
 import { LRSClient } from '../../data-access/clients/lrs.client';
-import { xAPIQueryFilters } from '../../data-access/interfaces/lrs.interface';
+import {
+  xAPIQueryFilters,
+  xAPIStatement,
+} from '../../data-access/interfaces/lrs.interface';
 import { IMetricComputation } from '../../computation/interfaces/metric.interface';
 import { MetricParams } from '../../computation/interfaces/metric-params.interface';
 import { MetricResultResponseDto } from '../dto/metric-results.dto';
 import { MetricsRegistryService } from '../../admin/services/metrics-registry.service';
 import { generateCacheKey } from '../../data-access/utils/cache-key.util';
 import { METRIC_PROVIDER_CLASSES } from '../../computation/providers';
+import { METRIC_VERB_MAP } from '../constants/metric-verbs';
 
 /**
  * Computation Service
@@ -163,11 +167,11 @@ export class ComputationService {
 
       // Step 5: Query LRS with circuit breaker protection (REQ-FN-017, REQ-NF-003)
       const lrsFilters = this.buildLRSFilters(params);
-      let statements;
+      let statements: xAPIStatement[];
       try {
         // REQ-NF-003: Wrap LRS query with circuit breaker
         statements = await this.circuitBreaker.execute(() =>
-          this.lrsClient.queryStatements(lrsFilters),
+          this.queryStatementsForMetric(metricId, lrsFilters),
         );
       } catch (error) {
         // REQ-NF-003: Handle circuit breaker open error with graceful degradation
@@ -345,6 +349,12 @@ export class ComputationService {
 
     const activityFilter = this.resolveActivityFilter(params);
     if (activityFilter) {
+      if (!this.isValidActivityIri(activityFilter.id)) {
+        throw new BadRequestException(
+          `${activityFilter.source} must be a valid IRI (e.g., https://... or urn:...). Received: ${activityFilter.id}`,
+        );
+      }
+
       filters.activity = activityFilter.id;
       if (activityFilter.related !== undefined) {
         filters.related_activities = activityFilter.related;
@@ -354,22 +364,65 @@ export class ComputationService {
     return filters;
   }
 
-  private resolveActivityFilter(
-    params: MetricParams,
-  ): { id: string; related?: boolean } | null {
+  /**
+   * Execute one or more LRS queries for the given metric, respecting
+   * metric-specific verb lists (frontend + Moodle/ADL namespaces).
+   */
+  private async queryStatementsForMetric(
+    metricId: string,
+    baseFilters: xAPIQueryFilters,
+  ): Promise<xAPIStatement[]> {
+    const verbs = METRIC_VERB_MAP[metricId];
+
+    // Single query without verb filter if no mapping exists
+    if (!verbs || verbs.length === 0) {
+      return this.circuitBreaker.execute(() =>
+        this.lrsClient.queryStatements(baseFilters),
+      );
+    }
+
+    // Run one query per verb to leverage LRS-side filtering
+    const results = await Promise.all(
+      verbs.map((verb) => {
+        const filters: xAPIQueryFilters = { ...baseFilters, verb };
+        return this.circuitBreaker.execute(() =>
+          this.lrsClient.queryStatements(filters),
+        );
+      }),
+    );
+
+    // Merge and de-duplicate by statement id
+    const merged = new Map<string, xAPIStatement>();
+    results.flat().forEach((stmt) => {
+      const key = stmt.id ?? `${stmt.verb?.id ?? 'unknown'}:${merged.size}`;
+      merged.set(key, stmt);
+    });
+
+    return Array.from(merged.values());
+  }
+
+  private resolveActivityFilter(params: MetricParams): {
+    id: string;
+    related?: boolean;
+    source: 'courseId' | 'topicId' | 'elementId';
+  } | null {
     if (params.elementId) {
-      return { id: params.elementId, related: false };
+      return { id: params.elementId, related: false, source: 'elementId' };
     }
 
     if (params.topicId) {
-      return { id: params.topicId, related: true };
+      return { id: params.topicId, related: true, source: 'topicId' };
     }
 
     if (params.courseId) {
-      return { id: params.courseId, related: true };
+      return { id: params.courseId, related: true, source: 'courseId' };
     }
 
     return null;
+  }
+
+  private isValidActivityIri(value: string): boolean {
+    return /^(https?:\/\/|urn:)/i.test(value);
   }
 
   /**

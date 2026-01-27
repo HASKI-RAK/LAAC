@@ -1,4 +1,10 @@
-import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  Inject,
+  forwardRef,
+  BadRequestException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, catchError } from 'rxjs';
@@ -471,6 +477,12 @@ export class LRSClient implements ILRSClient, OnModuleInit {
     if (err.response?.status === 403) {
       return new Error(
         `LRS authorization failed (${operation}). Insufficient permissions for this operation.`,
+      );
+    }
+
+    if (err.response?.status === 400) {
+      return new BadRequestException(
+        `LRS rejected the query (${operation}). Verify request parameters (e.g., activity/verb IDs must be valid IRIs).`,
       );
     }
 
