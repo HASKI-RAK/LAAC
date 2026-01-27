@@ -280,6 +280,7 @@ A date/time range for filtering statements.
 #### By Actor (Student)
 
 ```
+actor.account.homePage = https://{instance}.moodle.haski.app
 actor.account.name = {actorId}
 OR actor.mbox_sha1sum = {actorId}
 ```

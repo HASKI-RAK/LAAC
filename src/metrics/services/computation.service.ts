@@ -24,6 +24,7 @@ import { LRSClient } from '../../data-access/clients/lrs.client';
 import {
   xAPIQueryFilters,
   xAPIStatement,
+  xAPIAgent,
 } from '../../data-access/interfaces/lrs.interface';
 import { IMetricComputation } from '../../computation/interfaces/metric.interface';
 import { MetricParams } from '../../computation/interfaces/metric-params.interface';
@@ -347,6 +348,12 @@ export class ComputationService {
       filters.until = params.until;
     }
 
+    // REQ-FN-004: User-scoped metrics must filter by actor (xAPI agent)
+    const actorFilter = this.resolveActorFilter(params);
+    if (actorFilter) {
+      filters.agent = actorFilter;
+    }
+
     const activityFilter = this.resolveActivityFilter(params);
     if (activityFilter) {
       if (!this.isValidActivityIri(activityFilter.id)) {
@@ -362,6 +369,82 @@ export class ComputationService {
     }
 
     return filters;
+  }
+
+  /**
+   * Resolve xAPI agent filter for user-scoped metrics
+   * Uses account-based actor identification with derived homePage
+   *
+   * @param params - Metric computation parameters
+   * @returns xAPI agent filter or undefined if userId not provided
+   */
+  private resolveActorFilter(params: MetricParams): xAPIAgent | undefined {
+    if (!params.userId) {
+      return undefined;
+    }
+
+    const homePage = this.resolveActorHomePage(params.instanceId);
+
+    if (homePage) {
+      return {
+        objectType: 'Agent',
+        account: {
+          homePage,
+          name: params.userId,
+        },
+      };
+    }
+
+    return {
+      objectType: 'Agent',
+      mbox_sha1sum: params.userId,
+    };
+  }
+
+  private resolveActorHomePage(instanceId?: string): string | null {
+    const lrsConfig = this.configService.get('lrs', { infer: true });
+
+    if (!lrsConfig) {
+      return null;
+    }
+
+    const endpoint = this.resolveLrsEndpoint(instanceId, lrsConfig);
+    return this.normalizeActorHomePage(endpoint);
+  }
+
+  private resolveLrsEndpoint(
+    instanceId: string | undefined,
+    lrsConfig: Configuration['lrs'],
+  ): string | undefined {
+    if (!instanceId || instanceId === '*' || instanceId.includes(',')) {
+      return lrsConfig.url;
+    }
+
+    const instance = lrsConfig.instances?.find(
+      (item) => item.id === instanceId,
+    );
+    return instance?.endpoint ?? lrsConfig.url;
+  }
+
+  private normalizeActorHomePage(endpoint?: string): string | null {
+    if (!endpoint) {
+      return null;
+    }
+
+    try {
+      const url = new URL(endpoint);
+      let host = url.host;
+
+      if (host.includes('.lrs.')) {
+        host = host.replace('.lrs.', '.moodle.');
+      } else if (host.startsWith('lrs.')) {
+        host = host.replace('lrs.', 'moodle.');
+      }
+
+      return `${url.protocol}//${host}`;
+    } catch {
+      return null;
+    }
   }
 
   /**
