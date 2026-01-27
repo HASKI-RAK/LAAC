@@ -94,10 +94,26 @@ describe('REQ-FN-005: ComputationService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn().mockReturnValue({
-              threshold: 5,
-              timeout: 30000,
-              halfOpenRequests: 1,
+            get: jest.fn((key: string) => {
+              if (key === 'lrs') {
+                return {
+                  url: 'https://ke.lrs.haski.app/xapi',
+                  apiKey: 'test-key',
+                  apiSecret: 'test-secret',
+                  timeout: 10000,
+                  instances: [],
+                };
+              }
+
+              if (key === 'circuitBreaker') {
+                return {
+                  threshold: 5,
+                  timeout: 30000,
+                  halfOpenRequests: 1,
+                };
+              }
+
+              return undefined;
             }),
           },
         },
@@ -273,6 +289,41 @@ describe('REQ-FN-005: ComputationService', () => {
         expect.objectContaining({
           activity: 'https://example.com/courses/course-678',
           related_activities: true,
+        }),
+      );
+    });
+
+    it('should include agent filter when userId is provided', async () => {
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-678',
+        userId: '408',
+      };
+      const statements: xAPIStatement[] = [];
+      const computedResult: MetricResult = {
+        metricId: 'test-metric',
+        value: 0,
+        computed: '2025-11-13T10:30:00Z',
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      moduleRef.get.mockReturnValue(mockProvider);
+      (mockProvider.compute as jest.Mock).mockResolvedValue(computedResult);
+      lrsClient.queryStatements.mockResolvedValue(statements);
+      cacheService.set.mockResolvedValue(true);
+
+      await service.computeMetric('test-metric', params);
+
+      expect(lrsClient.queryStatements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          activity: 'https://example.com/courses/course-678',
+          related_activities: true,
+          agent: {
+            objectType: 'Agent',
+            account: {
+              homePage: 'https://ke.moodle.haski.app',
+              name: '408',
+            },
+          },
         }),
       );
     });

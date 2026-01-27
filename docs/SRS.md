@@ -67,6 +67,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-027 — Keycloak Integration and Token Issuance → `docs/srs/REQ-FN-027.md`
 - REQ-FN-028 — Learning Element Type Click Distribution → `docs/srs/REQ-FN-028.md`
 - REQ-FN-029 — Learning Element Type Time Allocation → `docs/srs/REQ-FN-029.md`
+- REQ-FN-030 — Incremental Metrics Cache Refresh → `docs/srs/REQ-FN-030.md`
 
 ## Non-Functional Requirements
 

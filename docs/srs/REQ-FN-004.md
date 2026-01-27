@@ -21,6 +21,7 @@ Delivers the core value of the service: turning LRS statements into learning ana
 
 - For every CSV metric, a corresponding computation is implemented and reachable through the service API.
 - Computations operate over xAPI data only (see REQ-NF-001) and support filtering by time range and, where applicable, by course, topic, learning element, and student.
+- If a metric requires `userId`, the LRS query **must** filter by actor (xAPI `agent`) so results are scoped per user (no cross-user aggregation).
 - If a metric requires a notion of "best attempt", the selection criteria are defined and documented consistently across metrics.
 - Missing data or gaps in xAPI statements result in well-defined empty/zero outputs rather than failures, with explanatory metadata.
 - All computations return a normalized `MetricResult` object as their API surface (see API/Interface Impact) to ensure consistency across metrics and providers.
@@ -67,7 +68,7 @@ Before marking story complete:
 
 ## API/Interface Impact
 
-- Endpoint pattern: GET /metrics/{id}/results with query params for `actorId`, `courseId`, `topicId`, `elementId`, `start`, `end` as applicable per metric. Instance scoping via `instanceId` per REQ-FN-017.
+- Endpoint pattern: GET /metrics/{id}/results with query params for `actorId`, `courseId`, `topicId`, `elementId`, `start`, `end` as applicable per metric. Instance scoping via `instanceId` per REQ-FN-017. For `userId` metrics, map `userId` to the xAPI `agent` filter (account-based actor) in LRS queries.
 - Response shape: normalized `MetricResult` object:
   ```json
   {
