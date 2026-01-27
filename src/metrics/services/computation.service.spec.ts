@@ -124,7 +124,9 @@ describe('REQ-FN-005: ComputationService', () => {
   describe('computeMetric - Cache Hit', () => {
     it('should return cached result when cache hit', async () => {
       // REQ-FN-006 + REQ-FN-017: Cache-aside pattern - cache hit with instance-aware key
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const cachedResult = {
         metricId: 'test-metric',
         value: 85.5,
@@ -140,7 +142,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
       // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:default:course:courseId=course-123:v1',
+        'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
       );
       expect(result).toEqual({
         ...cachedResult,
@@ -158,13 +160,18 @@ describe('REQ-FN-005: ComputationService', () => {
   describe('computeMetric - Cache Miss', () => {
     it('should compute metric when cache miss', async () => {
       // REQ-FN-006: Cache-aside pattern - cache miss
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const statements: xAPIStatement[] = [
         {
           id: 'stmt-1',
           actor: { objectType: 'Agent', name: 'Test User' },
           verb: { id: 'http://adlnet.gov/expapi/verbs/completed', display: {} },
-          object: { id: 'course-123', objectType: 'Activity' },
+          object: {
+            id: 'https://example.com/courses/course-123',
+            objectType: 'Activity',
+          },
           timestamp: '2025-11-13T10:00:00Z',
         },
       ];
@@ -191,13 +198,13 @@ describe('REQ-FN-005: ComputationService', () => {
       expect(moduleRef.get).toHaveBeenCalled();
       expect(mockProvider.validateParams).toHaveBeenCalledWith(params);
       expect(lrsClient.queryStatements).toHaveBeenCalledWith({
-        activity: 'course-123',
+        activity: 'https://example.com/courses/course-123',
         related_activities: true,
       });
       expect(mockProvider.compute).toHaveBeenCalledWith(params, statements);
       // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.set).toHaveBeenCalledWith(
-        'cache:test-metric:default:course:courseId=course-123:v1',
+        'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
         expect.objectContaining({
           metricId: 'test-metric',
           value: 85.5,
@@ -214,7 +221,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
     it('should build LRS filters with time range', async () => {
       const params: MetricParams = {
-        courseId: 'course-123',
+        courseId: 'https://example.com/courses/course-123',
         since: '2025-01-01T00:00:00Z',
         until: '2025-12-31T23:59:59Z',
       };
@@ -237,14 +244,16 @@ describe('REQ-FN-005: ComputationService', () => {
         expect.objectContaining({
           since: '2025-01-01T00:00:00Z',
           until: '2025-12-31T23:59:59Z',
-          activity: 'course-123',
+          activity: 'https://example.com/courses/course-123',
           related_activities: true,
         }),
       );
     });
 
     it('should include activity filter for courseId', async () => {
-      const params: MetricParams = { courseId: 'course-678' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-678',
+      };
       const statements: xAPIStatement[] = [];
       const computedResult: MetricResult = {
         metricId: 'test-metric',
@@ -262,7 +271,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
       expect(lrsClient.queryStatements).toHaveBeenCalledWith(
         expect.objectContaining({
-          activity: 'course-678',
+          activity: 'https://example.com/courses/course-678',
           related_activities: true,
         }),
       );
@@ -270,8 +279,8 @@ describe('REQ-FN-005: ComputationService', () => {
 
     it('should prefer topicId over courseId for activity filters', async () => {
       const params: MetricParams = {
-        courseId: 'course-678',
-        topicId: 'topic-555',
+        courseId: 'https://example.com/courses/course-678',
+        topicId: 'https://example.com/topics/topic-555',
       };
       const statements: xAPIStatement[] = [];
       const computedResult: MetricResult = {
@@ -290,7 +299,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
       expect(lrsClient.queryStatements).toHaveBeenCalledWith(
         expect.objectContaining({
-          activity: 'topic-555',
+          activity: 'https://example.com/topics/topic-555',
           related_activities: true,
         }),
       );
@@ -298,8 +307,8 @@ describe('REQ-FN-005: ComputationService', () => {
 
     it('should prefer elementId when provided', async () => {
       const params: MetricParams = {
-        courseId: 'course-678',
-        elementId: 'element-222',
+        courseId: 'https://example.com/courses/course-678',
+        elementId: 'https://example.com/elements/element-222',
       };
       const statements: xAPIStatement[] = [];
       const computedResult: MetricResult = {
@@ -318,7 +327,7 @@ describe('REQ-FN-005: ComputationService', () => {
 
       expect(lrsClient.queryStatements).toHaveBeenCalledWith(
         expect.objectContaining({
-          activity: 'element-222',
+          activity: 'https://example.com/elements/element-222',
           related_activities: false,
         }),
       );
@@ -327,7 +336,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
   describe('computeMetric - Error Handling', () => {
     it('should throw NotFoundException when provider not found', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
 
       cacheService.get.mockResolvedValue(null);
       moduleRef.get.mockReturnValue(null); // Provider not found
@@ -373,7 +384,9 @@ describe('REQ-FN-005: ComputationService', () => {
     });
 
     it('should handle LRS query errors', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const nonValidatingProvider = {
         ...mockProvider,
         validateParams: jest.fn(), // No validation error
@@ -394,7 +407,9 @@ describe('REQ-FN-005: ComputationService', () => {
     });
 
     it('should handle computation errors', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const statements: xAPIStatement[] = [];
       const failingProvider = {
         ...mockProvider,
@@ -419,7 +434,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
   describe('Cache Key Generation', () => {
     it('should generate cache key with courseId', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const nonValidatingProvider = {
         ...mockProvider,
         validateParams: jest.fn(), // No validation
@@ -439,12 +456,14 @@ describe('REQ-FN-005: ComputationService', () => {
 
       // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:default:course:courseId=course-123:v1',
+        'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
       );
     });
 
     it('should generate cache key with topicId', async () => {
-      const params: MetricParams = { topicId: 'topic-456' };
+      const params: MetricParams = {
+        topicId: 'https://example.com/topics/topic-456',
+      };
       const nonValidatingProvider = {
         ...mockProvider,
         validateParams: jest.fn(), // No validation
@@ -464,13 +483,13 @@ describe('REQ-FN-005: ComputationService', () => {
 
       // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:default:topic:topicId=topic-456:v1',
+        'cache:test-metric:default:topic:topicId=https%3A%2F%2Fexample.com%2Ftopics%2Ftopic-456:v1',
       );
     });
 
     it('should generate cache key with time range', async () => {
       const params: MetricParams = {
-        courseId: 'course-123',
+        courseId: 'https://example.com/courses/course-123',
         since: '2025-01-01T00:00:00Z',
         until: '2025-12-31T23:59:59Z',
       };
@@ -493,14 +512,16 @@ describe('REQ-FN-005: ComputationService', () => {
 
       // REQ-FN-017: Expected cache key format with instanceId and URL-encoded timestamps
       expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:default:course:courseId=course-123,since=2025-01-01T00%3A00%3A00Z,until=2025-12-31T23%3A59%3A59Z:v1',
+        'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123,since=2025-01-01T00%3A00%3A00Z,until=2025-12-31T23%3A59%3A59Z:v1',
       );
     });
   });
 
   describe('Telemetry hooks', () => {
     it('should record metric computation duration', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const statements: xAPIStatement[] = [];
       const computedResult: MetricResult = {
         metricId: 'test-metric',
@@ -529,7 +550,9 @@ describe('REQ-FN-005: ComputationService', () => {
 
   describe('Provider Validation', () => {
     it('should skip validation when provider does not implement validateParams', async () => {
-      const params: MetricParams = { courseId: 'course-123' };
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
       const providerWithoutValidation: IMetricComputation = {
         id: 'no-validation-metric',
         dashboardLevel: 'course',
