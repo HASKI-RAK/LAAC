@@ -144,15 +144,34 @@ describe('REQ-FN-005: ComputationService', () => {
         courseId: 'https://example.com/courses/course-123',
       };
       const cachedResult = {
-        metricId: 'test-metric',
-        value: 85.5,
-        timestamp: '2025-11-13T10:00:00Z',
-        computationTime: 10,
-        fromCache: false,
-        metadata: { cached: true },
+        response: {
+          metricId: 'test-metric',
+          value: 85.5,
+          timestamp: '2025-11-13T10:00:00Z',
+          computationTime: 10,
+          fromCache: false,
+          metadata: { cached: true },
+        },
+        statements: [
+          {
+            id: 'stmt-1',
+            actor: { objectType: 'Agent', name: 'Test User' },
+            verb: {
+              id: 'http://adlnet.gov/expapi/verbs/completed',
+              display: {},
+            },
+            object: {
+              id: 'https://example.com/courses/course-123',
+              objectType: 'Activity',
+            },
+            stored: '2025-11-13T10:00:00Z',
+          },
+        ],
+        cursor: '2025-11-13T10:00:00Z',
       };
 
       cacheService.get.mockResolvedValue(cachedResult);
+      lrsClient.queryStatements.mockResolvedValue([]);
 
       const result = await service.computeMetric('test-metric', params);
 
@@ -161,7 +180,7 @@ describe('REQ-FN-005: ComputationService', () => {
         'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
       );
       expect(result).toEqual({
-        ...cachedResult,
+        ...cachedResult.response,
         fromCache: true,
         computationTime: expect.any(Number),
       });
@@ -169,7 +188,87 @@ describe('REQ-FN-005: ComputationService', () => {
       expect(metricsRegistry.recordCacheHit).toHaveBeenCalledWith(
         'test-metric',
       );
-      expect(lrsClient.queryStatements).not.toHaveBeenCalled();
+      expect(lrsClient.queryStatements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          since: '2025-11-13T10:00:00Z',
+          activity: 'https://example.com/courses/course-123',
+          related_activities: true,
+        }),
+      );
+    });
+
+    it('should refresh cached result with incremental statements', async () => {
+      // REQ-FN-030: Incremental cache refresh
+      const params: MetricParams = {
+        courseId: 'https://example.com/courses/course-123',
+      };
+      const cachedEntry = {
+        response: {
+          metricId: 'test-metric',
+          value: 85.5,
+          timestamp: '2025-11-13T10:00:00Z',
+          computationTime: 10,
+          fromCache: false,
+          metadata: { cached: true },
+        },
+        statements: [
+          {
+            id: 'stmt-1',
+            actor: { objectType: 'Agent', name: 'Test User' },
+            verb: {
+              id: 'http://adlnet.gov/expapi/verbs/completed',
+              display: {},
+            },
+            object: {
+              id: 'https://example.com/courses/course-123',
+              objectType: 'Activity',
+            },
+            stored: '2025-11-13T10:00:00Z',
+          },
+        ],
+        cursor: '2025-11-13T10:00:00Z',
+      };
+
+      const incrementalStatements: xAPIStatement[] = [
+        {
+          id: 'stmt-2',
+          actor: { objectType: 'Agent', name: 'Test User' },
+          verb: { id: 'http://adlnet.gov/expapi/verbs/completed', display: {} },
+          object: {
+            id: 'https://example.com/courses/course-123',
+            objectType: 'Activity',
+          },
+          stored: '2025-11-13T11:00:00Z',
+        },
+      ];
+
+      const computedResult: MetricResult = {
+        metricId: 'test-metric',
+        value: 90,
+        computed: '2025-11-13T11:05:00Z',
+      };
+
+      cacheService.get.mockResolvedValue(cachedEntry);
+      moduleRef.get.mockReturnValue(mockProvider);
+      (mockProvider.compute as jest.Mock).mockResolvedValue(computedResult);
+      lrsClient.queryStatements.mockResolvedValue(incrementalStatements);
+      cacheService.set.mockResolvedValue(true);
+
+      const result = await service.computeMetric('test-metric', params);
+
+      expect(lrsClient.queryStatements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          since: '2025-11-13T10:00:00Z',
+          activity: 'https://example.com/courses/course-123',
+          related_activities: true,
+        }),
+      );
+      expect(mockProvider.compute).toHaveBeenCalledWith(params, [
+        ...cachedEntry.statements,
+        ...incrementalStatements,
+      ]);
+      expect(result.fromCache).toBe(false);
+      expect(result.value).toBe(90);
     });
   });
 
@@ -222,10 +321,13 @@ describe('REQ-FN-005: ComputationService', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
         expect.objectContaining({
-          metricId: 'test-metric',
-          value: 85.5,
-          fromCache: false,
-          instanceId: 'default', // REQ-FN-017: Instance metadata
+          response: expect.objectContaining({
+            metricId: 'test-metric',
+            value: 85.5,
+            fromCache: false,
+            instanceId: 'default', // REQ-FN-017: Instance metadata
+          }),
+          statements,
         }),
         undefined,
         'results',

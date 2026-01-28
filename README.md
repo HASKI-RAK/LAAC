@@ -422,11 +422,11 @@ curl -H "Authorization: Bearer $DEV_JWT" \
 
 Typical requests:
 
-| Purpose | HTTP call |
-| ------- | --------- |
-| List catalog | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics` |
-| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion` |
-| Compute results | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
+| Purpose               | HTTP call                                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| List catalog          | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics`                                                                                                                       |
+| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion`                                                                                                     |
+| Compute results       | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
 
 #### Supported query parameters for `/metrics/:id/results`
 
@@ -440,6 +440,20 @@ All parameters are optional at the transport level—individual metrics validate
 Responses include the computed value, metadata, cache status, and the timestamp of computation. The API returns **401** for missing/invalid tokens and **403** if the token lacks `analytics:read`.
 
 You can also test the secured endpoints via Swagger UI (`/api/docs`) by clicking “Authorize”, pasting your JWT, and running the `Metrics` operations directly in the browser.
+
+## Caching Strategy (REQ-FN-006, REQ-FN-030)
+
+- Cache-aside with Redis using keys in the form `cache:{metricId}:{scope}:{filters}:{version}`; keys are instance-aware for multi-tenant isolation.
+- Cache entries store `{ response, statements, cursor }`, where `response` wraps the metric payload (metricId, value, computed/timestamp, metadata, fromCache, instanceId, status/warning when degraded) to support incremental refresh and stale fallback.
+- Incremental refresh reuses cached `statements` and the `cursor` to fetch only new xAPI statements, reducing LRS load while keeping results current.
+- Invalidation is exposed via `/admin/cache/invalidate` (requires `admin:cache` scope) and supports single-key or pattern-based eviction.
+
+## Graceful Degradation (REQ-FN-017, REQ-NF-003)
+
+- A circuit breaker guards the LRS; when opened, the fallback handler is invoked instead of returning 503s.
+- Strategy 1: Serve stale cache data (when available) with `status=degraded`, recording the event in the metrics registry and surfacing `cachedAt` and `age` metadata.
+- Strategy 2: Return default/null data with `status` (`available`/`degraded`/`unavailable`), `warning`/`error`/`cause`, `cachedAt`, `age`, and `dataAvailable` flags while keeping HTTP 200 so clients can show graceful messaging.
+- Responses include `fromCache` to indicate whether data came from a stale fallback or fresh computation.
 
 ## API Versioning & Deprecation (REQ‑FN‑016)
 
