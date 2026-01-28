@@ -422,11 +422,11 @@ curl -H "Authorization: Bearer $DEV_JWT" \
 
 Typical requests:
 
-| Purpose | HTTP call |
-| ------- | --------- |
-| List catalog | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics` |
-| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion` |
-| Compute results | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
+| Purpose               | HTTP call                                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| List catalog          | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics`                                                                                                                       |
+| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion`                                                                                                     |
+| Compute results       | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
 
 #### Supported query parameters for `/metrics/:id/results`
 
