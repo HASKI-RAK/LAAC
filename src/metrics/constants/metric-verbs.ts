@@ -44,6 +44,7 @@ export const METRIC_VERB_MAP: Record<string, string[]> = {
   'topic-total-score': SCORE_VERBS,
   'topic-max-score': SCORE_VERBS,
   'course-total-score': SCORE_VERBS,
+  'courses-total-scores': SCORE_VERBS,
   'course-max-score': SCORE_VERBS,
   'element-best-attempt-score': SCORE_VERBS,
   'element-best-attempt-date': SCORE_VERBS,

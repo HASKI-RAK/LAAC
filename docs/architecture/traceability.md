@@ -166,7 +166,7 @@ Current CSV: [docs/resources/LAAC_Learning_Analytics_Requirements.v2.csv](docs/r
 
 | Order | CSV Name                   | Description                                                                    | Inputs                                   | Provider ID                | Implementation Status |
 | ----- | -------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------- | -------------------------- | --------------------- |
-| 1     | courses-total-scores       | Total scores earned by a student in each course                                | userId; since/until (optional)           | courses-total-scores       | ❌ Not Started        |
+| 1     | courses-total-scores       | Total scores earned by a student in each course                                | userId; since/until (optional)           | courses-total-scores       | ✅ Complete           |
 | 2     | courses-max-scores         | Max score of each course the student is enrolled in                            | userId                                   | courses-max-scores         | ❌ Not Started        |
 | 3     | courses-time-spent         | Total time spent by a student in each course                                   | userId; since/until (optional)           | courses-time-spent         | ❌ Not Started        |
 | 4     | courses-last-elements      | Last three learning elements completed by a student                            | userId; since/until (optional)           | courses-last-elements      | ❌ Not Started        |
