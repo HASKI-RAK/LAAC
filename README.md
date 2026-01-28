@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="http://haski-learning.de/" target="blank"><img src="https://haski-learning.de/wp-content/uploads/2023/03/cropped-cropped-Logo_HASKI_orange_2022_k101.png" width="120" alt="HASKI Logo" /></a>
+   <a href="http://haski-learning.de/" target="blank"><img src="https://haski-learning.de/wp-content/uploads/2023/03/cropped-cropped-Logo_HASKI_orange_2022_k101.png" width="120" alt="HASKI Logo" /></a>
 </p>
 
 # Learning Analytics Analyzing Center (LAAC)
@@ -7,861 +7,97 @@
 [![CI/CD Pipeline](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml)
 [![NestJS CI](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml)
 
-Provide processed learning analytics by compiling data from a Learning Record Store (LRS).
+LAAC serves learning analytics from your LRS via a compact NestJS API. This guide is trimmed for scientists and developers who just need to call it.
 
-## Description
-
-This is the Learning Analytics Analyzing Center (LAAC) project, which is part of the HASKI project. The LAAC is designed to take input from a Learning Record Store (LRS) and analyze the data to provide insights into learning activities, thus consolidating learning artifacts.
-
-The project is built using [NestJS](https://nestjs.com/), a progressive Node.js framework for building efficient and scalable server-side applications.
-
-## 🚀 Quick Start with Local LRS
-
-For realistic local development with production data, you can run a complete LRS stack locally:
+## Quick Start
 
 ```bash
-# 1. Start local LRS (Yetanalytics LRSQL + PostgreSQL + pgAdmin)
-docker compose -f docker-compose.lrs-local.yml up -d
-
-# 2. Restore production backup via pgAdmin (http://localhost:5050)
-# 3. Configure LAAC to use local LRS
-cp .env.local .env
-
-# 4. Install and start
+cp .env.example .env          # set LRS_* and JWT_SECRET
 yarn install
-yarn start:dev
+yarn start:dev                # API at http://localhost:3000
 ```
 
-**📖 Complete Guide**: [docs/LOCAL-LRS-SETUP.md](docs/LOCAL-LRS-SETUP.md)
+Need a local LRS? See [docs/LOCAL-LRS-SETUP.md](docs/LOCAL-LRS-SETUP.md). Swagger UI lives at http://localhost:3000/api/docs.
 
-**Access Points**:
+## Auth in One Minute
 
-- LAAC API: http://localhost:3000/api/v1/docs
-- Local LRS: http://localhost:8090/xapi
-- pgAdmin: http://localhost:5050
+All metric endpoints require `Authorization: Bearer <token>` with `analytics:read` scope.
 
----
-
-## Local development
+Local token:
 
 ```bash
-# install dependencies
-yarn install
-
-# run in watch mode
-yarn start:dev
-
-# run once (no watch)
-yarn start
-
-# production mode
-yarn start:prod
+yarn setup:secrets   # once
+yarn generate:jwt    # writes DEV_JWT into .env
 ```
 
-### Testing
+Use it:
 
 ```bash
-# unit tests
-yarn test
-
-# e2e tests
-yarn test:e2e
-
-# test coverage
-yarn test:cov
+curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics
 ```
 
-For detailed testing documentation, see:
+## Call the API
 
-- **[docs/TESTING.md](docs/TESTING.md)** - Test strategy and best practices
-- **[docs/CI-TESTING-WITH-LRS.md](docs/CI-TESTING-WITH-LRS.md)** - CI/CD testing with real LRS and Redis
-
-## Docker Compose Deployment
-
-> **REQ-FN-013**: This project provides Docker Compose configurations for both development and production environments with hot-reload support and Traefik integration.
-
-### Prerequisites
-
-1. **Install Docker and Docker Compose**:
-   - Docker: [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
-   - Docker Compose V2+ is included with Docker Desktop
-
-2. **Create environment configuration**:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Configure environment variables** in `.env`:
-   - For development: Use default values from `.env.example`
-   - For production: Set all required variables (see `.env.example` for details)
-
-### Development Environment
-
-The development environment provides hot-reload capabilities for rapid iteration with local Redis.
-
-#### Start Development Environment
+Base path: `/api/v1`. OpenAPI: http://localhost:3000/api-docs/openapi.json.
 
 ```bash
-# Start all services (app + Redis)
+# List catalog
+curl -H "Authorization: Bearer $DEV_JWT" \
+   http://localhost:3000/api/v1/metrics
+
+# Metric details
+curl -H "Authorization: Bearer $DEV_JWT" \
+   http://localhost:3000/api/v1/metrics/course-completion
+
+# Compute results
+curl -H "Authorization: Bearer $DEV_JWT" \
+   "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"
+```
+
+Common query params for `/metrics/:id/results`:
+
+- `courseId`, `topicId`, `elementId`
+- `userId`, `groupId`
+- `since`, `until` (ISO-8601)
+- `instanceId` (`hs-ke`, `hs-ke,hs-rv`, or `*`)
+
+Responses include value, metadata, cache status, and computation timestamp. 401/403 are returned for missing/invalid scopes.
+
+## Run with Docker Compose (short)
+
+```bash
+# dev: app + redis + hot reload
 docker compose -f docker-compose.dev.yml up
 
-# Or run in detached mode (background)
-docker compose -f docker-compose.dev.yml up -d
-
-# View logs
-docker compose -f docker-compose.dev.yml logs -f laac
-```
-
-#### Access the Application
-
-- **Application**: [http://localhost:3000](http://localhost:3000)
-- **Health Check**: [http://localhost:3000/health/liveness](http://localhost:3000/health/liveness)
-- **API Documentation**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
-- **Redis**: `localhost:6379` (accessible for debugging)
-
-#### Hot-Reload in Development
-
-The development compose file mounts your source code into the container:
-
-```yaml
-volumes:
-  - ./src:/app/src:ro
-  - ./test:/app/test:ro
-```
-
-When you edit files in `src/` or `test/`, NestJS automatically detects changes and restarts the application. No container rebuild needed!
-
-**Note**: If you modify `package.json` or install new dependencies, you must rebuild the container:
-
-```bash
-docker compose -f docker-compose.dev.yml up --build
-```
-
-#### Start Only Redis (Optional)
-
-If you prefer running the app with `yarn start:dev` locally but need Redis:
-
-```bash
-# Start only Redis service
-docker compose -f docker-compose.dev.yml up -d redis
-
-# Verify Redis is running
-docker compose -f docker-compose.dev.yml ps
-
-# Run app locally
-yarn start:dev
-```
-
-#### Stop Development Environment
-
-```bash
-# Stop and remove containers
-docker compose -f docker-compose.dev.yml down
-
-# Stop and remove containers + volumes (clears Redis data)
-docker compose -f docker-compose.dev.yml down -v
-```
-
-### Production Environment
-
-The production environment uses pre-built Docker images with Traefik reverse proxy integration for HTTPS and load balancing.
-
-#### Prerequisites for Production
-
-1. **Traefik Reverse Proxy**: Must be running with Let's Encrypt configured
-2. **External Network**: Create the Traefik network
-
-   ```bash
-   docker network create traefik_web
-   ```
-
-3. **Docker Image**: Build and push to registry (handled by CI/CD):
-
-   ```bash
-   # Manual build and push (if not using CI/CD)
-   docker build -t ghcr.io/haski-rak/laac:latest .
-   docker push ghcr.io/haski-rak/laac:latest
-   ```
-
-4. **Environment Variables**: Configure in `.env`:
-
-   ```bash
-   NODE_ENV=production
-   SUBDOMAIN=laac
-   DOMAIN_NAME=example.com
-   DOCKER_REGISTRY_URL=ghcr.io/haski-rak/laac
-   IMAGE_TAG=latest
-   GENERIC_TIMEZONE=Europe/Berlin
-
-   # Set secure secrets (NEVER commit these!)
-   JWT_SECRET=<generated-secure-secret>
-   LRS_USER=<your-lrs-api-key>
-   REDIS_PASSWORD=<optional-redis-password>
-   METRICS_DEBUG=false # Set true to emit telemetry logs
-   ```
-
-#### Start Production Environment
-
-```bash
-# Start all services in detached mode
+# prod (Traefik-ready)
 docker compose up -d
-
-# View logs
-docker compose logs -f laac
-
-# Check service health
-docker compose ps
 ```
 
-#### Access the Application (Production)
+Set required env vars in `.env` (see `.env.example`). For secrets in production, use Docker/Kubernetes secrets instead of files. Detailed ops notes stay in [docs/](docs/).
 
-- **Application**: `https://laac.example.com` (via Traefik)
-- **Health Check**: `https://laac.example.com/health/liveness`
-- **Telemetry Logs**: enable via `METRICS_DEBUG=true` to stream metrics events through application logs
+## Configuration Essentials
 
-**Note**: Replace `laac.example.com` with your configured `${SUBDOMAIN}.${DOMAIN_NAME}`.
+- `JWT_SECRET` (32+ chars), `LRS_DOMAIN`, `LRS_USER` are required.
+- Optional: `REDIS_HOST/PORT/PASSWORD`, `PORT`, `NODE_ENV`, `SWAGGER_ENABLED`.
+- Configuration validation fails fast on startup.
 
-#### Traefik Integration
+More: [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md).
 
-The production compose file includes Traefik labels for automatic service discovery and routing:
-
-```yaml
-labels:
-  - 'traefik.enable=true'
-  - 'traefik.http.routers.laac.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)'
-  - 'traefik.http.routers.laac.entrypoints=websecure'
-  - 'traefik.http.routers.laac.tls=true'
-  - 'traefik.http.routers.laac.tls.certresolver=le'
-  - 'traefik.http.services.laac.loadbalancer.server.port=3000'
-```
-
-These labels configure:
-
-- ✅ HTTPS with automatic Let's Encrypt certificates
-- ✅ HTTP to HTTPS redirect
-- ✅ Load balancing for multiple instances
-- ✅ Service health monitoring
-
-#### Portainer Deployment
-
-To deploy in Portainer:
-
-1. **Navigate to Stacks** → **Add Stack**
-2. **Upload** `docker-compose.yml` or paste its contents
-3. **Configure Environment Variables** in Portainer's environment editor:
-   - Set all required variables from `.env.example`
-   - Use Portainer secrets for sensitive values
-4. **Deploy Stack**
-
-Portainer will automatically:
-
-- Pull the Docker image from the registry
-- Create required networks and volumes
-- Register the service with Traefik
-- Monitor health checks and restart on failure
-
-#### Stop Production Environment
+## Testing
 
 ```bash
-# Stop services (keeps volumes)
-docker compose down
-
-# Stop and remove all data (including Redis)
-docker compose down -v
+yarn test        # unit
+yarn test:e2e    # e2e
+yarn test:cov    # coverage
 ```
 
-### Docker Compose Files
+## Health & Status
 
-| File                     | Purpose                 | Use Case                                     |
-| ------------------------ | ----------------------- | -------------------------------------------- |
-| `docker-compose.dev.yml` | Development environment | Local development with hot-reload            |
-| `docker-compose.yml`     | Production environment  | Portainer/production deployment with Traefik |
+- Liveness: `GET /health/liveness`
+- Readiness (includes Redis): `GET /health/readiness`
 
-### Environment Variables Reference
+## Need Details?
 
-See `.env.example` and the [Configuration and Secrets Management](#configuration-and-secrets-management) section for a complete list of environment variables and security guidance. For Docker/Traefik-specific deployment settings:
-
-#### Docker & Traefik (Production Only)
-
-- `DOCKER_REGISTRY_URL`: Container registry URL
-- `IMAGE_TAG`: Docker image tag (e.g., latest, v1.0.0)
-- `SUBDOMAIN`: Application subdomain (e.g., laac)
-- `DOMAIN_NAME`: Base domain (e.g., example.com)
-- `GENERIC_TIMEZONE`: Container timezone (e.g., Europe/Berlin)
-
-### Troubleshooting
-
-#### Port Already in Use
-
-```bash
-# Check what's using port 3000
-lsof -i :3000  # macOS/Linux
-netstat -ano | findstr :3000  # Windows
-
-# Change port in .env
-PORT=3001
-```
-
-#### Hot-Reload Not Working (Dev)
-
-1. Verify volumes are mounted:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml exec laac ls -la /app/src
-   ```
-
-2. Check file changes are detected:
-
-   ```bash
-   docker compose -f docker-compose.dev.yml logs -f laac
-   ```
-
-3. Rebuild if you changed dependencies:
-   ```bash
-   docker compose -f docker-compose.dev.yml up --build
-   ```
-
-#### Traefik Not Routing (Production)
-
-1. Verify Traefik network exists:
-
-   ```bash
-   docker network ls | grep traefik_web
-   ```
-
-2. Check Traefik can see the service:
-
-   ```bash
-   docker compose logs -f laac
-   ```
-
-3. Verify environment variables are set:
-   ```bash
-   docker compose config | grep -A 5 labels
-   ```
-
-#### Redis Connection Failed
-
-1. Check Redis is healthy:
-
-   ```bash
-   docker compose ps redis
-   ```
-
-2. Test Redis connection:
-
-   ```bash
-   docker compose exec redis redis-cli ping
-   # Should respond: PONG
-   ```
-
-3. Verify `REDIS_HOST` in `.env`:
-   - Development with Docker: `REDIS_HOST=redis`
-   - Development without Docker: `REDIS_HOST=localhost`
-
-## API Documentation
-
-> **REQ‑FN‑008/009**: This project provides interactive API documentation via Swagger UI and a machine‑readable OpenAPI specification.
-
-### Accessing API Documentation
-
-Once the application is running (via `yarn start` or `yarn start:dev`), you can access:
-
-- **Swagger UI**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
-  - Interactive API documentation with "Try it out" functionality
-  - Pre-configured with JWT bearer authentication
-  - Explore all endpoints, request/response schemas, and error codes
-
-- **OpenAPI Spec (JSON)**: [http://localhost:3000/api-docs/openapi.json](http://localhost:3000/api-docs/openapi.json)
-  - Machine-readable OpenAPI 3.0 specification
-  - Use for API client generation, testing tools, or CI/CD validation
-
-#### Disabling Swagger in Production
-
-To disable Swagger UI and OpenAPI spec endpoints in production:
-
-1. Set the environment variable:
-
-   ```bash
-   SWAGGER_ENABLED=false
-   ```
-
-2. Or in your `.env` file:
-   ```
-   SWAGGER_ENABLED=false
-   ```
-
-The Swagger UI and spec endpoints will return 404 when disabled.
-
-## Accessing Metrics via JWT Bearer (REST)
-
-All metrics endpoints live under the global prefix (`/api/v1/...`) and are protected by the `JwtAuthGuard` + `ScopesGuard`. Every request must include a JWT whose `scopes` claim contains `analytics:read`.
-
-### 1. Obtain a JWT
-
-- **Production**: Request a token from your identity provider (e.g., Keycloak or another OpenID Connect server) that LAAC trusts. Make sure the issued token includes the `analytics:read` scope/role and is signed with the shared `JWT_SECRET`.
-- **Local development**: Generate a token with the supplied helper script:
-
-  ```bash
-  yarn setup:secrets       # only needed once to create JWT_SECRET
-  yarn generate:jwt        # creates a read-only token in .env as DEV_JWT
-  source .env              # optional: exports DEV_JWT for your shell session
-  ```
-
-  The script prints the token to stdout and writes `DEV_JWT="<token>"` into `.env` so you can reference it in examples.
-
-### 2. Call the REST endpoints with the Bearer token
-
-Set the `Authorization` header on every request:
-
-```bash
-curl -H "Authorization: Bearer $DEV_JWT" \
-     http://localhost:3000/api/v1/metrics
-```
-
-Typical requests:
-
-| Purpose               | HTTP call                                                                                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| List catalog          | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics`                                                                                                                       |
-| Get metric definition | `curl -H "Authorization: Bearer $DEV_JWT" http://localhost:3000/api/v1/metrics/course-completion`                                                                                                     |
-| Compute results       | `curl -H "Authorization: Bearer $DEV_JWT" "http://localhost:3000/api/v1/metrics/course-completion/results?courseId=COURSE_123&userId=USER_456&since=2025-01-01T00:00:00Z&until=2025-02-01T00:00:00Z"` |
-
-#### Supported query parameters for `/metrics/:id/results`
-
-All parameters are optional at the transport level—individual metrics validate the subset they require:
-
-- `courseId`, `topicId`, `elementId`: scope the computation
-- `userId`, `groupId`: learner or cohort filters
-- `since`, `until`: ISO‑8601 timestamps for time ranges
-- `instanceId`: single ID (`hs-ke`), comma-separated IDs (`hs-ke,hs-rv`), or `*` for all instances
-
-Responses include the computed value, metadata, cache status, and the timestamp of computation. The API returns **401** for missing/invalid tokens and **403** if the token lacks `analytics:read`.
-
-You can also test the secured endpoints via Swagger UI (`/api/docs`) by clicking “Authorize”, pasting your JWT, and running the `Metrics` operations directly in the browser.
-
-## Caching Strategy (REQ-FN-006, REQ-FN-030)
-
-- Cache-aside with Redis using keys in the form `cache:{metricId}:{scope}:{filters}:{version}`; keys are instance-aware for multi-tenant isolation.
-- Cache entries store `{ response, statements, cursor }`, where `response` wraps the metric payload (metricId, value, computed/timestamp, metadata, fromCache, instanceId, status/warning when degraded) to support incremental refresh and stale fallback.
-- Incremental refresh reuses cached `statements` and the `cursor` to fetch only new xAPI statements, reducing LRS load while keeping results current.
-- Invalidation is exposed via `/admin/cache/invalidate` (requires `admin:cache` scope) and supports single-key or pattern-based eviction.
-
-## Graceful Degradation (REQ-FN-017, REQ-NF-003)
-
-- A circuit breaker guards the LRS; when opened, the fallback handler is invoked instead of returning 503s.
-- Strategy 1: Serve stale cache data (when available) with `status=degraded`, recording the event in the metrics registry and surfacing `cachedAt` and `age` metadata.
-- Strategy 2: Return default/null data with `status` (`available`/`degraded`/`unavailable`), `warning`/`error`/`cause`, `cachedAt`, `age`, and `dataAvailable` flags while keeping HTTP 200 so clients can show graceful messaging.
-- Responses include `fromCache` to indicate whether data came from a stale fallback or fresh computation.
-
-## API Versioning & Deprecation (REQ‑FN‑016)
-
-The public API is versioned using **URI path versioning**:
-
-| Version | Base Path     |
-| ------- | ------------- |
-| v1      | `/api/v1/...` |
-| v2      | `/api/v2/...` |
-
-_All responses include the header_ `X-API-Version: <major>` _so clients can detect the version they are talking to._
-
-When a major version is deprecated the service returns additional HTTP headers:
-
-- `Deprecation: <date>`: When the version will be deprecated
-- `Sunset: <date>`: When the version will be removed
-- `Link: </api/v2/...>; rel="next"`: URL of the next version's endpoint
-
-Clients should update to the latest version before the deprecation date to avoid service disruption.
-
-## Configuration and Secrets Management
-
-> **REQ-FN-014**: This project follows secure configuration management practices to prevent credential leaks and support deployment across environments.
-
-### Local Development
-
-1. **Copy the environment template**:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Generate secure secrets** (recommended):
-
-   ```bash
-   yarn setup:secrets
-   ```
-
-   This will generate a secure `JWT_SECRET` in `.env`.
-
-   Or, generate manually:
-
-   ```bash
-   # Generate a secure JWT secret (minimum 32 characters required)
-   openssl rand -base64 32
-   ```
-
-3. **Configure your local `.env` file** with actual values:
-   - Set `JWT_SECRET` to a secure random string (minimum 32 characters)
-   - Configure `LRS_DOMAIN` and `LRS_USER` from your LRS provider
-   - Adjust `REDIS_*` settings if using a non-default Redis configuration
-   - Set `NODE_ENV=development` for local development
-
-4. **Never commit `.env` files** - they are automatically excluded by `.gitignore`
-
-### Production Deployment
-
-For production deployments, **never use `.env` files**. Instead:
-
-#### Option 1: Docker Secrets (Recommended for Docker Swarm/Compose)
-
-1. Create Docker secrets for sensitive values:
-
-   ```bash
-   echo "your-jwt-secret" | docker secret create laac_jwt_secret -
-   echo "your-lrs-api-key" | docker secret create laac_LRS_SECRET -
-   ```
-
-2. Reference secrets in your `docker-compose.yml`:
-   ```yaml
-   services:
-     laac:
-       environment:
-         JWT_SECRET_FILE: /run/secrets/laac_jwt_secret
-         LRS_USER_FILE: /run/secrets/laac_LRS_SECRET
-       secrets:
-         - laac_jwt_secret
-         - laac_LRS_SECRET
-   ```
-
-#### Option 2: Environment Variables (Portainer/Kubernetes)
-
-Use Portainer's environment variable editor or Kubernetes secrets to inject configuration at runtime:
-
-- **Portainer**: Navigate to Container → Env variables and add required variables
-- **Kubernetes**: Create ConfigMaps for non-sensitive config and Secrets for credentials
-
-#### Option 3: Secret Management Services
-
-For enterprise deployments, integrate with secret management services:
-
-- HashiCorp Vault
-- AWS Secrets Manager
-- Azure Key Vault
-- Google Secret Manager
-
-### Required Configuration Variables
-
-See `.env.example` for a complete list of required environment variables. Key variables include:
-
-| Variable         | Required | Description                   | Security Level                      |
-| ---------------- | -------- | ----------------------------- | ----------------------------------- |
-| `JWT_SECRET`     | Yes      | JWT signing secret            | **CRITICAL** - Never commit         |
-| `LRS_USER`       | Yes      | LRS authentication key        | **CRITICAL** - Never commit         |
-| `LRS_DOMAIN`     | Yes      | LRS xAPI endpoint URL         | Sensitive                           |
-| `REDIS_PASSWORD` | No       | Redis authentication password | **CRITICAL** - Never commit if used |
-| `NODE_ENV`       | No       | Application environment       | Public                              |
-| `PORT`           | No       | Application port              | Public                              |
-
-**Note:** For LRS configuration, see [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md) which explains:
-
-- Single-instance vs multi-instance LRS setup
-- GitHub secret naming (`LRS_DOMAIN`, `LRS_USER`) vs environment variables (`LRS_DOMAIN`, `LRS_USER`)
-- Configuration priority and fallback logic
-
-### Security Checklist
-
-- ✅ All secrets use environment variables or Docker secrets
-- ✅ `.env` files are in `.gitignore`
-- ✅ `.env.example` contains only placeholder values
-- ✅ `JWT_SECRET` is at least 32 characters in production
-- ✅ CI/CD pipeline uses repository secrets (GitHub Actions)
-- ✅ Automated secret scanning runs on every PR
-
-### Validation
-
-The application validates all required configuration at startup using Joi schema validation. If required variables are missing or invalid, the application will fail to start with clear error messages.
-
-For more details, see:
-
-- [docs/LRS-CONFIGURATION.md](docs/LRS-CONFIGURATION.md) - Complete LRS configuration guide
-- `.env.example` - Complete environment variable documentation
-- [docs/CI-TESTING-WITH-LRS.md](docs/CI-TESTING-WITH-LRS.md) - CI/CD testing infrastructure
-- `docs/srs/REQ-FN-014.md` - Requirements specification
-- `docs/architecture/ARCHITECTURE.md` Section 5.3 - Deployment configuration
-- `src/core/config/` - Configuration validation implementation
-
-## CI/CD Pipeline and Deployment
-
-> **REQ-FN-015**: The project uses GitHub Actions for automated testing, building, and deployment.
-
-### Pipeline Overview
-
-The CI/CD pipeline (`.github/workflows/ci-cd.yml`) automatically runs on every push to the `main` branch:
-
-1. **Test Stage**: Runs linting, unit tests, E2E tests, and generates coverage reports
-2. **Build Stage**: Builds Docker image with multi-architecture support (amd64, arm64)
-3. **Push Stage**: Pushes image to GitHub Container Registry (GHCR) with proper tags
-4. **Deploy Stage**: Triggers Portainer webhook to redeploy the application stack
-
-### Pipeline Status
-
-Check the current pipeline status:
-
-- **CI/CD Pipeline**: [![CI/CD Status](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/ci-cd.yml)
-- **Pull Request Tests**: [![NestJS CI](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml/badge.svg)](https://github.com/HASKI-RAK/LAAC/actions/workflows/nest_js.yml)
-
-### Repository Secrets Configuration
-
-To enable the CI/CD pipeline, configure the following repository secrets in **Settings > Secrets and variables > Actions**:
-
-#### Required Secrets
-
-| Secret Name             | Description                              | Example                                           | Required |
-| ----------------------- | ---------------------------------------- | ------------------------------------------------- | -------- |
-| `PORTAINER_WEBHOOK_URL` | Portainer webhook URL for stack redeploy | `https://portainer.example.com/api/webhooks/<id>` | **Yes**  |
-
-#### Optional Secrets (for custom registries)
-
-The pipeline uses GitHub Container Registry (GHCR) by default with `GITHUB_TOKEN` (automatically provided). Custom registry credentials are not currently supported, but the workflow can be extended if needed.
-
-| Secret Name           | Description            | Example                | Required                |
-| --------------------- | ---------------------- | ---------------------- | ----------------------- |
-| `DOCKER_REGISTRY_URL` | Container registry URL | `ghcr.io`, `docker.io` | No (default: `ghcr.io`) |
-
-### Setting Up Portainer Webhook
-
-1. **Create Webhook in Portainer**:
-   - Navigate to your Portainer stack (Stacks > LAAC)
-   - Enable webhook in stack settings
-   - Copy the webhook URL
-
-2. **Configure GitHub Secret**:
-
-   ```bash
-   # In GitHub repository:
-   # Settings > Secrets and variables > Actions > New repository secret
-   # Name: PORTAINER_WEBHOOK_URL
-   # Value: https://portainer.example.com/api/webhooks/<webhook-id>
-   ```
-
-3. **Test Webhook** (optional):
-   ```bash
-   curl -X POST "https://portainer.example.com/api/webhooks/<webhook-id>" \
-     -H "Content-Type: application/json" \
-     -d '{"test": true}'
-   ```
-
-### Docker Image Tags
-
-The pipeline creates the following Docker image tags:
-
-- **`latest`**: Always points to the most recent build from `main` branch
-- **`<short-sha>`**: Short commit SHA (7 characters) for rollback capability
-- **`<long-sha>`**: Full commit SHA for complete traceability
-
-Example:
-
-```bash
-ghcr.io/haski-rak/laac:latest
-ghcr.io/haski-rak/laac:a1b2c3d
-ghcr.io/haski-rak/laac:a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
-```
-
-### Manual Deployment Trigger
-
-You can manually trigger the CI/CD pipeline from the GitHub Actions UI:
-
-1. Navigate to **Actions** tab
-2. Select **CI/CD Pipeline** workflow
-3. Click **Run workflow** button
-4. Select `main` branch and click **Run workflow**
-
-### Deployment Verification
-
-After a successful deployment:
-
-1. **Check GitHub Actions**: Verify all steps completed successfully (green checkmarks)
-2. **Check Portainer**: Verify stack update event in activity logs
-3. **Check Application Health**:
-   ```bash
-   curl https://your-domain.com/health/readiness
-   # Should return HTTP 200 with status "ok"
-   ```
-
-### Troubleshooting
-
-#### Pipeline Fails at Test Stage
-
-- Check test logs in GitHub Actions for specific failure
-- Run tests locally: `yarn test` and `yarn test:e2e`
-- Ensure all dependencies are properly installed
-
-#### Pipeline Fails at Build Stage
-
-- Check Dockerfile syntax and build context
-- Verify base image availability
-- Check for disk space issues in runner
-
-#### Pipeline Fails at Push Stage
-
-- Verify `GITHUB_TOKEN` permissions (packages: write)
-- Check GitHub Container Registry status
-- Ensure repository allows package publishing
-
-#### Webhook Invocation Fails
-
-- Verify `PORTAINER_WEBHOOK_URL` secret is set correctly
-- Check Portainer webhook is enabled and accessible
-- Test webhook manually with `curl`
-- Note: Webhook failure does not block image push (reliability consideration from REQ-FN-015)
-
-### Rollback Procedure
-
-If a deployment causes issues, you can rollback to a previous version:
-
-1. **Identify previous working version** (check GitHub Actions history for SHA)
-2. **Update Portainer stack** to use the specific SHA tag:
-   ```yaml
-   services:
-     laac:
-       image: ghcr.io/haski-rak/laac:<previous-sha>
-   ```
-3. **Redeploy stack** in Portainer UI or trigger webhook manually
-
-For more details, see:
-
-- `.github/workflows/ci-cd.yml` - Full pipeline implementation
-- `docs/srs/REQ-FN-015.md` - CI/CD requirements specification
-- `docs/architecture/ARCHITECTURE.md` Section 9 - Deployment architecture
-
-## Health and Readiness Endpoints
-
-> **REQ-NF-002**: The application provides health check endpoints for container orchestration and monitoring.
-
-### Quick Checks
-
-Run simple curl checks against the health endpoints:
-
-```bash
-# Check application health
-curl http://localhost:3000/health/liveness
-
-# Check application + dependencies (Redis)
-curl http://localhost:3000/health/readiness
-```
-
-These checks are commonly used by Docker Compose, Portainer, and Traefik for monitoring and automated restarts.
-
-### Liveness Probe
-
-**Endpoint**: `GET /health/liveness`
-
-Returns 200 OK if the application is running. This endpoint checks only the application's internal state and does not verify external dependencies.
-
-**Response**:
-
-```json
-{
-  "status": "ok",
-  "info": {},
-  "error": {},
-  "details": {},
-  "timestamp": "2025-10-21T12:14:07.537Z",
-  "version": "0.0.1"
-}
-```
-
-### Readiness Probe
-
-**Endpoint**: `GET /health/readiness`
-
-Returns 200 OK if the application and Redis are ready to accept traffic. Returns 503 Service Unavailable if Redis is not reachable.
-
-**Response (Healthy)**:
-
-```json
-{
-  "status": "ok",
-  "info": {
-    "redis": { "status": "up" }
-  },
-  "error": {},
-  "details": {
-    "redis": { "status": "up" }
-  },
-  "timestamp": "2025-10-21T12:14:07.537Z",
-  "version": "0.0.1"
-}
-```
-
-**Response (Unhealthy - 503)**:
-
-```json
-{
-  "status": "error",
-  "info": {},
-  "error": {
-    "redis": { "status": "down", "message": "Connection refused" }
-  },
-  "details": {
-    "redis": { "status": "down", "message": "Connection refused" }
-  }
-}
-```
-
-### Usage in Container Orchestration
-
-**Docker Compose**:
-
-```yaml
-services:
-  laac:
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'wget',
-          '--spider',
-          '-q',
-          'http://localhost:3000/health/readiness',
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-```
-
-**Kubernetes**:
-
-```yaml
-livenessProbe:
-  httpGet:
-    path: /health/liveness
-    port: 3000
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /health/readiness
-    port: 3000
-  initialDelaySeconds: 10
-  periodSeconds: 5
-```
-
-### Implementation Details
-
-- **Framework**: Built with `@nestjs/terminus` for standardized health checks
-- **Dependencies Checked**: Redis cache, LRS (Learning Record Store)
-- **Authentication**: Both endpoints are public (no authentication required)
-- **Timeout Handling**:
-  - Redis: 3 seconds timeout
-  - LRS: 5 seconds timeout (capped from configuration)
-- **Error Handling**: Graceful degradation with detailed error messages
-
-For more details, see:
-
-- `docs/srs/REQ-NF-002.md` - Requirements specification
-- `docs/architecture/ARCHITECTURE.md` Section 10.3 - Health checks architecture
-- `src/core/health/` - Health check implementation
+- Metrics spec: [docs/Metrics-Specification.md](docs/Metrics-Specification.md)
+- Architecture: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
+- CI/CD: [docs/CI-TESTING-WITH-LRS.md](docs/CI-TESTING-WITH-LRS.md)
