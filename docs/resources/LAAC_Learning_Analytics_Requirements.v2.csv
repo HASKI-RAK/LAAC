@@ -1,0 +1,13 @@
+Name,Description,Input,Output,Source
+courses-total-scores,Total scores earned by a student in each course,"userId, since (optional), until (optional)","[{courseId, totalScore}]",LAAC
+courses-max-scores,Max score of each course the student is enrolled in,userId,"[{courseId, maxScore}]",LAAC
+courses-time-spent,Total time spent by a student in each course,"userId, since (optional), until (optional)","[{courseId, timeSpent}]",LAAC
+courses-last-elements,Last three learning elements completed by a student,"userId, since (optional), until (optional)","[{elementId, completedAt}]",LAAC
+topics-total-scores,Total scores earned by a student in each topic,"userId, courseId, since (optional), until (optional)","[{topicId, totalScore}]",LAAC
+topics-max-scores,Max score of each topic within the selected course,"userId, courseId","[{topicId, maxScore}]",LAAC
+topics-time-spent,Total time spent by a student in each topic,"userId, courseId, since (optional), until (optional)","[{topicId, timeSpent}]",LAAC
+topics-last-elements,Last three learning elements completed by a student within the selected course,"userId, courseId, since (optional), until (optional)","[{elementId, completedAt}]",LAAC
+elements-completion-status,Completion status of the best attempt by a student on each learning element in topic,"userId, topicId","[{elementId, score, completionStatus, completedAt}]",LAAC
+elements-max-scores,Max score of each learning element within the selected topic,"userId, topicId","[{elementId, maxScore}]",LAAC
+elements-time-spent,Total time spent by a student on each learning element,"userId, topicId, since (optional), until (optional)","[{elementId, timeSpent}]",LAAC
+elements-last-elements,Last three learning elements completed by a student within the selected topic,"userId, topicId, since (optional), until (optional)","[{elementId, completedAt}]",LAAC

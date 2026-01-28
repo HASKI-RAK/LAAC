@@ -6,7 +6,7 @@ NestJS-based intermediary between Learning Record Store (LRS) and Adaptive Learn
 
 - Follow **SOLID/CUPID** (REQ-FN-019)
 - **Traceability**: Reference REQ-\* IDs in code comments, tests, commits
-- **Stateless functions** for metric computations (REQ-NF-004)
+- **Stateless functions** for metric computations (REQ-FN-004)
 - **Dependency injection** for all services
 - Only modify code related to your issue
 
@@ -77,7 +77,7 @@ export interface IMetricComputation {
 
 ## API Design
 
-- **Versioned REST**: `/api/v1/*`
+- **Versioned REST**: `/api/vX/*`
 - **OpenAPI decorators** (`@nestjs/swagger`) on all endpoints (REQ-FN-008, 009)
 - **DTO validation** with `class-validator` (REQ-FN-024)
 - **Auth guards**: `JwtAuthGuard`, `ScopesGuard` (REQ-FN-023)
@@ -86,10 +86,10 @@ export interface IMetricComputation {
 ### Key Endpoints
 
 ```
-GET /api/v1/metrics                   # Catalog (all metrics metadata)
-GET /api/v1/metrics/:id               # Metric details with examples
-GET /api/v1/metrics/:id/results       # Compute/retrieve results
-GET /api/v1/instances                 # LRS instance metadata (REQ-FN-017)
+GET /api/vX/metrics                   # Catalog (all metrics metadata)
+GET /api/vX/metrics/:id               # Metric details with examples
+GET /api/vX/metrics/:id/results       # Compute/retrieve results
+GET /api/vX/instances                 # LRS instance metadata (REQ-FN-017)
 POST /admin/cache/invalidate          # Admin only (admin:cache scope)
 GET /health/liveness                  # Liveness probe (public)
 GET /health/readiness                 # Readiness probe (public)
@@ -109,6 +109,7 @@ GET /health/readiness                 # Readiness probe (public)
 - **Invalidation**: Single key or pattern-based via admin API (REQ-FN-007)
 - **Service**: `CacheService` implements `ICacheService` interface
 - **Admin**: `CacheController` provides `/admin/cache/invalidate` endpoint
+- **Entry shape** (REQ-FN-030): store `{ response, statements, cursor }` where `response` wraps the metric payload (metricId, value, timestamp/computed, fromCache, metadata, instanceId, status/warning when degraded) to enable incremental refresh and stale fallbacks.
 
 ## Resilience & Fault Tolerance (REQ-FN-017, REQ-NF-003)
 
@@ -117,8 +118,8 @@ GET /health/readiness                 # Readiness probe (public)
   - Configurable threshold, timeout, and recovery attempts
   - State transitions tracked by `MetricsRegistryService`
 - **Graceful Degradation**: `FallbackHandler` service
-  - Strategy 1: Serve stale cache data when LRS unavailable
-  - Strategy 2: Return default/null values with degraded indicator
+  - Strategy 1: Serve stale cache data when LRS unavailable (records `MetricsRegistryService.recordGracefulDegradation`)
+  - Strategy 2: Return default/null values with degraded indicator; responses stay HTTP 200 but must include `status` (`available/degraded/unavailable`), `warning/error/cause`, `cachedAt`, `age`, and `dataAvailable` flags for clients.
 - **Health Checks**: Liveness (app running) vs. Readiness (dependencies ready)
 
 ## Security

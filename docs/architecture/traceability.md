@@ -32,38 +32,39 @@ The traceability matrix includes implementation status for each requirement:
 
 ## Functional Requirements Traceability
 
-| Requirement ID | Title                                               | Implementation Status   | Architecture Mapping                                 | Components                                                       | ADR/Section               |
-| -------------- | --------------------------------------------------- | ----------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- | ------------------------- |
-| **REQ-FN-001** | Client-Facing Intermediary API                      | 🟡 In Progress          | MetricsModule, MetricsController, API Gateway Layer  | `MetricsController`, `AuthGuard`, `ValidationPipe`               | ADR-004, Section 4.2      |
-| **REQ-FN-002** | xAPI LRS Integration                                | ❌ Not Started          | DataAccessModule, LRSClient                          | `LRSClient`, HTTP client with xAPI query support                 | Section 4.2, 8.2          |
-| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | 🟡 In Progress          | MetricsModule, MetricsRegistry                       | `MetricsRegistry`, `GET /metrics` endpoint                       | Section 4.2, 4.3          |
-| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ✅ Complete             | ComputationModule, MetricProviders                   | `IMetricComputation`, 16 CSV-compliant providers (CO/TO/EO-001+) | ADR-002, Section 4.2      |
-| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | ❌ Not Started          | MetricsModule, MetricsService                        | `MetricsService.getResults()`, `GET /metrics/:id/results`        | Section 4.3               |
-| **REQ-FN-006** | Analytics Results Caching                           | ❌ Not Started          | DataAccessModule, CacheService                       | `CacheService` (Redis), cache-aside pattern                      | ADR-003, Section 8.1      |
-| **REQ-FN-007** | Cache Invalidation and Refresh                      | ❌ Not Started          | AdminModule, CacheController                         | `CacheController`, `POST /admin/cache/invalidate`                | Section 4.2               |
-| **REQ-FN-030** | Incremental Metrics Cache Refresh                   | ❌ Not Started          | MetricsModule, DataAccessModule                      | `ComputationService`, `CacheService`, `LRSClient`                | ADR-003, Section 8.1      |
-| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | ❌ Not Started          | NestJS Swagger integration                           | `@nestjs/swagger` decorators, auto-generated spec                | ADR-004, Section 10.1     |
-| **REQ-FN-009** | Interactive API Documentation UI                    | ❌ Not Started          | Swagger UI integration                               | Swagger UI served at `/api/docs`                                 | ADR-004                   |
-| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ❌ Not Started          | ComputationModule, IMetricComputation interface      | `IMetricComputation`, plugin-based registration                  | ADR-002, Section 11.1     |
-| **REQ-FN-011** | Metric Contribution Guide and Templates             | 🔵 Deferred             | Documentation + code templates                       | Template files, contribution guide (future)                      | Section 11.2              |
-| **REQ-FN-012** | Container Image Build and Registry                  | ❌ Not Started          | Dockerfile, CI/CD pipeline                           | GitHub Actions workflow, Docker build                            | Section 5.2               |
-| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | ✅ Complete             | Deployment manifests                                 | `docker-compose.dev.yml`, `docker-compose.prod.yml`              | Section 5.1, 5.4          |
-| **REQ-FN-014** | Secrets and Configuration Management                | ❌ Not Started          | CoreModule, ConfigService                            | `ConfigService`, environment variables, Docker secrets           | Section 4.2, 5.3          |
-| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | ❌ Not Started          | GitHub Actions workflows                             | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`       | Section 7.2               |
-| **REQ-FN-016** | API Versioning and Deprecation Policy               | ❌ Not Started          | API design, versioning strategy                      | URL-based versioning (`/v1/metrics`), deprecation headers        | Section 11.3              |
-| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | 🟡 Partially Complete   | MetricsModule, DataAccessModule, InstancesController | Statement tagging, instance-aware cache keys, instances endpoint | Section 5.4, 6.2, ADR-008 |
-| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | ✅ Complete             | This document and PlantUML diagrams                  | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`          | Section 1-17              |
-| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | ✅ Complete             | Design patterns, module structure                    | Module boundaries, dependency injection, interfaces              | Section 12.1, 12.2        |
-| **REQ-FN-020** | Structured Logging with Correlation IDs             | ✅ Complete             | CoreModule, LoggerService                            | `LoggerService` (Winston), correlation ID middleware             | ADR-006, Section 10.1     |
-| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | ⚪ Deferred (log-based) | AdminModule, TelemetryHooks                          | `MetricsRegistryService` log events (`METRICS_DEBUG=true`)       | Section 10.2              |
-| **REQ-FN-022** | Performance Testing and SLO Validation              | 🔵 Deferred             | Testing strategy, observability                      | Load tests (k6/Artillery), SLO dashboards                        | Section 7.2, 10.2         |
-| **REQ-FN-023** | Authentication and Authorization Framework          | ✅ Complete             | AuthModule, JWT strategy                             | `JwtAuthGuard`, `ScopesGuard`, JWT validation                    | ADR-005, Section 9.1, 9.2 |
-| **REQ-FN-024** | Input Validation and Rate Limiting                  | 🟡 In Progress          | API Gateway Layer                                    | `ValidationPipe` (class-validator), `RateLimitGuard`             | Section 4.2, 9.3, 9.4     |
-| **REQ-FN-025** | LRS Instance Health Monitoring                      | 🟡 In Progress          | CoreModule, HealthController                         | `HealthController`, `RedisHealthIndicator`, circuit breaker hook | Section 10.3, ADR-007     |
-| **REQ-FN-026** | Multi-LRS Configuration Schema and Instance Auth    | 🟡 In Progress          | CoreModule, ConfigService                            | `ConfigSchema`, `InstancesService`, secrets loaders              | Section 4.2, 5.4          |
-| **REQ-FN-027** | Keycloak Integration and Token Issuance             | ❌ Not Started          | AuthModule, Identity provider adapters               | Keycloak strategy (planned), token issuance bridge               | Section 9.1, ADR-005      |
-| **REQ-FN-028** | Learning Element Type Click Distribution            | ✅ Complete             | ComputationModule, MetricsModule                     | `ElementClicksProvider`, `element-type-helpers.ts`               | ADR-002, Section 4.2      |
-| **REQ-FN-029** | Learning Element Type Time Allocation               | ✅ Complete             | ComputationModule, MetricsModule                     | `ElementTypeTimeSpentProvider`, `duration-helpers.ts`            | ADR-002, Section 4.2      |
+| Requirement ID | Title                                               | Implementation Status    | Architecture Mapping                                 | Components                                                               | ADR/Section               |
+| -------------- | --------------------------------------------------- | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------- |
+| **REQ-FN-001** | Client-Facing Intermediary API                      | 🟡 In Progress           | MetricsModule, MetricsController, API Gateway Layer  | `MetricsController`, `AuthGuard`, `ValidationPipe`                       | ADR-004, Section 4.2      |
+| **REQ-FN-002** | xAPI LRS Integration                                | ❌ Not Started           | DataAccessModule, LRSClient                          | `LRSClient`, HTTP client with xAPI query support                         | Section 4.2, 8.2          |
+| **REQ-FN-003** | Analytics Metrics Catalog and Discovery             | 🟡 In Progress           | MetricsModule, MetricsRegistry                       | `MetricsRegistry`, `GET /metrics` endpoint                               | Section 4.2, 4.3          |
+| **REQ-FN-004** | Compute Analytics from xAPI LRS per CSV Metric      | ✅ Complete (Deprecated) | ComputationModule, MetricProviders                   | `IMetricComputation`, 16 CSV-compliant providers (CO/TO/EO-001+)         | ADR-002, Section 4.2      |
+| **REQ-FN-005** | Results Retrieval, Aggregation, and Export          | ❌ Not Started           | MetricsModule, MetricsService                        | `MetricsService.getResults()`, `GET /metrics/:id/results`                | Section 4.3               |
+| **REQ-FN-006** | Analytics Results Caching                           | ❌ Not Started           | DataAccessModule, CacheService                       | `CacheService` (Redis), cache-aside pattern                              | ADR-003, Section 8.1      |
+| **REQ-FN-007** | Cache Invalidation and Refresh                      | ❌ Not Started           | AdminModule, CacheController                         | `CacheController`, `POST /admin/cache/invalidate`                        | Section 4.2               |
+| **REQ-FN-030** | Incremental Metrics Cache Refresh                   | ❌ Not Started           | MetricsModule, DataAccessModule                      | `ComputationService`, `CacheService`, `LRSClient`                        | ADR-003, Section 8.1      |
+| **REQ-FN-008** | OpenAPI Specification Generation and Exposure       | ❌ Not Started           | NestJS Swagger integration                           | `@nestjs/swagger` decorators, auto-generated spec                        | ADR-004, Section 10.1     |
+| **REQ-FN-009** | Interactive API Documentation UI                    | ❌ Not Started           | Swagger UI integration                               | Swagger UI served at `/api/docs`                                         | ADR-004                   |
+| **REQ-FN-010** | Metric Extension Architecture and Interfaces        | ❌ Not Started           | ComputationModule, IMetricComputation interface      | `IMetricComputation`, plugin-based registration                          | ADR-002, Section 11.1     |
+| **REQ-FN-011** | Metric Contribution Guide and Templates             | 🔵 Deferred              | Documentation + code templates                       | Template files, contribution guide (future)                              | Section 11.2              |
+| **REQ-FN-012** | Container Image Build and Registry                  | ❌ Not Started           | Dockerfile, CI/CD pipeline                           | GitHub Actions workflow, Docker build                                    | Section 5.2               |
+| **REQ-FN-013** | Docker Compose Configurations (Dev and Prod)        | ✅ Complete              | Deployment manifests                                 | `docker-compose.dev.yml`, `docker-compose.prod.yml`                      | Section 5.1, 5.4          |
+| **REQ-FN-014** | Secrets and Configuration Management                | ❌ Not Started           | CoreModule, ConfigService                            | `ConfigService`, environment variables, Docker secrets                   | Section 4.2, 5.3          |
+| **REQ-FN-015** | CI/CD Pipeline with GitHub Actions                  | ❌ Not Started           | GitHub Actions workflows                             | `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`               | Section 7.2               |
+| **REQ-FN-016** | API Versioning and Deprecation Policy               | ❌ Not Started           | API design, versioning strategy                      | URL-based versioning (`/v1/metrics`), deprecation headers                | Section 11.3              |
+| **REQ-FN-017** | Multi-Instance Support and Cross-Instance Analytics | 🟡 Partially Complete    | MetricsModule, DataAccessModule, InstancesController | Statement tagging, instance-aware cache keys, instances endpoint         | Section 5.4, 6.2, ADR-008 |
+| **REQ-FN-018** | Architecture Documentation with PlantUML Diagrams   | ✅ Complete              | This document and PlantUML diagrams                  | `components.puml`, `deployment.puml`, `ARCHITECTURE.md`                  | Section 1-17              |
+| **REQ-FN-019** | SOLID and CUPID Principles Guidance                 | ✅ Complete              | Design patterns, module structure                    | Module boundaries, dependency injection, interfaces                      | Section 12.1, 12.2        |
+| **REQ-FN-020** | Structured Logging with Correlation IDs             | ✅ Complete              | CoreModule, LoggerService                            | `LoggerService` (Winston), correlation ID middleware                     | ADR-006, Section 10.1     |
+| **REQ-FN-021** | Metrics Export and Monitoring Endpoints             | ⚪ Deferred (log-based)  | AdminModule, TelemetryHooks                          | `MetricsRegistryService` log events (`METRICS_DEBUG=true`)               | Section 10.2              |
+| **REQ-FN-022** | Performance Testing and SLO Validation              | 🔵 Deferred              | Testing strategy, observability                      | Load tests (k6/Artillery), SLO dashboards                                | Section 7.2, 10.2         |
+| **REQ-FN-023** | Authentication and Authorization Framework          | ✅ Complete              | AuthModule, JWT strategy                             | `JwtAuthGuard`, `ScopesGuard`, JWT validation                            | ADR-005, Section 9.1, 9.2 |
+| **REQ-FN-024** | Input Validation and Rate Limiting                  | 🟡 In Progress           | API Gateway Layer                                    | `ValidationPipe` (class-validator), `RateLimitGuard`                     | Section 4.2, 9.3, 9.4     |
+| **REQ-FN-025** | LRS Instance Health Monitoring                      | 🟡 In Progress           | CoreModule, HealthController                         | `HealthController`, `RedisHealthIndicator`, circuit breaker hook         | Section 10.3, ADR-007     |
+| **REQ-FN-026** | Multi-LRS Configuration Schema and Instance Auth    | 🟡 In Progress           | CoreModule, ConfigService                            | `ConfigSchema`, `InstancesService`, secrets loaders                      | Section 4.2, 5.4          |
+| **REQ-FN-027** | Keycloak Integration and Token Issuance             | ❌ Not Started           | AuthModule, Identity provider adapters               | Keycloak strategy (planned), token issuance bridge                       | Section 9.1, ADR-005      |
+| **REQ-FN-028** | Learning Element Type Click Distribution            | ✅ Complete              | ComputationModule, MetricsModule                     | `ElementClicksProvider`, `element-type-helpers.ts`                       | ADR-002, Section 4.2      |
+| **REQ-FN-029** | Learning Element Type Time Allocation               | ✅ Complete              | ComputationModule, MetricsModule                     | `ElementTypeTimeSpentProvider`, `duration-helpers.ts`                    | ADR-002, Section 4.2      |
+| **REQ-FN-031** | Compute Analytics from xAPI LRS per CSV v2 Metric   | ❌ Not Started           | ComputationModule, MetricProviders                   | `IMetricComputation`, v2 CSV-aligned providers (courses/topics/elements) | ADR-002, Section 4.2      |
 
 ---
 
@@ -94,9 +95,11 @@ The traceability matrix includes implementation status for each requirement:
 
 ---
 
-## CSV Metrics to Implementation Mapping
+## CSV Metrics to Implementation Mapping (v1 — Legacy)
 
-**Epic 14**: CSV-Compliant Metrics Implementation (REQ-FN-004)
+**Epic 14 (Legacy)**: CSV-Compliant Metrics Implementation (REQ-FN-004 — Deprecated)
+
+This section is retained for legacy clients that rely on the v1 CSV (`LAAC_Learning_Analytics_Requirements.csv`). See the v2 section below for the current catalog.
 
 This section tracks the mapping of CSV-specified metrics to their provider implementations.
 
@@ -157,6 +160,35 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ---
 
+## CSV v2 Metrics to Implementation Mapping (REQ-FN-031)
+
+Current CSV: [docs/resources/LAAC_Learning_Analytics_Requirements.v2.csv](docs/resources/LAAC_Learning_Analytics_Requirements.v2.csv). Provider IDs must match the CSV `Name` field exactly.
+
+| Order | CSV Name                   | Description                                                                    | Inputs                                   | Provider ID                | Implementation Status |
+| ----- | -------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------- | -------------------------- | --------------------- |
+| 1     | courses-total-scores       | Total scores earned by a student in each course                                | userId; since/until (optional)           | courses-total-scores       | ❌ Not Started        |
+| 2     | courses-max-scores         | Max score of each course the student is enrolled in                            | userId                                   | courses-max-scores         | ❌ Not Started        |
+| 3     | courses-time-spent         | Total time spent by a student in each course                                   | userId; since/until (optional)           | courses-time-spent         | ❌ Not Started        |
+| 4     | courses-last-elements      | Last three learning elements completed by a student                            | userId; since/until (optional)           | courses-last-elements      | ❌ Not Started        |
+| 5     | topics-total-scores        | Total scores earned by a student in each topic                                 | userId, courseId; since/until (optional) | topics-total-scores        | ❌ Not Started        |
+| 6     | topics-max-scores          | Max score of each topic within the selected course                             | userId, courseId                         | topics-max-scores          | ❌ Not Started        |
+| 7     | topics-time-spent          | Total time spent by a student in each topic                                    | userId, courseId; since/until (optional) | topics-time-spent          | ❌ Not Started        |
+| 8     | topics-last-elements       | Last three learning elements completed by a student within the selected course | userId, courseId; since/until (optional) | topics-last-elements       | ❌ Not Started        |
+| 9     | elements-completion-status | Completion status of the best attempt by a student on each learning element    | userId, topicId                          | elements-completion-status | ❌ Not Started        |
+| 10    | elements-max-scores        | Max score of each learning element within the selected topic                   | userId, topicId                          | elements-max-scores        | ❌ Not Started        |
+| 11    | elements-time-spent        | Total time spent by a student on each learning element                         | userId, topicId; since/until (optional)  | elements-time-spent        | ❌ Not Started        |
+| 12    | elements-last-elements     | Last three learning elements completed by a student within the selected topic  | userId, topicId; since/until (optional)  | elements-last-elements     | ❌ Not Started        |
+
+### CSV Verification Checkpoint (REQ-FN-031)
+
+- [x] Pre-Implementation: Approve CSV v2 name-to-provider mapping (table above)
+- [ ] During Implementation: Provider files named after CSV `Name` slugs; JSDoc references v2 description
+- [ ] During Implementation: Output schema aligns with CSV `Output` column
+- [ ] During Implementation: Test data validates raw aggregations per v2 definitions
+- [ ] Completion Verification: Coverage achieved for all v2 metrics
+
+---
+
 ## Stakeholder Needs Traceability
 
 | Stakeholder Need                                | Requirements Covered                                                   | Architecture Components                                           |
@@ -195,8 +227,8 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 ### Coverage Summary
 
-- **Total Requirements**: 45 (25 functional + 20 non-functional)
-- **Mapped to Architecture**: 45 (100%)
+- **Total Requirements**: 46 (26 functional + 20 non-functional)
+- **Mapped to Architecture**: 46 (100%)
 - **Unmapped Requirements**: 0
 - **Orphan Components**: 0
 
@@ -204,8 +236,8 @@ This section tracks the mapping of CSV-specified metrics to their provider imple
 
 | Component             | Requirements Addressed                               | Coverage       |
 | --------------------- | ---------------------------------------------------- | -------------- |
-| **MetricsModule**     | REQ-FN-001, 003, 004, 005, 030                       | 5 requirements |
-| **ComputationModule** | REQ-FN-004, 010, 011, REQ-NF-009, 010                | 5 requirements |
+| **MetricsModule**     | REQ-FN-001, 003, 004, 005, 030, 031                  | 6 requirements |
+| **ComputationModule** | REQ-FN-004, 010, 011, 031, REQ-NF-009, 010           | 6 requirements |
 | **DataAccessModule**  | REQ-FN-002, 006, 007, 030, REQ-NF-005, 006, 007      | 7 requirements |
 | **AuthModule**        | REQ-FN-023, 024, REQ-NF-019, 020                     | 4 requirements |
 | **CoreModule**        | REQ-FN-014, 020, REQ-NF-016                          | 3 requirements |

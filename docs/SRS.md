@@ -41,7 +41,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-001 — Client-Facing Intermediary API → `docs/srs/REQ-FN-001.md`
 - REQ-FN-002 — xAPI LRS Integration → `docs/srs/REQ-FN-002.md`
 - REQ-FN-003 — Analytics Metrics Catalog and Discovery → `docs/srs/REQ-FN-003.md`
-- REQ-FN-004 — Compute Analytics from xAPI LRS per CSV Metric → `docs/srs/REQ-FN-004.md`
+- REQ-FN-004 — ~~Compute Analytics from xAPI LRS per CSV Metric~~ [**DEPRECATED** — superseded by REQ-FN-031] → `docs/srs/REQ-FN-004.md`
 - REQ-FN-005 — Results Retrieval, Aggregation, and Export → `docs/srs/REQ-FN-005.md`
 - REQ-FN-006 — Analytics Results Caching → `docs/srs/REQ-FN-006.md`
 - REQ-FN-007 — Cache Invalidation and Refresh → `docs/srs/REQ-FN-007.md`
@@ -68,6 +68,7 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-028 — Learning Element Type Click Distribution → `docs/srs/REQ-FN-028.md`
 - REQ-FN-029 — Learning Element Type Time Allocation → `docs/srs/REQ-FN-029.md`
 - REQ-FN-030 — Incremental Metrics Cache Refresh → `docs/srs/REQ-FN-030.md`
+- REQ-FN-031 — Compute Analytics from xAPI LRS per CSV v2 Metric → `docs/srs/REQ-FN-031.md`
 
 ## Non-Functional Requirements
 

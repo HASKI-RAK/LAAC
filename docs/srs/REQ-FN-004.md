@@ -2,16 +2,20 @@
 id: REQ-FN-004
 title: Compute Analytics from xAPI LRS per CSV Metric
 type: Functional
-status: Draft
+status: Deprecated
 priority: High
 stakeholder_trace: SG-4-003
 owner: theupsider
-version: 0.2
+version: 0.3
+---
+
+**DEPRECATED**: Superseded by REQ-FN-031 (CSV v2 baseline). This requirement is retained for legacy clients tied to `docs/resources/LAAC_Learning_Analytics_Requirements.csv` (v1).
+
 ---
 
 ## Description
 
-The system shall compute analytics results for every metric specified in `docs/resources/LAAC_Learning_Analytics_Requirements.csv` (used as the authoritative reference) using data retrieved from the configured xAPI LRS. For each metric, the system shall implement the required xAPI queries and aggregations to produce deterministic outputs.
+The system shall compute analytics results for every metric specified in `docs/resources/LAAC_Learning_Analytics_Requirements.csv` (authoritative v1 baseline) using data retrieved from the configured xAPI LRS. For each metric, the system shall implement the required xAPI queries and aggregations to produce deterministic outputs for legacy consumers.
 
 ## Rationale
 
@@ -65,6 +69,7 @@ Before marking story complete:
 
 - The CSV does not prescribe exact formulas; the initial definitions follow common-sense interpretations documented in code and API docs.
 - Time range filters default to inclusive [start, end].
+- New metrics and updated semantics must target REQ-FN-031; this requirement receives only compatibility fixes.
 
 ## API/Interface Impact
 
@@ -101,5 +106,6 @@ Before marking story complete:
 
 ## Change History
 
+- v0.3 — Deprecated; superseded by REQ-FN-031 (CSV v2 baseline)
 - v0.1 — Initial draft
 - v0.2 — Added Structure doc reference

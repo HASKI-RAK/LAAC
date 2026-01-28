@@ -2,11 +2,12 @@
 
 ## Purpose
 
-This document provides formal definitions for all learning analytics metrics specified in `LAAC_Learning_Analytics_Requirements.csv`. It eliminates ambiguity by defining precise semantics, calculation methods, and data requirements for each metric.
+This document provides formal definitions for all learning analytics metrics specified in the v2 catalog [docs/resources/LAAC_Learning_Analytics_Requirements.v2.csv](docs/resources/LAAC_Learning_Analytics_Requirements.v2.csv). It eliminates ambiguity by defining precise semantics, calculation methods, and data requirements for each metric. Legacy v1 definitions (CSV without the v2 suffix) remain valid for backward compatibility and are documented in prior revisions.
 
 ## References
 
-- [LAAC_Learning_Analytics_Requirements.csv](./resources/LAAC_Learning_Analytics_Requirements.csv)
+- [LAAC_Learning_Analytics_Requirements.v2.csv](./resources/LAAC_Learning_Analytics_Requirements.v2.csv)
+- Legacy: [LAAC_Learning_Analytics_Requirements.csv](./resources/LAAC_Learning_Analytics_Requirements.csv)
 - xAPI Specification: https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Data.md
 - Yetanalytics LRS API: https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md
 
@@ -100,176 +101,103 @@ A date/time range for filtering statements.
 
 ---
 
-## Metric Definitions
+## Metric Definitions (CSV v2)
 
-### Course Overview Metrics
+### Course Metrics (v2)
 
-#### CO-001: Total Score Earned by Student in Course
+#### courses-total-scores
 
-- **CSV Description**: "Total score earned by a student on learning elements in each course"
-- **Definition**: Sum of scores from the best attempt of each learning element within the course for the given student.
-- **Calculation**:
-  1. Identify all learning elements in the course (from xAPI context hierarchy)
-  2. For each element, select the best attempt by the student
-  3. Extract `result.score.scaled` (or compute from raw/min/max)
-  4. Sum scores across all elements
-- **Units**: Normalized score (sum of scaled scores)
-- **Filters**: `actorId`, `courseId`
-- **Missing Data**: Learning elements without scores contribute 0
-- **xAPI Query**: Filter by `actor`, `context.contextActivities.parent` or `grouping` matching course, aggregate by `object.id`
+- **CSV Description**: Total scores earned by a student in each course.
+- **Inputs**: `userId`; optional `since`, `until`.
+- **Definition**: For each course the student appears in, sum the best-attempt scores of all learning elements within that course during the time window (if provided). Best attempt selection follows the global definition.
+- **Output**: Array of `{ courseId, totalScore }` sorted by `courseId`.
+- **Units**: Normalized score (scaled where available; derive from raw/min/max otherwise).
 
-#### CO-002: Possible Total Score for Course
+#### courses-max-scores
 
-- **CSV Description**: "Possible total score for all learning elements in each course"
-- **Definition**: Sum of maximum possible scores for all learning elements in the course.
-- **Calculation**:
-  1. Identify all unique learning elements in the course from historical statements
-  2. For each element, determine max possible score:
-     - If `result.score.scaled` is used: max = 1.0 per element
-     - If `result.score.max` is present: use that value
-  3. Sum maximum scores
-- **Units**: Normalized score (sum of 1.0 per element if scaled) or sum of max raw scores
-- **Filters**: `courseId`
-- **Note**: This is course metadata; may be derived from activity definitions or configuration
+- **CSV Description**: Max score of each course the student is enrolled in.
+- **Inputs**: `userId`.
+- **Definition**: For each course, return the highest single best-attempt score observed among its learning elements for the student. If scores are scaled, use the maximum scaled value; otherwise derive from raw/min/max.
+- **Output**: Array of `{ courseId, maxScore }`.
+- **Notes**: If no scored attempts exist for a course, return `maxScore = 0`.
 
-#### CO-003: Total Time Spent by Student in Course
+#### courses-time-spent
 
-- **CSV Description**: "Total time spent by a student in each course in a given time period"
-- **Definition**: Sum of all `result.duration` values from statements within the course, filtered by student and time period.
-- **Calculation**:
-  1. Filter statements: `actor = student`, `course context`, `start ≤ timestamp < end`
-  2. Extract `result.duration` from each statement
-  3. Parse ISO 8601 durations and convert to seconds
-  4. Sum durations
-- **Units**: Seconds (or format as HH:MM:SS)
-- **Filters**: `actorId`, `courseId`, `start`, `end`
-- **Missing Data**: Statements without duration are excluded
+- **CSV Description**: Total time spent by a student in each course.
+- **Inputs**: `userId`; optional `since`, `until`.
+- **Definition**: Sum `result.duration` values for statements within each course for the student in the time window. Exclude malformed or negative durations.
+- **Output**: Array of `{ courseId, timeSpent }` in seconds.
 
-#### CO-004: Last Three Learning Elements Completed in Course
+#### courses-last-elements
 
-- **CSV Description**: "Last three learning elements of any course completed by a student"
-- **Definition**: The three most recently completed learning elements within the course, ordered by completion timestamp descending.
-- **Calculation**:
-  1. Filter statements: `actor = student`, `course context`, `result.completion = true`
-  2. For each unique learning element (`object.id`), find the latest completion timestamp
-  3. Sort elements by timestamp descending
-  4. Take top 3
-- **Output**: Array of learning element identifiers (IRIs) or objects with `id`, `name`, `timestamp`
-- **Filters**: `actorId`, `courseId`
-- **Missing Data**: If fewer than 3 elements completed, return available elements
-
-#### CO-005: Completion Dates of Last Three Elements in Course
-
-- **CSV Description**: "Completion date of the last three learning elements of any course completed by a student"
-- **Definition**: Timestamps corresponding to the three most recently completed elements (see CO-004).
-- **Calculation**: Extract `timestamp` from the completion statements identified in CO-004
-- **Output**: Array of ISO 8601 timestamps
-- **Filters**: `actorId`, `courseId`
+- **CSV Description**: Last three learning elements completed by a student.
+- **Inputs**: `userId`; optional `since`, `until`.
+- **Definition**: Per course, identify completions (`result.completion = true`) for the student within the time window. Deduplicate per element by most recent completion, sort by completion timestamp descending, and return the latest three.
+- **Output**: Array of `{ elementId, completedAt }` per course context; if fewer than three exist, return available completions.
 
 ---
 
-### Topic Overview Metrics
+### Topic Metrics (v2)
 
-#### TO-001: Total Score Earned by Student in Topic
+#### topics-total-scores
 
-- **CSV Description**: "Total score earned by a student on learning elements in each topic"
-- **Definition**: Sum of scores from the best attempt of each learning element within the topic for the given student.
-- **Calculation**: Same as CO-001 but scoped to topic context instead of course
-- **Units**: Normalized score
-- **Filters**: `actorId`, `topicId`
+- **CSV Description**: Total scores earned by a student in each topic.
+- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
+- **Definition**: Within the selected course, sum the best-attempt scores of learning elements grouped by topic for the student and time window.
+- **Output**: Array of `{ topicId, totalScore }`.
 
-#### TO-002: Possible Total Score for Topic
+#### topics-max-scores
 
-- **CSV Description**: "Possible total score for all learning elements in each topic"
-- **Definition**: Sum of maximum possible scores for all learning elements in the topic.
-- **Calculation**: Same as CO-002 but scoped to topic
-- **Units**: Normalized score
-- **Filters**: `topicId`
+- **CSV Description**: Max score of each topic within the selected course.
+- **Inputs**: `userId`, `courseId`.
+- **Definition**: For each topic in the course, return the highest best-attempt score across its learning elements for the student.
+- **Output**: Array of `{ topicId, maxScore }`; default 0 when no scores exist for a topic.
 
-#### TO-003: Total Time Spent by Student in Topic
+#### topics-time-spent
 
-- **CSV Description**: "Total time spent by a student in each topic in a given time period"
-- **Definition**: Sum of durations from statements within the topic, filtered by student and time period.
-- **Calculation**: Same as CO-003 but scoped to topic context
-- **Units**: Seconds
-- **Filters**: `actorId`, `topicId`, `start`, `end`
+- **CSV Description**: Total time spent by a student in each topic.
+- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
+- **Definition**: Sum `result.duration` per topic for the student in the time window. Use the same duration parsing and filtering rules as course time spent.
+- **Output**: Array of `{ topicId, timeSpent }` in seconds.
 
-#### TO-004: Last Three Learning Elements Completed in Topic
+#### topics-last-elements
 
-- **CSV Description**: "Last three learning elements of any topic in a course completed by a student"
-- **Definition**: The three most recently completed elements within the topic.
-- **Calculation**: Same as CO-004 but scoped to topic context
-- **Output**: Array of learning element identifiers
-- **Filters**: `actorId`, `topicId`
-
-#### TO-005: Completion Dates of Last Three Elements in Topic
-
-- **CSV Description**: "Completion date of the last three learning elements of any course completed by a student"
-- **Note**: CSV description references "course" but context indicates this is for topics
-- **Definition**: Timestamps of the three most recently completed elements in the topic.
-- **Calculation**: Same as CO-005 but scoped to topic
-- **Output**: Array of timestamps
-- **Filters**: `actorId`, `topicId`
+- **CSV Description**: Last three learning elements completed by a student within the selected course.
+- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
+- **Definition**: Within the course, find completions per topic, deduplicate per element by most recent completion, sort descending by timestamp, and return the latest three per topic.
+- **Output**: Array of `{ elementId, completedAt }`; return available items when fewer than three exist.
 
 ---
 
-### Learning Element Overview Metrics
+### Learning Element Metrics (v2)
 
-#### LE-001: Current Completion Status of Best Attempt
+#### elements-completion-status
 
-- **CSV Description**: "Current completion status of the best attempt by a student for each learning element"
-- **Definition**: The completion status (`result.completion`) from the best attempt at the learning element.
-- **Calculation**:
-  1. Identify best attempt (see Best Attempt definition)
-  2. Find the latest statement in that attempt with `result.completion` present
-  3. Return the boolean value
-- **Output**: `true`, `false`, or `null` (if no completion data)
-- **Filters**: `actorId`, `elementId`
+- **CSV Description**: Completion status of the best attempt by a student on each learning element in topic.
+- **Inputs**: `userId`, `topicId`.
+- **Definition**: For each element within the topic, select the best attempt for the student and report `completionStatus`, the best-attempt `score` (scaled where possible), and `completedAt` timestamp from the completion statement if present.
+- **Output**: Array of `{ elementId, score, completionStatus, completedAt }`, where `completionStatus` is `true | false | null`.
 
-#### LE-002: Date of Best Attempt for Learning Element
+#### elements-max-scores
 
-- **CSV Description**: "Date of the best attempt of a student for each learning element"
-- **Definition**: The timestamp of the first statement in the best attempt registration.
-- **Calculation**:
-  1. Identify best attempt
-  2. Return the earliest `timestamp` from statements in that registration
-- **Output**: ISO 8601 timestamp
-- **Filters**: `actorId`, `elementId`
+- **CSV Description**: Max score of each learning element within the selected topic.
+- **Inputs**: `userId`, `topicId`.
+- **Definition**: For each element, return the highest score achieved by the student across all attempts within the topic context.
+- **Output**: Array of `{ elementId, maxScore }`; default 0 when no scores exist.
 
-#### LE-003: Score for Best Attempt at Learning Element
+#### elements-time-spent
 
-- **CSV Description**: "Score for the best attempt of a student at each learning element"
-- **Definition**: The score from the best attempt.
-- **Calculation**:
-  1. Identify best attempt
-  2. Extract `result.score.scaled` (or compute from raw/min/max)
-- **Output**: Numeric score (scaled between -1.0 and 1.0, typically 0.0 to 1.0)
-- **Filters**: `actorId`, `elementId`
-- **Missing Data**: Return `null` or 0 if no score present
+- **CSV Description**: Total time spent by a student on each learning element.
+- **Inputs**: `userId`, `topicId`; optional `since`, `until`.
+- **Definition**: Sum `result.duration` for the student's statements per element in the time window, applying the same duration validation rules as above.
+- **Output**: Array of `{ elementId, timeSpent }` in seconds.
 
-#### LE-004: Total Time Spent on Learning Element
+#### elements-last-elements
 
-- **CSV Description**: "Total time spent by a student on each learning element in a given time period"
-- **Definition**: Sum of all durations from statements related to the element, filtered by time period.
-- **Calculation**:
-  1. Filter statements: `actor = student`, `object.id = element`, `start ≤ timestamp < end`
-  2. Sum `result.duration` values
-- **Units**: Seconds
-- **Filters**: `actorId`, `elementId`, `start`, `end`
-
-#### LE-005: Last Three Learning Elements Completed in Topic
-
-- **CSV Description**: "Last three learning elements of a topic completed by a student"
-- **Note**: Duplicate of TO-004; included for consistency
-- **Definition**: Same as TO-004
-- **Filters**: `actorId`, `topicId`
-
-#### LE-006: Completion Dates of Last Three Elements in Topic
-
-- **CSV Description**: "Completion date of the last three learning elements of a topic completed by a student"
-- **Note**: Duplicate of TO-005; included for consistency
-- **Definition**: Same as TO-005
-- **Filters**: `actorId`, `topicId`
+- **CSV Description**: Last three learning elements completed by a student within the selected topic.
+- **Inputs**: `userId`, `topicId`; optional `since`, `until`.
+- **Definition**: Identify completions for the student per element, deduplicate by most recent completion, sort by completion timestamp descending, and return the latest three.
+- **Output**: Array of `{ elementId, completedAt }`; return available items when fewer than three exist.
 
 ---
 
@@ -320,11 +248,11 @@ timestamp >= {start} AND timestamp < {end}
 ```
 1. Group statements by registration
 2. For each attempt:
-   a. Extract max score (latest statement with result.score)
-   b. Extract latest timestamp
+  a. Extract max score (latest statement with result.score)
+  b. Extract latest timestamp
 3. Sort attempts by:
-   a. Score descending (highest first)
-   b. Timestamp descending (most recent first) as tie-breaker
+  a. Score descending (highest first)
+  b. Timestamp descending (most recent first) as tie-breaker
 4. Select first attempt
 ```
 
@@ -354,17 +282,13 @@ timestamp >= {start} AND timestamp < {end}
 
 This specification is versioned alongside the API. Changes to metric definitions constitute breaking changes and require a new API version.
 
-- **Version**: 1.0
-- **Date**: October 20, 2025
-- **Status**: Initial Release
+- **Version**: 2.0
+- **Date**: January 28, 2026
+- **Status**: Aligned to CSV v2 catalog
 
 ### Change Log
 
-- v1.2 (2025-11-18): All 16 CSV metrics implemented and verified
-  - Course metrics (CO-001 to CO-005): ✅ Complete
-  - Topic metrics (TO-001 to TO-005): ✅ Complete
-  - Element metrics (EO-001 to EO-006): ✅ Complete
-  - Provider implementations: `src/computation/providers/`
-  - CSV Verification Checkpoint: 100% complete
-- v1.1 (2025-11-18): Added formal specifications for topic-level CSV metrics (TO-001 through TO-005)
-- v1.0 (2025-10-20): Initial formal specification covering all 16 CSV metrics
+- v2.0 (2026-01-28): Adopted CSV v2 catalog; replaced CO/TO/EO metrics with courses/topics/elements slugs; retained general definitions; legacy v1 remains available for backward compatibility.
+- v1.2 (2025-11-18): All 16 CSV v1 metrics implemented and verified.
+- v1.1 (2025-11-18): Added formal specifications for topic-level CSV metrics (TO-001 through TO-005).
+- v1.0 (2025-10-20): Initial formal specification covering all 16 CSV metrics.
