@@ -110,8 +110,8 @@ describe('CoursesScoresProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('courses-scores');
       expect(result.value).toEqual([
-        { courseId: 'course-1', score: 35 }, // 30 + 5
-        { courseId: 'course-2', score: 50 },
+        { courseId: courseIri('course-1'), score: 35 }, // 30 + 5
+        { courseId: courseIri('course-2'), score: 50 },
       ]);
       expect(result.metadata).toMatchObject({ courseCount: 2 });
     });
@@ -169,8 +169,8 @@ describe('CoursesMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('courses-max-scores');
       expect(result.value).toEqual([
-        { courseId: 'course-1', maxScore: 150 },
-        { courseId: 'course-2', maxScore: 75 },
+        { courseId: courseIri('course-1'), maxScore: 150 },
+        { courseId: courseIri('course-2'), maxScore: 75 },
       ]);
     });
   });
@@ -212,8 +212,8 @@ describe('CoursesTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('courses-time-spent');
       expect(result.value).toEqual([
-        { courseId: 'course-1', timeSpent: 2700 }, // 30*60 + 15*60
-        { courseId: 'course-2', timeSpent: 3600 },
+        { courseId: courseIri('course-1'), timeSpent: 2700 }, // 30*60 + 15*60
+        { courseId: courseIri('course-2'), timeSpent: 3600 },
       ]);
       expect(result.metadata).toMatchObject({ unit: 'seconds' });
     });
@@ -335,8 +335,8 @@ describe('CourseTopicsScoresProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('course-topics-scores');
       expect(result.value).toEqual([
-        { topicId: 'topic-1', score: 30 },
-        { topicId: 'topic-2', score: 50 },
+        { topicId: topicIri('topic-1'), score: 30 },
+        { topicId: topicIri('topic-2'), score: 50 },
       ]);
     });
   });
@@ -394,8 +394,8 @@ describe('CourseTopicsMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('course-topics-max-scores');
       expect(result.value).toEqual([
-        { topicId: 'topic-1', maxScore: 150 },
-        { topicId: 'topic-2', maxScore: 75 },
+        { topicId: topicIri('topic-1'), maxScore: 150 },
+        { topicId: topicIri('topic-2'), maxScore: 75 },
       ]);
     });
   });
@@ -453,8 +453,8 @@ describe('CourseTopicsTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
 
       expect(result.metricId).toBe('course-topics-time-spent');
       expect(result.value).toEqual([
-        { topicId: 'topic-1', timeSpent: 1500 }, // 25 min
-        { topicId: 'topic-2', timeSpent: 1800 }, // 30 min
+        { topicId: topicIri('topic-1'), timeSpent: 1500 }, // 25 min
+        { topicId: topicIri('topic-2'), timeSpent: 1800 }, // 30 min
       ]);
       expect(result.metadata).toMatchObject({ unit: 'seconds' });
     });

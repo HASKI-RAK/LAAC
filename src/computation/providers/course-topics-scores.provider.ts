@@ -7,6 +7,11 @@ import { MetricParams } from '../interfaces/metric-params.interface';
 import { MetricResult } from '../interfaces/metric-result.interface';
 import { xAPIStatement } from '../../data-access';
 import { selectBestAttempt, extractScore } from '../utils/attempt-helpers';
+import { extractCourseIds, matchesCourse } from '../utils/course-helpers';
+import {
+  extractTopicIds,
+  extractCourseIdFromTopicUrl,
+} from '../utils/topic-helpers';
 
 /**
  * Course Topics Scores Provider
@@ -48,7 +53,7 @@ export class CourseTopicsScoresProvider implements IMetricComputation {
     lrsData.forEach((statement) => {
       if (!this.belongsToCourse(statement, params.courseId!)) return;
 
-      const topicIds = this.extractTopicIds(statement);
+      const topicIds = extractTopicIds(statement);
       if (topicIds.length === 0) return;
 
       const elementId = statement.object?.id;
@@ -120,58 +125,24 @@ export class CourseTopicsScoresProvider implements IMetricComputation {
   }
 
   private belongsToCourse(statement: xAPIStatement, courseId: string): boolean {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return false;
+    // Check if the statement has course context that matches the target course
+    const courseIds = extractCourseIds(statement);
 
-    const parents = contextActivities.parent ?? [];
-    const groupings = contextActivities.grouping ?? [];
+    // Direct course match from context activities
+    if (courseIds.some((id) => matchesCourse(id, courseId))) {
+      return true;
+    }
 
-    const allActivities = [...parents, ...groupings];
-    return allActivities.some((activity) => {
-      const id = activity.id;
-      if (!id) return false;
-      return (
-        id === courseId ||
-        id.includes(`/course/${courseId}`) ||
-        id.includes(`/courses/${courseId}`)
-      );
-    });
-  }
-
-  private extractTopicIds(statement: xAPIStatement): string[] {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return [];
-
-    const ids = new Set<string>();
-    const parents = contextActivities.parent ?? [];
-
-    parents.forEach((parent) => {
-      const id = parent.id;
-      if (!id) return;
-
-      // Topic IDs typically contain /topic/ or /topics/
-      if (id.includes('/topic/') || id.includes('/topics/')) {
-        const parsed = this.parseTopicId(id);
-        if (parsed) ids.add(parsed);
+    // For Frontend statements, check if topics are within the target course
+    // Topic URLs contain the course ID: /course/{courseId}/topic/{topicId}
+    const topicIds = extractTopicIds(statement);
+    for (const topicId of topicIds) {
+      const topicCourseId = extractCourseIdFromTopicUrl(topicId);
+      if (topicCourseId && matchesCourse(topicCourseId, courseId)) {
+        return true;
       }
-    });
-
-    return Array.from(ids);
-  }
-
-  private parseTopicId(id: string): string | null {
-    if (!id) return null;
-
-    if (id.includes('/topic/')) {
-      const [, topic] = id.split('/topic/');
-      return topic || null;
     }
 
-    if (id.includes('/topics/')) {
-      const [, topic] = id.split('/topics/');
-      return topic || null;
-    }
-
-    return id;
+    return false;
   }
 }
