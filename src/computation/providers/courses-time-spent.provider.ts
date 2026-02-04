@@ -7,6 +7,7 @@ import { MetricParams } from '../interfaces/metric-params.interface';
 import { MetricResult } from '../interfaces/metric-result.interface';
 import { xAPIStatement } from '../../data-access';
 import { parseDuration } from '../utils/duration-helpers';
+import { extractCourseIds } from '../utils/course-helpers';
 
 /**
  * Courses Time Spent Provider
@@ -44,7 +45,7 @@ export class CoursesTimeSpentProvider implements IMetricComputation {
     const courses = new Map<string, number>();
 
     lrsData.forEach((statement) => {
-      const courseIds = this.extractCourseIds(statement);
+      const courseIds = extractCourseIds(statement);
       if (courseIds.length === 0) return;
 
       const duration = statement.result?.duration;
@@ -94,44 +95,5 @@ export class CoursesTimeSpentProvider implements IMetricComputation {
         throw new Error('since timestamp must be before until timestamp');
       }
     }
-  }
-
-  private extractCourseIds(statement: xAPIStatement): string[] {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return [];
-
-    const ids = new Set<string>();
-    const parents = contextActivities.parent ?? [];
-    const groupings = contextActivities.grouping ?? [];
-
-    parents.forEach((parent) => this.maybeAddCourseId(ids, parent.id));
-    groupings.forEach((grouping) => this.maybeAddCourseId(ids, grouping.id));
-
-    return Array.from(ids);
-  }
-
-  private maybeAddCourseId(target: Set<string>, id?: string): void {
-    if (!id) return;
-
-    const parsed = this.parseCourseId(id);
-    if (parsed) {
-      target.add(parsed);
-    }
-  }
-
-  private parseCourseId(id: string): string | null {
-    if (!id) return null;
-
-    if (id.includes('/course/')) {
-      const [, course] = id.split('/course/');
-      return course || null;
-    }
-
-    if (id.includes('/courses/')) {
-      const [, course] = id.split('/courses/');
-      return course || null;
-    }
-
-    return id;
   }
 }
