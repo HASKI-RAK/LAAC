@@ -287,5 +287,57 @@ describe('attempt-helpers (REQ-FN-004)', () => {
 
       expect(isCompleted(statement)).toBe(false);
     });
+
+    it('should return true for HASKI completion verb', () => {
+      const statement: xAPIStatement = {
+        actor: { account: { homePage: 'test', name: 'user1' } },
+        verb: { id: 'https://wiki.haski.app/variables/xapi.completed' },
+        object: { id: 'test' },
+      };
+
+      expect(isCompleted(statement)).toBe(true);
+    });
+
+    it('should return true for ADL completed verb', () => {
+      const statement: xAPIStatement = {
+        actor: { account: { homePage: 'test', name: 'user1' } },
+        verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
+        object: { id: 'test' },
+      };
+
+      expect(isCompleted(statement)).toBe(true);
+    });
+
+    it('should return true for ADL passed verb', () => {
+      const statement: xAPIStatement = {
+        actor: { account: { homePage: 'test', name: 'user1' } },
+        verb: { id: 'http://adlnet.gov/expapi/verbs/passed' },
+        object: { id: 'test' },
+      };
+
+      expect(isCompleted(statement)).toBe(true);
+    });
+
+    it('should return true when both completion flag and verb are present', () => {
+      const statement: xAPIStatement = {
+        actor: { account: { homePage: 'test', name: 'user1' } },
+        verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
+        object: { id: 'test' },
+        result: { completion: true },
+      };
+
+      expect(isCompleted(statement)).toBe(true);
+    });
+
+    it('should respect completion flag when set to false even with completion verb', () => {
+      const statement: xAPIStatement = {
+        actor: { account: { homePage: 'test', name: 'user1' } },
+        verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
+        object: { id: 'test' },
+        result: { completion: false },
+      };
+
+      expect(isCompleted(statement)).toBe(false);
+    });
   });
 });

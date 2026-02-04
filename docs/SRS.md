@@ -68,7 +68,8 @@ The primary users of the system are developers who will integrate the system wit
 - REQ-FN-028 — Learning Element Type Click Distribution → `docs/srs/REQ-FN-028.md`
 - REQ-FN-029 — Learning Element Type Time Allocation → `docs/srs/REQ-FN-029.md`
 - REQ-FN-030 — Incremental Metrics Cache Refresh → `docs/srs/REQ-FN-030.md`
-- REQ-FN-031 — Compute Analytics from xAPI LRS per CSV v2 Metric → `docs/srs/REQ-FN-031.md`
+- REQ-FN-031 — ~~Compute Analytics from xAPI LRS per CSV v2 Metric~~ [**DEPRECATED** — superseded by REQ-FN-032] → `docs/srs/REQ-FN-031.md`
+- REQ-FN-032 — Compute Analytics from xAPI LRS per CSV v3 Metric → `docs/srs/REQ-FN-032.md`
 
 ## Non-Functional Requirements
 

@@ -93,10 +93,23 @@ export function extractScore(statement: xAPIStatement): number | null {
 
 /**
  * Checks if an xAPI statement represents a completed attempt
+ * Checks both result.completion flag and completion verbs
  *
  * @param statement - xAPI statement
- * @returns True if completion flag is set, false otherwise
+ * @returns True if completion flag is set or completion verb is used, false otherwise
  */
 export function isCompleted(statement: xAPIStatement): boolean {
-  return statement.result?.completion ?? false;
+  // If completion flag is explicitly set, respect it
+  if (statement.result?.completion !== undefined) {
+    return statement.result.completion;
+  }
+
+  // Otherwise, check for completion verbs (HASKI custom + standard ADL)
+  const completionVerbs = [
+    'https://wiki.haski.app/variables/xapi.completed',
+    'http://adlnet.gov/expapi/verbs/completed',
+    'http://adlnet.gov/expapi/verbs/passed',
+  ];
+
+  return completionVerbs.includes(statement.verb?.id);
 }
