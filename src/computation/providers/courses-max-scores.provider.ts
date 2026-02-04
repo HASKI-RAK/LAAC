@@ -6,6 +6,7 @@ import { IMetricComputation } from '../interfaces/metric.interface';
 import { MetricParams } from '../interfaces/metric-params.interface';
 import { MetricResult } from '../interfaces/metric-result.interface';
 import { xAPIStatement } from '../../data-access';
+import { extractCourseIds } from '../utils/course-helpers';
 
 /**
  * Courses Max Scores Provider
@@ -45,7 +46,7 @@ export class CoursesMaxScoresProvider implements IMetricComputation {
     const courses = new Map<string, Map<string, number>>();
 
     lrsData.forEach((statement) => {
-      const courseIds = this.extractCourseIds(statement);
+      const courseIds = extractCourseIds(statement);
       if (courseIds.length === 0) return;
 
       const elementId = statement.object?.id;
@@ -94,44 +95,5 @@ export class CoursesMaxScoresProvider implements IMetricComputation {
     if (!params.userId) {
       throw new Error('userId is required for courses-max-scores metric');
     }
-  }
-
-  private extractCourseIds(statement: xAPIStatement): string[] {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return [];
-
-    const ids = new Set<string>();
-    const parents = contextActivities.parent ?? [];
-    const groupings = contextActivities.grouping ?? [];
-
-    parents.forEach((parent) => this.maybeAddCourseId(ids, parent.id));
-    groupings.forEach((grouping) => this.maybeAddCourseId(ids, grouping.id));
-
-    return Array.from(ids);
-  }
-
-  private maybeAddCourseId(target: Set<string>, id?: string): void {
-    if (!id) return;
-
-    const parsed = this.parseCourseId(id);
-    if (parsed) {
-      target.add(parsed);
-    }
-  }
-
-  private parseCourseId(id: string): string | null {
-    if (!id) return null;
-
-    if (id.includes('/course/')) {
-      const [, course] = id.split('/course/');
-      return course || null;
-    }
-
-    if (id.includes('/courses/')) {
-      const [, course] = id.split('/courses/');
-      return course || null;
-    }
-
-    return id;
   }
 }
