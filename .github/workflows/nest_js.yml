@@ -38,23 +38,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # Note: Using external LRS (GitHub secrets) - no seeding needed
-      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
-
       - name: Lint code
         run: yarn lint
 
-      - name: Run tests
-        env:
-          # Configure tests to use external LRS via GitHub secrets
-          # GitHub Secret Name → Environment Variable (used by application)
-          LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }}         
-          LRS_USER: ${{ secrets.LRS_USER }}             
-          LRS_SECRET: ${{ secrets.LRS_SECRET }}         
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          TEST_REDIS_HOST: localhost
-          TEST_REDIS_PORT: 6379
+      - name: Run unit tests
         run: yarn test
 
       - name: Build application

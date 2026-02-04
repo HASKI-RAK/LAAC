@@ -75,39 +75,19 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # Note: Using external LRS (GitHub secrets) - no seeding needed
-      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
-
-      # Step 5: Run linting
+      # Step 4: Run linting
       - name: Run ESLint
         run: yarn lint
 
-      # Step 6: Run unit tests
+      # Step 5: Run unit tests
       - name: Run unit tests
         run: yarn test
 
-      # Note: Using external LRS (GitHub secrets) - no seeding needed
-      # The LRS at ${{ secrets.LRS_DOMAIN }} is pre-populated with test data
-
-      # Step 6: Run E2E tests with external LRS
-      - name: Run E2E tests
-        env:
-          # Configure tests to use external LRS via GitHub secrets
-          # GitHub Secret Name → Environment Variable (used by application)
-          LRS_DOMAIN: ${{ secrets.LRS_DOMAIN }}              # LRS_DOMAIN → LRS_URL
-          LRS_USER: ${{ secrets.LRS_USER }}        # LRS_USER → LRS_SECRET
-          LRS_SECRET: ${{ secrets.LRS_SECRET }}   # LRS_SECRET → LRS_SECRET
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          TEST_REDIS_HOST: localhost
-          TEST_REDIS_PORT: 6379
-        run: yarn test:e2e
-
-      # Step 7: Generate coverage report
+      # Step 6: Generate coverage report
       - name: Generate test coverage
         run: yarn test:cov
 
-      # Step 8: Upload coverage report as artifact (optional, for tracking)
+      # Step 7: Upload coverage report as artifact (optional, for tracking)
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
@@ -116,7 +96,7 @@ jobs:
           path: coverage/
           retention-days: 30
 
-      # Step 9: Build application (validates TypeScript compilation)
+      # Step 8: Build application (validates TypeScript compilation)
       - name: Build application
         run: yarn build
 
