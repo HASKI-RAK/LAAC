@@ -1,9 +1,9 @@
-// Unit tests for Topic Last Elements Provider (REQ-FN-004, CSV TO-004)
+// Unit tests for Topic Last Elements Provider (REQ-FN-032, CSV v3)
 
 import { TopicLastElementsProvider } from './topic-last-elements.provider';
 import { xAPIStatement } from '../../data-access';
 
-describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
+describe('TopicLastElementsProvider (REQ-FN-032, CSV v3)', () => {
   let provider: TopicLastElementsProvider;
 
   beforeEach(() => {
@@ -11,20 +11,17 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
   });
 
   describe('metadata', () => {
-    it('should have correct metric metadata', () => {
+    it('should have correct metric metadata for CSV v3', () => {
       expect(provider.id).toBe('topic-last-elements');
       expect(provider.dashboardLevel).toBe('topic');
       expect(provider.description).toBe(
-        'Last three learning elements of any topic in a course completed by a student',
+        'Returns the three most recently completed learning elements by the user within a specified topic, ordered by completion time descending and optionally filtered by a specified time range.',
       );
-      expect(provider.version).toBe('1.0.0');
+      expect(provider.version).toBe('3.0.0');
       expect(provider.outputType).toBe('array');
-      expect(provider.requiredParams).toEqual([
-        'userId',
-        'courseId',
-        'topicId',
-      ]);
-      expect(provider.optionalParams).toEqual([]);
+      // v3: no longer requires courseId
+      expect(provider.requiredParams).toEqual(['userId', 'topicId']);
+      expect(provider.optionalParams).toEqual(['since', 'until']);
     });
   });
 
@@ -118,34 +115,32 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
       expect(result.value).toHaveLength(3);
       const elements = result.value as Array<{
         elementId: string;
-        title?: string;
         completedAt: string;
       }>;
+      // v3: returns {elementId, completedAt} without title
       expect(elements[0]).toEqual({
         elementId: 'element-2',
-        title: 'Element 2',
         completedAt: '2025-11-03T10:00:00Z',
       });
       expect(elements[1]).toEqual({
         elementId: 'element-3',
-        title: 'Element 3',
         completedAt: '2025-11-02T10:00:00Z',
       });
       expect(elements[2]).toEqual({
         elementId: 'element-1',
-        title: 'Element 1',
         completedAt: '2025-11-01T10:00:00Z',
       });
       expect(result.metricId).toBe('topic-last-elements');
-      expect(result.metadata?.count).toBe(3);
-      expect(result.metadata?.totalCompletions).toBe(3);
+      // v3: different metadata shape
+      expect(result.metadata?.returnedCount).toBe(3);
+      expect(result.metadata?.totalCompletedElements).toBe(3);
     });
 
     it('should limit results to 3 elements when more exist', async () => {
@@ -263,7 +258,7 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
@@ -272,8 +267,8 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       expect(elements1[0].elementId).toBe('element-5'); // Most recent
       expect(elements1[1].elementId).toBe('element-4');
       expect(elements1[2].elementId).toBe('element-3');
-      expect(result.metadata?.count).toBe(3);
-      expect(result.metadata?.totalCompletions).toBe(5);
+      expect(result.metadata?.returnedCount).toBe(3);
+      expect(result.metadata?.totalCompletedElements).toBe(5);
     });
 
     it('should exclude completions from other topics', async () => {
@@ -325,7 +320,7 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
@@ -336,13 +331,13 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
 
     it('should return empty array when no completions in topic', async () => {
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         [],
       );
 
       expect(result.value).toEqual([]);
-      expect(result.metadata?.count).toBe(0);
-      expect(result.metadata?.totalCompletions).toBe(0);
+      expect(result.metadata?.returnedCount).toBe(0);
+      expect(result.metadata?.totalCompletedElements).toBe(0);
     });
 
     it('should handle fewer than 3 completions', async () => {
@@ -372,12 +367,12 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
       expect(result.value).toHaveLength(1);
-      expect(result.metadata?.count).toBe(1);
+      expect(result.metadata?.returnedCount).toBe(1);
     });
 
     it('should recognize HASKI custom completion verb', async () => {
@@ -407,7 +402,7 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
@@ -443,7 +438,7 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
@@ -500,7 +495,7 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-101', topicId: '5' },
+        { userId: 'user-1', topicId: '5' },
         statements,
       );
 
@@ -512,30 +507,37 @@ describe('TopicLastElementsProvider (REQ-FN-004, CSV TO-004)', () => {
 
   describe('validateParams', () => {
     it('should throw error if userId is missing', () => {
-      expect(() =>
-        provider.validateParams({ courseId: 'course-101', topicId: '5' }),
-      ).toThrow(
-        'userId is required for topic-last-elements metric computation',
-      );
-    });
-
-    it('should throw error if courseId is missing', () => {
-      expect(() =>
-        provider.validateParams({ userId: 'user-1', topicId: '5' }),
-      ).toThrow(
-        'courseId is required for topic-last-elements metric computation',
+      expect(() => provider.validateParams({ topicId: '5' })).toThrow(
+        'userId is required for topic-last-elements metric',
       );
     });
 
     it('should throw error if topicId is missing', () => {
-      expect(() =>
-        provider.validateParams({ userId: 'user-1', courseId: 'course-101' }),
-      ).toThrow(
-        'topicId is required for topic-last-elements metric computation',
+      expect(() => provider.validateParams({ userId: 'user-1' })).toThrow(
+        'topicId is required for topic-last-elements metric',
       );
     });
 
+    it('should throw error if since is after until', () => {
+      expect(() =>
+        provider.validateParams({
+          userId: 'user-1',
+          topicId: '5',
+          since: '2025-12-31T23:59:59Z',
+          until: '2025-01-01T00:00:00Z',
+        }),
+      ).toThrow('since timestamp must be before until timestamp');
+    });
+
     it('should not throw error for valid params', () => {
+      expect(() =>
+        provider.validateParams({
+          userId: 'user-1',
+          topicId: '5',
+        }),
+      ).not.toThrow();
+
+      // courseId is no longer required in v3
       expect(() =>
         provider.validateParams({
           userId: 'user-1',

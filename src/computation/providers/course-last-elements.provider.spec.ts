@@ -1,9 +1,9 @@
-// Unit tests for Course Last Elements Provider (REQ-FN-004, CSV CO-004)
+// Unit tests for Course Last Elements Provider (REQ-FN-032, CSV v3)
 
 import { CourseLastElementsProvider } from './course-last-elements.provider';
 import { xAPIStatement } from '../../data-access';
 
-describe('CourseLastElementsProvider (REQ-FN-004, CSV CO-004)', () => {
+describe('CourseLastElementsProvider (REQ-FN-032, CSV v3)', () => {
   let provider: CourseLastElementsProvider;
 
   beforeEach(() => {
@@ -11,13 +11,13 @@ describe('CourseLastElementsProvider (REQ-FN-004, CSV CO-004)', () => {
   });
 
   describe('metadata', () => {
-    it('should have correct metric metadata', () => {
+    it('should have correct metric metadata for CSV v3', () => {
       expect(provider.id).toBe('course-last-elements');
       expect(provider.dashboardLevel).toBe('course');
       expect(provider.description).toBe(
-        'Last three learning elements of any course completed by a student',
+        'Returns the three most recently completed learning elements by the user within a specific course, ordered by completion time descending and optionally filtered by a specified time range.',
       );
-      expect(provider.version).toBe('1.0.0');
+      expect(provider.version).toBe('3.0.0');
       expect(provider.outputType).toBe('array');
       expect(provider.requiredParams).toEqual(['userId', 'courseId']);
       expect(provider.optionalParams).toEqual(['since', 'until']);

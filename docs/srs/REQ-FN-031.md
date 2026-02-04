@@ -103,4 +103,5 @@ Before marking story complete:
 
 ## Change History
 
+- v0.2 — **DEPRECATED** (2026-02-04): Superseded by REQ-FN-032 (CSV v3 baseline)
 - v0.1 — Initial draft for CSV v2 baseline; supersedes REQ-FN-004

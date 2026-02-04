@@ -1,5 +1,5 @@
-// Implements REQ-FN-004: CSV Row CO-004
-// Returns the last three learning elements of a course completed by a student
+// Implements REQ-FN-032: CSV v3 metric course-last-elements
+// Returns the three most recently completed learning elements within a course
 
 import { Injectable } from '@nestjs/common';
 import { IMetricComputation } from '../interfaces/metric.interface';
@@ -10,17 +10,16 @@ import { xAPIStatement } from '../../data-access';
 /**
  * Course Last Elements Provider
  *
- * Implements CSV row CO-004
- * Dashboard Level: Course overview
- * Metric Description: "Last three learning elements of any course completed by a student"
- * CSV Source: docs/resources/LAAC_Learning_Analytics_Requirements.csv
+ * Implements CSV v3 metric: course-last-elements — Returns the three most recently
+ * completed learning elements by the user within a specific course, ordered by
+ * completion time descending.
  *
  * @remarks
  * - Returns array of the 3 most recently completed elements
  * - Orders by completion timestamp (most recent first)
  * - Filters by userId, courseId, and optional time range
  * - Returns fewer than 3 elements if not enough completions exist
- * - Stateless: no side effects, no internal state mutation (REQ-FN-004)
+ * - Stateless: no side effects, no internal state mutation (REQ-FN-032)
  *
  * @implements {IMetricComputation}
  *
@@ -30,17 +29,17 @@ import { xAPIStatement } from '../../data-access';
  *   { userId: 'user-123', courseId: 'course-101' },
  *   statements
  * );
- * console.log(result.value); // [{ elementId: 'e3', title: '...', completedAt: '...' }, ...]
+ * console.log(result.value); // [{ elementId: 'e3', completedAt: '...' }, ...]
  * ```
  */
 @Injectable()
 export class CourseLastElementsProvider implements IMetricComputation {
   readonly id = 'course-last-elements';
   readonly dashboardLevel = 'course';
-  readonly title = 'Course Last Completed Elements';
+  readonly title = 'Course Last Elements';
   readonly description =
-    'Last three learning elements of any course completed by a student';
-  readonly version = '1.0.0';
+    'Returns the three most recently completed learning elements by the user within a specific course, ordered by completion time descending and optionally filtered by a specified time range.';
+  readonly version = '3.0.0';
   readonly requiredParams: Array<keyof MetricParams> = ['userId', 'courseId'];
   readonly optionalParams: Array<keyof MetricParams> = ['since', 'until'];
   readonly outputType = 'array' as const;

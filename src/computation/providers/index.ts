@@ -25,6 +25,18 @@ import { ElementClicksProvider } from './element-clicks.provider';
 import { ElementTypeTimeSpentProvider } from './element-type-time-spent.provider';
 import { CoursesTotalScoresProvider } from './courses-total-scores.provider';
 
+// CSV v3 metric providers (REQ-FN-032)
+import { CoursesScoresProvider } from './courses-scores.provider';
+import { CoursesMaxScoresProvider } from './courses-max-scores.provider';
+import { CoursesTimeSpentProvider } from './courses-time-spent.provider';
+import { UserLastElementsProvider } from './user-last-elements.provider';
+import { CourseTopicsScoresProvider } from './course-topics-scores.provider';
+import { CourseTopicsMaxScoresProvider } from './course-topics-max-scores.provider';
+import { CourseTopicsTimeSpentProvider } from './course-topics-time-spent.provider';
+import { TopicElementsBestAttemptsProvider } from './topic-elements-best-attempts.provider';
+import { TopicElementsMaxScoresProvider } from './topic-elements-max-scores.provider';
+import { TopicElementsTimeSpentProvider } from './topic-elements-time-spent.provider';
+
 export {
   ExampleMetricProvider,
   CourseCompletionProvider,
@@ -49,6 +61,17 @@ export {
   ElementClicksProvider,
   ElementTypeTimeSpentProvider,
   CoursesTotalScoresProvider,
+  // CSV v3 providers (REQ-FN-032)
+  CoursesScoresProvider,
+  CoursesMaxScoresProvider,
+  CoursesTimeSpentProvider,
+  UserLastElementsProvider,
+  CourseTopicsScoresProvider,
+  CourseTopicsMaxScoresProvider,
+  CourseTopicsTimeSpentProvider,
+  TopicElementsBestAttemptsProvider,
+  TopicElementsMaxScoresProvider,
+  TopicElementsTimeSpentProvider,
 };
 
 export const METRIC_PROVIDER_CLASSES = [
@@ -75,4 +98,15 @@ export const METRIC_PROVIDER_CLASSES = [
   ElementClicksProvider,
   ElementTypeTimeSpentProvider,
   CoursesTotalScoresProvider,
+  // CSV v3 providers (REQ-FN-032)
+  CoursesScoresProvider,
+  CoursesMaxScoresProvider,
+  CoursesTimeSpentProvider,
+  UserLastElementsProvider,
+  CourseTopicsScoresProvider,
+  CourseTopicsMaxScoresProvider,
+  CourseTopicsTimeSpentProvider,
+  TopicElementsBestAttemptsProvider,
+  TopicElementsMaxScoresProvider,
+  TopicElementsTimeSpentProvider,
 ] as const;
