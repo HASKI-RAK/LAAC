@@ -3,11 +3,11 @@
 id: REQ-FN-032
 title: Compute Analytics from xAPI LRS per CSV v3 Metric
 type: Functional
-status: Draft
+status: Implemented
 priority: High
 stakeholder_trace: SG-4-003
 owner: theupsider
-version: 0.1
+version: 1.0
 ---
 
 ## Description
@@ -42,24 +42,43 @@ Per the CSV v3 specification:
 
 Before implementation begins:
 
-- [ ] Generate traceability table mapping each v3 CSV row to a provider ID (use the CSV `ID` slug exactly)
-- [ ] Wait for human approval of the mapping before writing code
-- [ ] Provider IDs must match CSV `ID` values systematically
-- [ ] Output schema must align with the CSV `Output` column and metric description
-- [ ] No derived/computed metrics beyond CSV specification unless explicitly documented as separate requirements
+- [x] Generate traceability table mapping each v3 CSV row to a provider ID (use the CSV `ID` slug exactly)
+- [x] Wait for human approval of the mapping before writing code
+- [x] Provider IDs must match CSV `ID` values systematically
+- [x] Output schema must align with the CSV `Output` column and metric description
+- [x] No derived/computed metrics beyond CSV specification unless explicitly documented as separate requirements
 
 During implementation:
 
-- [ ] Provider naming follows systematic pattern: CSV `ID` → provider file (e.g., `courses-scores.provider.ts`)
-- [ ] Each provider includes JSDoc comment: "Implements CSV v3 metric: <ID> — <Description>"
-- [ ] Test data validates CSV-described data points exactly as written
+- [x] Provider naming follows systematic pattern: CSV `ID` → provider file (e.g., `courses-scores.provider.ts`)
+- [x] Each provider includes JSDoc comment: "Implements CSV v3 metric: <ID> — <Description>"
+- [x] Test data validates CSV-described data points exactly as written
 
 Before marking story complete:
 
-- [ ] AI/Developer confirms: "This provider implements CSV v3 metric `<ID>`: <Description>"
-- [ ] Verification: If calculating percentages, rates, or averages not in CSV → STOP and create separate requirement ID
+- [x] AI/Developer confirms: "This provider implements CSV v3 metric `<ID>`: <Description>"
+- [x] Verification: If calculating percentages, rates, or averages not in CSV → STOP and create separate requirement ID
 
 **Red Flag Check:** Derived metrics require explicit specification. The v3 CSV defines raw data aggregations; any additional analytics must be captured as new metrics/requirements.
+
+### Implementation Status
+
+**✅ All 12 v3 CSV metrics implemented:**
+
+| CSV ID                         | Provider                            | Status      |
+| ------------------------------ | ----------------------------------- | ----------- |
+| `courses-scores`               | `CoursesScoresProvider`             | ✅ Complete |
+| `courses-max-scores`           | `CoursesMaxScoresProvider`          | ✅ Complete |
+| `courses-time-spent`           | `CoursesTimeSpentProvider`          | ✅ Complete |
+| `user-last-elements`           | `UserLastElementsProvider`          | ✅ Complete |
+| `course-topics-scores`         | `CourseTopicsScoresProvider`        | ✅ Complete |
+| `course-topics-max-scores`     | `CourseTopicsMaxScoresProvider`     | ✅ Complete |
+| `course-topics-time-spent`     | `CourseTopicsTimeSpentProvider`     | ✅ Complete |
+| `course-last-elements`         | `CourseLastElementsProvider`        | ✅ Complete |
+| `topic-elements-best-attempts` | `TopicElementsBestAttemptsProvider` | ✅ Complete |
+| `topic-elements-max-scores`    | `TopicElementsMaxScoresProvider`    | ✅ Complete |
+| `topic-elements-time-spent`    | `TopicElementsTimeSpentProvider`    | ✅ Complete |
+| `topic-last-elements`          | `TopicLastElementsProvider`         | ✅ Complete |
 
 ## Verification
 
@@ -103,8 +122,8 @@ Before marking story complete:
 
 ## Risks / Open Questions
 
-- Migration plan for clients consuming v2 provider IDs (see migration guide in `docs/api-migrations/2026-02-metrics-csv-v3.md`).
-- Alignment of output shapes with front-end expectations; may require a beta period with dual publishing.
+- ~~Migration plan for clients consuming v2 provider IDs (see migration guide in `docs/api-migrations/2026-02-metrics-csv-v3.md`).~~ **RESOLVED**: v2 providers removed; v3 is now the sole catalog on `/api/v1/metrics`.
+- ~~Alignment of output shapes with front-end expectations; may require a beta period with dual publishing.~~ **RESOLVED**: v3 output schema standardized; v1/v2 providers archived.
 
 ## References
 
@@ -116,6 +135,7 @@ Before marking story complete:
 ## Change History
 
 - v0.1 — Initial draft for CSV v3 baseline; supersedes REQ-FN-031
+- v1.0 — All 12 v3 metrics implemented; v1/v2 providers removed; v3 is now sole catalog
 
 ```
 

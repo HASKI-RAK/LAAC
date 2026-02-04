@@ -2,13 +2,11 @@
 
 ## Purpose
 
-This document provides formal definitions for all learning analytics metrics specified in the v3 catalog [docs/resources/LAAC_Learning_Analytics_Requirements.v3.csv](docs/resources/LAAC_Learning_Analytics_Requirements.v3.csv). It eliminates ambiguity by defining precise semantics, calculation methods, and data requirements for each metric. Legacy v2 and v1 definitions remain valid for backward compatibility and are documented in prior revisions.
+This document provides formal definitions for all learning analytics metrics specified in the v3 catalog [docs/resources/LAAC_Learning_Analytics_Requirements.v3.csv](docs/resources/LAAC_Learning_Analytics_Requirements.v3.csv). It eliminates ambiguity by defining precise semantics, calculation methods, and data requirements for each metric. Legacy v1 and v2 definitions have been removed; v3 is the sole authoritative catalog.
 
 ## References
 
 - [LAAC_Learning_Analytics_Requirements.v3.csv](./resources/LAAC_Learning_Analytics_Requirements.v3.csv)
-- Legacy v2: [LAAC_Learning_Analytics_Requirements.v2.csv](./resources/LAAC_Learning_Analytics_Requirements.v2.csv)
-- Legacy v1: [LAAC_Learning_Analytics_Requirements.csv](./resources/LAAC_Learning_Analytics_Requirements.csv)
 - xAPI Specification: https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Data.md
 - Yetanalytics LRS API: https://github.com/yetanalytics/lrsql/blob/main/doc/endpoints.md
 
@@ -213,108 +211,6 @@ Per the CSV v3 specification, all metric implementations MUST follow these rules
 
 ---
 
-## Legacy Metric Definitions (CSV v2 — Deprecated)
-
-> **Note**: The following v2 metrics are retained for backward compatibility during the transition period. New implementations should use the v3 definitions above.
-
-### Course Metrics (v2)
-
-#### courses-total-scores
-
-- **CSV Description**: Total scores earned by a student in each course.
-- **Inputs**: `userId`; optional `since`, `until`.
-- **Definition**: For each course the student appears in, sum the best-attempt scores of all learning elements within that course during the time window (if provided). Best attempt selection follows the global definition.
-- **Output**: Array of `{ courseId, totalScore }` sorted by `courseId`.
-- **Units**: Normalized score (scaled where available; derive from raw/min/max otherwise).
-
-#### courses-max-scores
-
-- **CSV Description**: Max score of each course the student is enrolled in.
-- **Inputs**: `userId`.
-- **Definition**: For each course, return the highest single best-attempt score observed among its learning elements for the student. If scores are scaled, use the maximum scaled value; otherwise derive from raw/min/max.
-- **Output**: Array of `{ courseId, maxScore }`.
-- **Notes**: If no scored attempts exist for a course, return `maxScore = 0`.
-
-#### courses-time-spent
-
-- **CSV Description**: Total time spent by a student in each course.
-- **Inputs**: `userId`; optional `since`, `until`.
-- **Definition**: Sum `result.duration` values for statements within each course for the student in the time window. Exclude malformed or negative durations.
-- **Output**: Array of `{ courseId, timeSpent }` in seconds.
-
-#### courses-last-elements
-
-- **CSV Description**: Last three learning elements completed by a student.
-- **Inputs**: `userId`; optional `since`, `until`.
-- **Definition**: Per course, identify completions (`result.completion = true`) for the student within the time window. Deduplicate per learning element by most recent completion, sort by completion timestamp descending, and return the latest three.
-- **Output**: Array of `{ elementId, completedAt }` per course context; if fewer than three exist, return available completions.
-
----
-
-### Topic Metrics (v2)
-
-#### topics-total-scores
-
-- **CSV Description**: Total scores earned by a student in each topic.
-- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
-- **Definition**: Within the selected course, sum the best-attempt scores of learning elements grouped by topic for the student and time window.
-- **Output**: Array of `{ topicId, totalScore }`.
-
-#### topics-max-scores
-
-- **CSV Description**: Max score of each topic within the selected course.
-- **Inputs**: `userId`, `courseId`.
-- **Definition**: For each topic in the course, return the highest best-attempt score across its learning elements for the student.
-- **Output**: Array of `{ topicId, maxScore }`; default 0 when no scores exist for a topic.
-
-#### topics-time-spent
-
-- **CSV Description**: Total time spent by a student in each topic.
-- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
-- **Definition**: Sum `result.duration` per topic for the student in the time window. Use the same duration parsing and filtering rules as course time spent.
-- **Output**: Array of `{ topicId, timeSpent }` in seconds.
-
-#### topics-last-elements
-
-- **CSV Description**: Last three learning elements completed by a student within the selected course.
-- **Inputs**: `userId`, `courseId`; optional `since`, `until`.
-- **Definition**: Within the course, find completions per topic, deduplicate per element by most recent completion, sort descending by timestamp, and return the latest three per topic.
-- **Output**: Array of `{ elementId, completedAt }`; return available items when fewer than three exist.
-
----
-
-### Learning Element Metrics (v2)
-
-#### elements-completion-status
-
-- **CSV Description**: Completion status of the best attempt by a student on each learning element in topic.
-- **Inputs**: `userId`, `topicId`.
-- **Definition**: For each element within the topic, select the best attempt for the student and report `completionStatus`, the best-attempt `score` (scaled where possible), and `completedAt` timestamp from the completion statement if present.
-- **Output**: Array of `{ elementId, score, completionStatus, completedAt }`, where `completionStatus` is `true | false | null`.
-
-#### elements-max-scores
-
-- **CSV Description**: Max score of each learning element within the selected topic.
-- **Inputs**: `userId`, `topicId`.
-- **Definition**: For each element, return the highest score achieved by the student across all attempts within the topic context.
-- **Output**: Array of `{ elementId, maxScore }`; default 0 when no scores exist.
-
-#### elements-time-spent
-
-- **CSV Description**: Total time spent by a student on each learning element.
-- **Inputs**: `userId`, `topicId`; optional `since`, `until`.
-- **Definition**: Sum `result.duration` for the student's statements per element in the time window, applying the same duration validation rules as above.
-- **Output**: Array of `{ elementId, timeSpent }` in seconds.
-
-#### elements-last-elements
-
-- **CSV Description**: Last three learning elements completed by a student within the selected topic.
-- **Inputs**: `userId`, `topicId`; optional `since`, `until`.
-- **Definition**: Identify completions for the student per element, deduplicate by most recent completion, sort by completion timestamp descending, and return the latest three.
-- **Output**: Array of `{ elementId, completedAt }`; return available items when fewer than three exist.
-
----
-
 ## Implementation Notes
 
 ### xAPI Statement Filtering
@@ -396,12 +292,13 @@ timestamp >= {start} AND timestamp < {end}
 
 This specification is versioned alongside the API. Changes to metric definitions constitute breaking changes and require a new API version.
 
-- **Version**: 3.0
+- **Version**: 3.1
 - **Date**: February 4, 2026
-- **Status**: Aligned to CSV v3 catalog
+- **Status**: v3 is sole catalog; v1/v2 definitions removed
 
 ### Change Log
 
+- v3.1 (2026-02-04): Removed legacy v1/v2 metric definitions; v3 is now the sole authoritative catalog. All 12 v3 providers implemented.
 - v3.0 (2026-02-04): Adopted CSV v3 catalog; restructured naming (courses-_, course-topics-_, topic-elements-_, user-_); added global aggregation rules; standardized output fields.
 - v2.0 (2026-01-28): Adopted CSV v2 catalog; replaced CO/TO/EO metrics with courses/topics/elements slugs; retained general definitions; legacy v1 remains available for backward compatibility.
 - v1.2 (2025-11-18): All 16 CSV v1 metrics implemented and verified.

@@ -5,7 +5,7 @@ import { IMetricComputation } from './metric.interface';
 import { MetricParams } from './metric-params.interface';
 import { MetricResult } from './metric-result.interface';
 import { DashboardLevel } from '../types/dashboard-level.type';
-import { ExampleMetricProvider } from '../providers/example.provider';
+import { CoursesScoresProvider } from '../providers/courses-scores.provider';
 import { xAPIStatement } from '../../data-access';
 
 describe('REQ-FN-010: Metric Computation Interface', () => {
@@ -98,11 +98,11 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     });
   });
 
-  describe('ExampleMetricProvider Implementation', () => {
-    let provider: ExampleMetricProvider;
+  describe('CoursesScoresProvider Implementation (v3)', () => {
+    let provider: CoursesScoresProvider;
 
     beforeEach(() => {
-      provider = new ExampleMetricProvider();
+      provider = new CoursesScoresProvider();
     });
 
     it('should satisfy IMetricComputation interface', () => {
@@ -112,16 +112,11 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     });
 
     it('should have required properties', () => {
-      expect(provider.id).toBe('example-metric');
+      expect(provider.id).toBe('courses-scores');
       expect(provider.dashboardLevel).toBe('course');
-      expect(provider.description).toBe(
-        'Example metric that counts xAPI statements',
-      );
-      expect(provider.version).toBe('1.0.0');
-      expect(provider.title).toBe('Example Statement Count');
-      expect(provider.requiredParams).toEqual(['courseId']);
-      expect(provider.outputType).toBe('scalar');
-      expect(provider.example).toBeDefined();
+      expect(provider.description).toContain('score');
+      expect(provider.requiredParams).toContain('userId');
+      expect(provider.outputType).toBe('array');
     });
 
     it('should have compute method', () => {
@@ -138,93 +133,29 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
 
     describe('compute method', () => {
       it('should return MetricResult with correct structure', async () => {
-        const params: MetricParams = { courseId: 'course-123' };
-        const statements: xAPIStatement[] = [
-          {
-            actor: {
-              account: { homePage: 'https://example.com', name: 'user1' },
-            },
-            verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
-            object: { id: 'http://example.com/activity/1' },
-          },
-        ];
-
-        const result = await provider.compute(params, statements);
-
-        expect(result).toBeDefined();
-        expect(result.metricId).toBe('example-metric');
-        expect(result.value).toBe(1);
-        expect(result.computed).toBeDefined();
-        expect(result.metadata).toBeDefined();
-      });
-
-      it('should count all statements when no verb filter', async () => {
-        const params: MetricParams = { courseId: 'course-123' };
-        const statements: xAPIStatement[] = [
-          {
-            actor: {
-              account: { homePage: 'https://example.com', name: 'user1' },
-            },
-            verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
-            object: { id: 'http://example.com/activity/1' },
-          },
-          {
-            actor: {
-              account: { homePage: 'https://example.com', name: 'user2' },
-            },
-            verb: { id: 'http://adlnet.gov/expapi/verbs/attempted' },
-            object: { id: 'http://example.com/activity/2' },
-          },
-        ];
-
-        const result = await provider.compute(params, statements);
-
-        expect(result.value).toBe(2);
-        expect(result.metadata?.totalStatements).toBe(2);
-        expect(result.metadata?.matchingStatements).toBe(2);
-      });
-
-      it('should filter statements by verb when provided', async () => {
-        const params: MetricParams = {
-          courseId: 'course-123',
-          filters: { verbId: 'http://adlnet.gov/expapi/verbs/completed' },
-        };
-        const statements: xAPIStatement[] = [
-          {
-            actor: {
-              account: { homePage: 'https://example.com', name: 'user1' },
-            },
-            verb: { id: 'http://adlnet.gov/expapi/verbs/completed' },
-            object: { id: 'http://example.com/activity/1' },
-          },
-          {
-            actor: {
-              account: { homePage: 'https://example.com', name: 'user2' },
-            },
-            verb: { id: 'http://adlnet.gov/expapi/verbs/attempted' },
-            object: { id: 'http://example.com/activity/2' },
-          },
-        ];
-
-        const result = await provider.compute(params, statements);
-
-        expect(result.value).toBe(1);
-        expect(result.metadata?.totalStatements).toBe(2);
-        expect(result.metadata?.matchingStatements).toBe(1);
-      });
-
-      it('should handle empty statement array', async () => {
-        const params: MetricParams = { courseId: 'course-123' };
+        const params: MetricParams = { userId: 'user-123' };
         const statements: xAPIStatement[] = [];
 
         const result = await provider.compute(params, statements);
 
-        expect(result.value).toBe(0);
-        expect(result.metadata?.totalStatements).toBe(0);
+        expect(result).toBeDefined();
+        expect(result.metricId).toBe('courses-scores');
+        expect(result.computed).toBeDefined();
+        expect(Array.isArray(result.value)).toBe(true);
+      });
+
+      it('should handle empty statement array', async () => {
+        const params: MetricParams = { userId: 'user-123' };
+        const statements: xAPIStatement[] = [];
+
+        const result = await provider.compute(params, statements);
+
+        expect(Array.isArray(result.value)).toBe(true);
+        expect((result.value as unknown[]).length).toBe(0);
       });
 
       it('should include timestamp in ISO 8601 format', async () => {
-        const params: MetricParams = { courseId: 'course-123' };
+        const params: MetricParams = { userId: 'user-123' };
         const statements: xAPIStatement[] = [];
 
         const result = await provider.compute(params, statements);
@@ -242,23 +173,23 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     });
 
     describe('validateParams method', () => {
-      it('should pass validation with valid courseId', () => {
-        const params: MetricParams = { courseId: 'course-123' };
+      it('should pass validation with valid userId', () => {
+        const params: MetricParams = { userId: 'user-123' };
         const validateFn = provider.validateParams?.bind(provider);
 
         expect(() => validateFn?.(params)).not.toThrow();
       });
 
-      it('should throw error when courseId is missing', () => {
+      it('should throw error when userId is missing', () => {
         const params: MetricParams = {};
         const validateFn = provider.validateParams?.bind(provider);
 
-        expect(() => validateFn?.(params)).toThrow('courseId is required');
+        expect(() => validateFn?.(params)).toThrow('userId is required');
       });
 
       it('should validate time range when both since and until provided', () => {
         const validParams: MetricParams = {
-          courseId: 'course-123',
+          userId: 'user-123',
           since: '2024-01-01T00:00:00Z',
           until: '2024-12-31T23:59:59Z',
         };
@@ -269,7 +200,7 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
 
       it('should throw error when since is after until', () => {
         const invalidParams: MetricParams = {
-          courseId: 'course-123',
+          userId: 'user-123',
           since: '2024-12-31T23:59:59Z',
           until: '2024-01-01T00:00:00Z',
         };

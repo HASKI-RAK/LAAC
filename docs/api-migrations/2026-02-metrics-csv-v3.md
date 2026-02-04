@@ -59,16 +59,18 @@
 
 ## Deprecation Timeline
 
-| Phase         | Date Range           | Action                                                        |
-| ------------- | -------------------- | ------------------------------------------------------------- |
-| Announcement  | February 4, 2026     | v3 metrics released; v2 deprecated but functional             |
-| Compatibility | Feb 4 – May 31, 2026 | Both v2 and v3 endpoints available; migration warnings logged |
-| Sunset        | June 1, 2026         | v2 endpoints removed; v3 is sole catalog                      |
+| Phase        | Date             | Action                                                               |
+| ------------ | ---------------- | -------------------------------------------------------------------- |
+| Announcement | February 4, 2026 | v3 metrics released; v2 providers deprecated and removed immediately |
+| Live         | February 4, 2026 | v3 is sole catalog on `/api/v1/metrics` endpoint                     |
 
-## Open Decisions
+## Migration Decisions (Resolved)
 
-- Should v2 providers be removed immediately or retained as aliases?
-- Do we need a versioned catalog endpoint (`/v3/metrics`) or rely on header-based version negotiation?
+The following decisions were made on February 4, 2026:
+
+1. **v2 providers removed immediately**: Legacy v1/v2 providers have been removed from the codebase. No backward compatibility aliases are maintained.
+2. **No versioned catalog endpoint specifially for v3**: v3 metrics are served on the existing `/api/v1/metrics` endpoint. No header-based version negotiation is implemented. The URL versioning (`/v1/`) refers to the API version, not the metrics catalog version.
+3. **Clean break**: Clients must update to v3 metric IDs and parameters immediately. See the mapping table above for migration guidance.
 
 ---
 
