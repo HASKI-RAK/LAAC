@@ -1,0 +1,21 @@
+ID,Description,Input,Output,Source
+courses-scores,"Calculates, per course, the sum of the highest score achieved by the user for each learning element in that course, optionally limited to a specified time range.*","userId, since (optional), until (optional)","[{courseId, score}]",LAAC
+courses-max-scores,"Calculates, per course, the maximum possible score, defined as the sum of the defined maximum scores configured for all learning elements belonging to that course.*",userId,"[{courseId, maxScore}]",LAAC
+courses-time-spent,"Calculates, per course, the total time spent by the user across all attempts of all learning elements in that course, optionally limited to a specified time range.*","userId, since (optional), until (optional)","[{courseId, timeSpent}]",LAAC
+user-last-elements,"Returns the three most recently completed learning elements by the user across all courses, ordered by completion time descending and optionally filtered by a specified time range.*","userId, since (optional), until (optional)","[{elementId, completedAt}]",LAAC
+course-last-elements,"Returns the three most recently completed learning elements by the user within a specific course, ordered by completion time descending and optionally filtered by a specified time range.*","userId, courseId, since (optional), until (optional)","[{elementId, completedAt}]",LAAC
+course-elements-best-attempts,"For each learning element within a specified course, selects the user's highest-scoring attempt and returns its score, completion status, and completion timestamp.*","userId, courseId","[{elementId, score, completionStatus, completedAt}]",LAAC
+course-elements-max-scores,"Returns for each learning element within a specified course its defined maximum achievable score.*","userId, courseId","[{elementId, maxScore}]",LAAC
+course-elements-time-spent,"Calculates, for each learning element within a specified course, the total time spent by the user across all attempts, optionally limited to a specified time range.*","userId, courseId, since (optional), until (optional)","[{elementId, timeSpent}]",LAAC
+,,,,
+*Global aggregation rules:,,,,
+• Score aggregation MUST consider only the highest-scoring attempt per learning element.,,,,
+• Time aggregation MUST sum the durations of all attempts.,,,,
+• All time values MUST be returned in seconds.,,,,
+• All calculations MUST consider only entities the user is authorized to access.,,,,
+,,,,
+Migration notes (v3 → v4):,,,,
+• Removed all topic-level metrics (course-topics-scores / course-topics-max-scores / course-topics-time-spent) — topic IDs are not present in Moodle xAPI statements.,,,,
+• Removed all topic-elements-* metrics — replaced by course-elements-* equivalents scoped to courseId.,,,,
+• Removed topic-last-elements — covered by course-last-elements.,,,,
+• Removed topicId as a query parameter from the API.,,,,

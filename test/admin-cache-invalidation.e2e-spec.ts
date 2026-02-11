@@ -186,7 +186,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
           generateCacheKey({
             metricId: `${TEST_KEY_PREFIX}-pattern-metrics`,
             instanceId: TEST_INSTANCE_ID,
-            scope: 'topic',
+            scope: 'element',
             filters: { id: '3' },
           }),
           generateCacheKey({
@@ -263,7 +263,7 @@ describe('REQ-FN-007: Cache Invalidation Admin Endpoint (e2e)', () => {
           generateCacheKey({
             metricId: `${TEST_KEY_PREFIX}-all-2`,
             instanceId: TEST_INSTANCE_ID,
-            scope: 'topic',
+            scope: 'element',
           }),
           { test: '2' },
         );

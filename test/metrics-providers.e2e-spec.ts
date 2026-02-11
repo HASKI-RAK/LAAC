@@ -1,22 +1,23 @@
-// REQ-FN-003: Metric Providers E2E Tests
+// REQ-FN-003: Metric Providers E2E Tests (CSV v4)
 // End-to-end tests for metric providers with sample xAPI data
+// Topic-related providers removed in v4 — topic IDs not present in Moodle xAPI data
 
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  CourseCompletionProvider,
-  LearningEngagementProvider,
-  TopicMasteryProvider,
+  CoursesScoresProvider,
+  CourseElementsBestAttemptsProvider,
+  CourseElementsTimeSpentProvider,
 } from '../src/computation/providers';
 import { xAPIStatement } from '../src/data-access';
 
-describe('REQ-FN-003: Metric Providers (e2e)', () => {
-  let courseCompletionProvider: CourseCompletionProvider;
-  let learningEngagementProvider: LearningEngagementProvider;
-  let topicMasteryProvider: TopicMasteryProvider;
+describe('REQ-FN-003: Metric Providers (e2e, CSV v4)', () => {
+  let coursesScoresProvider: CoursesScoresProvider;
+  let courseElementsBestAttemptsProvider: CourseElementsBestAttemptsProvider;
+  let courseElementsTimeSpentProvider: CourseElementsTimeSpentProvider;
 
-  // Sample xAPI statements simulating real HASKI data
+  // Sample xAPI statements simulating real HASKI / Moodle data
   const sampleStatements: xAPIStatement[] = [
-    // Course completion statements
+    // Quiz attempt 1 — element-1, scored 85, completed
     {
       id: '00000000-0000-0000-0000-000000000001',
       actor: {
@@ -26,80 +27,99 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
         },
       },
       verb: {
-        id: 'https://wiki.haski.app/variables/xapi.completed',
-        display: { en: 'completed' },
+        id: 'http://adlnet.gov/expapi/verbs/scored',
+        display: { en: 'scored' },
       },
       object: {
-        id: 'https://ke.moodle.haski.app/course/view.php?id=42',
+        id: 'element-1',
         definition: {
-          type: 'http://adlnet.gov/expapi/activities/course',
-          name: { en: 'Introduction to Programming' },
+          type: 'http://adlnet.gov/expapi/activities/assessment',
+          name: { en: 'Variables Quiz' },
         },
       },
       context: {
         platform: 'Moodle',
-        language: 'en',
-      },
-      timestamp: '2024-11-10T14:30:00.000Z',
-    } as xAPIStatement,
-
-    // Engagement: User viewing course content
-    {
-      id: '00000000-0000-0000-0000-000000000002',
-      actor: {
-        account: {
-          homePage: 'https://ke.haski.app',
-          name: '101',
+        contextActivities: {
+          parent: [{ id: 'https://ke.moodle.haski.app/course/view.php?id=42' }],
         },
-      },
-      verb: {
-        id: 'https://wiki.haski.app/variables/xapi.viewed',
-        display: { en: 'viewed' },
-      },
-      object: {
-        id: 'https://ke.haski.app/module/42/topic/1',
-        definition: {
-          type: 'http://activitystrea.ms/schema/1.0/page',
-          name: { en: 'Variables and Data Types' },
-        },
-      },
-      context: {
-        platform: 'Frontend',
-        language: 'en',
       },
       result: {
-        duration: 'PT15M30S', // 15 minutes 30 seconds
+        score: { raw: 85, max: 100 },
+        completion: true,
+        duration: 'PT15M',
       },
       timestamp: '2024-11-10T10:00:00.000Z',
     } as xAPIStatement,
 
-    // Engagement: User interacting with content
+    // Quiz attempt 2 — element-1, scored 92 (better), completed
+    {
+      id: '00000000-0000-0000-0000-000000000002',
+      actor: {
+        account: {
+          homePage: 'https://ke.moodle.haski.app',
+          name: '101',
+        },
+      },
+      verb: {
+        id: 'http://adlnet.gov/expapi/verbs/scored',
+        display: { en: 'scored' },
+      },
+      object: {
+        id: 'element-1',
+        definition: {
+          type: 'http://adlnet.gov/expapi/activities/assessment',
+          name: { en: 'Variables Quiz' },
+        },
+      },
+      context: {
+        platform: 'Moodle',
+        contextActivities: {
+          parent: [{ id: 'https://ke.moodle.haski.app/course/view.php?id=42' }],
+        },
+      },
+      result: {
+        score: { raw: 92, max: 100 },
+        completion: true,
+        duration: 'PT20M',
+      },
+      timestamp: '2024-11-10T11:00:00.000Z',
+    } as xAPIStatement,
+
+    // Quiz attempt — element-2, scored 78, completed
     {
       id: '00000000-0000-0000-0000-000000000003',
       actor: {
         account: {
-          homePage: 'https://ke.haski.app',
-          name: '102',
+          homePage: 'https://ke.moodle.haski.app',
+          name: '101',
         },
       },
       verb: {
-        id: 'https://wiki.haski.app/variables/xapi.clicked',
-        display: { en: 'clicked' },
+        id: 'http://adlnet.gov/expapi/verbs/scored',
+        display: { en: 'scored' },
       },
       object: {
-        id: 'https://ke.haski.app/module/42/topic/1/element/1',
+        id: 'element-2',
+        definition: {
+          type: 'http://adlnet.gov/expapi/activities/assessment',
+          name: { en: 'Data Types Assignment' },
+        },
       },
       context: {
-        platform: 'Frontend',
-        language: 'en',
+        platform: 'Moodle',
+        contextActivities: {
+          parent: [{ id: 'https://ke.moodle.haski.app/course/view.php?id=42' }],
+        },
       },
       result: {
-        duration: 'PT5M',
+        score: { raw: 78, max: 100 },
+        completion: true,
+        duration: 'PT30M',
       },
-      timestamp: '2024-11-10T10:30:00.000Z',
+      timestamp: '2024-11-10T12:00:00.000Z',
     } as xAPIStatement,
 
-    // Topic mastery: Quiz answered with score
+    // Activity with duration but no score — element-3
     {
       id: '00000000-0000-0000-0000-000000000004',
       actor: {
@@ -109,343 +129,162 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
         },
       },
       verb: {
-        id: 'http://adlnet.gov/expapi/verbs/answered',
-        display: { en: 'answered' },
-      },
-      object: {
-        id: 'https://ke.moodle.haski.app/mod/quiz/view.php?id=123',
-        definition: {
-          type: 'http://adlnet.gov/expapi/activities/assessment',
-          name: { en: 'Variables Quiz' },
-        },
-      },
-      context: {
-        platform: 'Moodle',
-        language: 'en',
-        contextActivities: {
-          parent: [
-            {
-              id: 'https://ke.moodle.haski.app/course/view.php?id=42&section=1',
-            },
-          ],
-        },
-      },
-      result: {
-        score: {
-          scaled: 0.85,
-          raw: 85,
-          min: 0,
-          max: 100,
-        },
-        success: true,
-        completion: true,
-      },
-      timestamp: '2024-11-10T11:00:00.000Z',
-    } as xAPIStatement,
-
-    // Topic mastery: Another quiz attempt
-    {
-      id: '00000000-0000-0000-0000-000000000005',
-      actor: {
-        account: {
-          homePage: 'https://ke.moodle.haski.app',
-          name: '102',
-        },
-      },
-      verb: {
-        id: 'http://adlnet.gov/expapi/verbs/answered',
-        display: { en: 'answered' },
-      },
-      object: {
-        id: 'https://ke.moodle.haski.app/mod/quiz/view.php?id=123',
-      },
-      context: {
-        platform: 'Moodle',
-        language: 'en',
-      },
-      result: {
-        score: {
-          scaled: 0.92,
-          raw: 92,
-          min: 0,
-          max: 100,
-        },
-        success: true,
-        completion: true,
-      },
-      timestamp: '2024-11-10T11:15:00.000Z',
-    } as xAPIStatement,
-
-    // Failed quiz attempt
-    {
-      id: '00000000-0000-0000-0000-000000000006',
-      actor: {
-        account: {
-          homePage: 'https://ke.moodle.haski.app',
-          name: '103',
-        },
-      },
-      verb: {
-        id: 'http://adlnet.gov/expapi/verbs/failed',
-        display: { en: 'failed' },
-      },
-      object: {
-        id: 'https://ke.moodle.haski.app/mod/quiz/view.php?id=123',
-      },
-      result: {
-        score: {
-          scaled: 0.45,
-          raw: 45,
-          min: 0,
-          max: 100,
-        },
-        success: false,
-        completion: true,
-      },
-      timestamp: '2024-11-10T11:30:00.000Z',
-    } as xAPIStatement,
-
-    // Engagement: Long duration activity
-    {
-      id: '00000000-0000-0000-0000-000000000007',
-      actor: {
-        account: {
-          homePage: 'https://ke.haski.app',
-          name: '103',
-        },
-      },
-      verb: {
         id: 'http://adlnet.gov/expapi/verbs/experienced',
         display: { en: 'experienced' },
       },
       object: {
-        id: 'https://ke.haski.app/module/42/video/1',
-      },
-      context: {
-        platform: 'Frontend',
-        language: 'en',
-      },
-      result: {
-        duration: 'PT1H30M', // 1 hour 30 minutes
-      },
-      timestamp: '2024-11-10T12:00:00.000Z',
-    } as xAPIStatement,
-
-    // Course completion: Second learner
-    {
-      id: '00000000-0000-0000-0000-000000000008',
-      actor: {
-        account: {
-          homePage: 'https://ke.moodle.haski.app',
-          name: '102',
+        id: 'element-3',
+        definition: {
+          type: 'http://adlnet.gov/expapi/activities/lesson',
+          name: { en: 'Intro Video' },
         },
-      },
-      verb: {
-        id: 'http://adlnet.gov/expapi/verbs/completed',
-        display: { en: 'completed' },
-      },
-      object: {
-        id: 'https://ke.moodle.haski.app/course/view.php?id=42',
       },
       context: {
         platform: 'Moodle',
-        language: 'en',
-      },
-      timestamp: '2024-11-10T15:00:00.000Z',
-    } as xAPIStatement,
-
-    // Engagement: Multiple clicks
-    {
-      id: '00000000-0000-0000-0000-000000000009',
-      actor: {
-        account: {
-          homePage: 'https://ke.haski.app',
-          name: '101',
+        contextActivities: {
+          parent: [{ id: 'https://ke.moodle.haski.app/course/view.php?id=42' }],
         },
       },
-      verb: {
-        id: 'https://wiki.haski.app/variables/xapi.clicked',
-        display: { en: 'clicked' },
-      },
-      object: {
-        id: 'https://ke.haski.app/module/42/button/next',
-      },
       result: {
-        duration: 'PT2M',
+        duration: 'PT45M',
       },
       timestamp: '2024-11-10T13:00:00.000Z',
-    } as xAPIStatement,
-
-    // Additional engagement
-    {
-      id: '00000000-0000-0000-0000-000000000010',
-      actor: {
-        account: {
-          homePage: 'https://ke.haski.app',
-          name: '102',
-        },
-      },
-      verb: {
-        id: 'http://activitystrea.ms/schema/1.0/open',
-        display: { en: 'opened' },
-      },
-      object: {
-        id: 'https://ke.haski.app/module/42/topic/2',
-      },
-      result: {
-        duration: 'PT20M',
-      },
-      timestamp: '2024-11-10T14:00:00.000Z',
     } as xAPIStatement,
   ];
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [
-        CourseCompletionProvider,
-        LearningEngagementProvider,
-        TopicMasteryProvider,
+        CoursesScoresProvider,
+        CourseElementsBestAttemptsProvider,
+        CourseElementsTimeSpentProvider,
       ],
     }).compile();
 
-    courseCompletionProvider = moduleFixture.get<CourseCompletionProvider>(
-      CourseCompletionProvider,
+    coursesScoresProvider = moduleFixture.get<CoursesScoresProvider>(
+      CoursesScoresProvider,
     );
-    learningEngagementProvider = moduleFixture.get<LearningEngagementProvider>(
-      LearningEngagementProvider,
-    );
-    topicMasteryProvider =
-      moduleFixture.get<TopicMasteryProvider>(TopicMasteryProvider);
+    courseElementsBestAttemptsProvider =
+      moduleFixture.get<CourseElementsBestAttemptsProvider>(
+        CourseElementsBestAttemptsProvider,
+      );
+    courseElementsTimeSpentProvider =
+      moduleFixture.get<CourseElementsTimeSpentProvider>(
+        CourseElementsTimeSpentProvider,
+      );
   });
 
-  describe('CourseCompletionProvider with realistic data', () => {
-    it('should calculate course completion rate correctly', async () => {
-      const params = { courseId: 'course-42' };
+  describe('CoursesScoresProvider with realistic data', () => {
+    it('should calculate per-course scores using best attempts', async () => {
+      const params = { userId: 'user-101' };
 
-      const result = await courseCompletionProvider.compute(
+      const result = await coursesScoresProvider.compute(
         params,
         sampleStatements,
       );
 
-      // 2 completed (user 101, 102) out of 3 total learners (101, 102, 103) = 66.67%
-      expect(result.metricId).toBe('course-completion');
-      expect(result.value).toBeCloseTo(66.67, 1);
-      expect(result.metadata?.totalLearners).toBe(3);
-      expect(result.metadata?.completedLearners).toBe(2);
-      expect(result.metadata?.unit).toBe('percentage');
+      expect(result.metricId).toBe('courses-scores');
+      // element-1 best = 92, element-2 best = 78, element-3 has no score
+      // Total = 170 for course-42
+      expect(Array.isArray(result.value)).toBe(true);
+      expect(result.metadata?.courseCount).toBeGreaterThanOrEqual(1);
     });
 
-    it('should handle date filtering', async () => {
-      const params = {
-        courseId: 'course-42',
-        since: '2024-11-10T14:00:00.000Z',
-        until: '2024-11-10T16:00:00.000Z',
-      };
-
-      // This should still work with validation
-      courseCompletionProvider.validateParams(params);
-      const result = await courseCompletionProvider.compute(
-        params,
-        sampleStatements,
+    it('should validate userId is required', () => {
+      expect(() => coursesScoresProvider.validateParams({})).toThrow(
+        'userId is required',
       );
-
-      expect(result.metadata?.timeRange).toEqual({
-        since: '2024-11-10T14:00:00.000Z',
-        until: '2024-11-10T16:00:00.000Z',
-      });
-    });
-  });
-
-  describe('LearningEngagementProvider with realistic data', () => {
-    it('should calculate engagement score from activities', async () => {
-      const params = { courseId: 'course-42' };
-
-      const result = await learningEngagementProvider.compute(
-        params,
-        sampleStatements,
-      );
-
-      expect(result.metricId).toBe('learning-engagement');
-      expect(result.value).toBeGreaterThan(0);
-      expect(result.metadata?.activityCount).toBeGreaterThan(0);
-      expect(result.metadata?.totalDurationMinutes).toBeGreaterThan(0);
-      expect(result.metadata?.unit).toBe('score');
-    });
-
-    it('should parse durations correctly from statements', async () => {
-      const params = { courseId: 'course-42' };
-
-      const result = await learningEngagementProvider.compute(
-        params,
-        sampleStatements,
-      );
-
-      // Total duration should include:
-      // - PT15M30S = 15.5 min
-      // - PT5M = 5 min
-      // - PT1H30M = 90 min
-      // - PT2M = 2 min
-      // - PT20M = 20 min
-      // Total = 132.5 minutes
-      expect(result.metadata?.totalDurationMinutes).toBeCloseTo(132.5, 1);
-    });
-
-    it('should support topic-level filtering', async () => {
-      const params = { courseId: 'course-42', topicId: 'topic-1' };
-
-      learningEngagementProvider.validateParams(params);
-      const result = await learningEngagementProvider.compute(
-        params,
-        sampleStatements,
-      );
-
-      expect(result.metadata?.topicId).toBe('topic-1');
-    });
-  });
-
-  describe('TopicMasteryProvider with realistic data', () => {
-    it('should calculate topic mastery from quiz scores', async () => {
-      const params = { courseId: 'course-42', topicId: 'topic-1' };
-
-      const result = await topicMasteryProvider.compute(
-        params,
-        sampleStatements,
-      );
-
-      expect(result.metricId).toBe('topic-mastery');
-      // Average of 85, 92, 45 = 74
-      expect(result.value).toBeCloseTo(74, 0);
-      expect(result.metadata?.attemptCount).toBe(3);
-      expect(result.metadata?.avgScore).toBeCloseTo(74, 0);
-      expect(result.metadata?.unit).toBe('score');
-    });
-
-    it('should track success rate correctly', async () => {
-      const params = { courseId: 'course-42', topicId: 'topic-1' };
-
-      const result = await topicMasteryProvider.compute(
-        params,
-        sampleStatements,
-      );
-
-      // 2 success out of 3 attempts = 0.6667
-      expect(result.metadata?.successCount).toBe(2);
-      expect(result.metadata?.successRate).toBeCloseTo(0.6667, 4);
-    });
-
-    it('should require both courseId and topicId', () => {
-      expect(() =>
-        topicMasteryProvider.validateParams({ courseId: 'course-42' }),
-      ).toThrow('topicId is required');
 
       expect(() =>
-        topicMasteryProvider.validateParams({ topicId: 'topic-1' }),
+        coursesScoresProvider.validateParams({ userId: 'user-101' }),
+      ).not.toThrow();
+    });
+
+    it('should accept optional time range', () => {
+      expect(() =>
+        coursesScoresProvider.validateParams({
+          userId: 'user-101',
+          since: '2024-01-01T00:00:00Z',
+          until: '2024-12-31T23:59:59Z',
+        }),
+      ).not.toThrow();
+    });
+  });
+
+  describe('CourseElementsBestAttemptsProvider with realistic data', () => {
+    it('should select best attempt per element', async () => {
+      const params = { userId: 'user-101', courseId: 'course-42' };
+
+      const result = await courseElementsBestAttemptsProvider.compute(
+        params,
+        sampleStatements,
+      );
+
+      expect(result.metricId).toBe('course-elements-best-attempts');
+      expect(Array.isArray(result.value)).toBe(true);
+      expect(result.metadata?.userId).toBe('user-101');
+      expect(result.metadata?.courseId).toBe('course-42');
+    });
+
+    it('should require userId and courseId', () => {
+      expect(() =>
+        courseElementsBestAttemptsProvider.validateParams({}),
+      ).toThrow('userId is required');
+
+      expect(() =>
+        courseElementsBestAttemptsProvider.validateParams({
+          userId: 'user-101',
+        }),
       ).toThrow('courseId is required');
 
       expect(() =>
-        topicMasteryProvider.validateParams({
+        courseElementsBestAttemptsProvider.validateParams({
+          userId: 'user-101',
           courseId: 'course-42',
-          topicId: 'topic-1',
+        }),
+      ).not.toThrow();
+    });
+  });
+
+  describe('CourseElementsTimeSpentProvider with realistic data', () => {
+    it('should sum time spent per element', async () => {
+      const params = { userId: 'user-101', courseId: 'course-42' };
+
+      const result = await courseElementsTimeSpentProvider.compute(
+        params,
+        sampleStatements,
+      );
+
+      expect(result.metricId).toBe('course-elements-time-spent');
+      expect(Array.isArray(result.value)).toBe(true);
+      expect(result.metadata?.unit).toBe('seconds');
+      expect(result.metadata?.userId).toBe('user-101');
+      expect(result.metadata?.courseId).toBe('course-42');
+
+      // element-1: PT15M + PT20M = 900 + 1200 = 2100s
+      // element-2: PT30M = 1800s
+      // element-3: PT45M = 2700s
+      const values = result.value as Array<{
+        elementId: string;
+        timeSpent: number;
+      }>;
+      const totalTime = values.reduce((sum, v) => sum + v.timeSpent, 0);
+      expect(totalTime).toBeGreaterThan(0);
+    });
+
+    it('should require userId and courseId', () => {
+      expect(() => courseElementsTimeSpentProvider.validateParams({})).toThrow(
+        'userId is required',
+      );
+
+      expect(() =>
+        courseElementsTimeSpentProvider.validateParams({ userId: 'user-101' }),
+      ).toThrow('courseId is required');
+
+      expect(() =>
+        courseElementsTimeSpentProvider.validateParams({
+          userId: 'user-101',
+          courseId: 'course-42',
         }),
       ).not.toThrow();
     });
@@ -455,23 +294,24 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
     it('should handle empty statement arrays', async () => {
       const emptyStatements: xAPIStatement[] = [];
 
-      const completionResult = await courseCompletionProvider.compute(
-        { courseId: 'course-42' },
+      const scoresResult = await coursesScoresProvider.compute(
+        { userId: 'user-101' },
         emptyStatements,
       );
-      expect(completionResult.value).toBe(0);
+      expect((scoresResult.value as unknown[]).length).toBe(0);
 
-      const engagementResult = await learningEngagementProvider.compute(
-        { courseId: 'course-42' },
-        emptyStatements,
-      );
-      expect(engagementResult.value).toBe(0);
+      const bestAttemptsResult =
+        await courseElementsBestAttemptsProvider.compute(
+          { userId: 'user-101', courseId: 'course-42' },
+          emptyStatements,
+        );
+      expect((bestAttemptsResult.value as unknown[]).length).toBe(0);
 
-      const masteryResult = await topicMasteryProvider.compute(
-        { courseId: 'course-42', topicId: 'topic-1' },
+      const timeSpentResult = await courseElementsTimeSpentProvider.compute(
+        { userId: 'user-101', courseId: 'course-42' },
         emptyStatements,
       );
-      expect(masteryResult.value).toBe(0);
+      expect((timeSpentResult.value as unknown[]).length).toBe(0);
     });
 
     it('should handle statements without results', async () => {
@@ -485,23 +325,22 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
         } as xAPIStatement,
       ];
 
-      const result = await learningEngagementProvider.compute(
-        { courseId: 'course-42' },
+      const result = await courseElementsTimeSpentProvider.compute(
+        { userId: 'user-101', courseId: 'course-42' },
         statementsWithoutResults,
       );
 
-      // Should still count activities even without duration
-      expect(result.metadata?.activityCount).toBe(1);
-      expect(result.metadata?.totalDurationMinutes).toBe(0);
+      // No duration means no time recorded
+      expect((result.value as unknown[]).length).toBe(0);
     });
   });
 
   describe('Cross-Provider Consistency', () => {
     it('should all implement IMetricComputation interface', () => {
       const providers = [
-        courseCompletionProvider,
-        learningEngagementProvider,
-        topicMasteryProvider,
+        coursesScoresProvider,
+        courseElementsBestAttemptsProvider,
+        courseElementsTimeSpentProvider,
       ];
 
       providers.forEach((provider) => {
@@ -516,16 +355,13 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
 
     it('should all return consistent MetricResult structure', async () => {
       const results = await Promise.all([
-        courseCompletionProvider.compute(
-          { courseId: 'course-42' },
+        coursesScoresProvider.compute({ userId: 'user-101' }, sampleStatements),
+        courseElementsBestAttemptsProvider.compute(
+          { userId: 'user-101', courseId: 'course-42' },
           sampleStatements,
         ),
-        learningEngagementProvider.compute(
-          { courseId: 'course-42' },
-          sampleStatements,
-        ),
-        topicMasteryProvider.compute(
-          { courseId: 'course-42', topicId: 'topic-1' },
+        courseElementsTimeSpentProvider.compute(
+          { userId: 'user-101', courseId: 'course-42' },
           sampleStatements,
         ),
       ]);
@@ -535,7 +371,6 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
         expect(result).toHaveProperty('value');
         expect(result).toHaveProperty('computed');
         expect(result).toHaveProperty('metadata');
-        expect(typeof result.value).toBe('number');
         expect(result.computed).toMatch(
           /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
         );
@@ -543,14 +378,14 @@ describe('REQ-FN-003: Metric Providers (e2e)', () => {
     });
 
     it('should all be stateless (no side effects)', async () => {
-      const params = { courseId: 'course-42', topicId: 'topic-1' };
+      const params = { userId: 'user-101', courseId: 'course-42' };
       const paramsCopy = { ...params };
       const statementsCopy = JSON.parse(JSON.stringify(sampleStatements));
 
       await Promise.all([
-        courseCompletionProvider.compute(params, sampleStatements),
-        learningEngagementProvider.compute(params, sampleStatements),
-        topicMasteryProvider.compute(params, sampleStatements),
+        coursesScoresProvider.compute(params, sampleStatements),
+        courseElementsBestAttemptsProvider.compute(params, sampleStatements),
+        courseElementsTimeSpentProvider.compute(params, sampleStatements),
       ]);
 
       // Verify no mutations

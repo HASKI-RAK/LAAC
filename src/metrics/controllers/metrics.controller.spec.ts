@@ -154,7 +154,7 @@ describe('REQ-FN-003: MetricsController', () => {
       const mockMetric: MetricDetailResponseDto = {
         id: 'simple-metric',
         title: 'Simple Metric',
-        dashboardLevel: DashboardLevel.TOPIC,
+        dashboardLevel: DashboardLevel.ELEMENT,
         description: 'Simple metric without params',
         requiredParams: [],
         outputType: 'scalar',
@@ -168,11 +168,7 @@ describe('REQ-FN-003: MetricsController', () => {
     });
 
     it('should handle all dashboard levels', () => {
-      const dashboardLevels = [
-        DashboardLevel.COURSE,
-        DashboardLevel.TOPIC,
-        DashboardLevel.ELEMENT,
-      ];
+      const dashboardLevels = [DashboardLevel.COURSE, DashboardLevel.ELEMENT];
 
       dashboardLevels.forEach((level, index) => {
         const mockMetric: MetricDetailResponseDto = {

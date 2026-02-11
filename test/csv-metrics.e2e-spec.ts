@@ -19,7 +19,7 @@ import { generateTokenWithScopes } from './helpers/auth.helper';
  *
  * Coverage:
  * - Course overview metrics (CO-001 to CO-005)
- * - Topic overview metrics (TO-001 to TO-005)
+ * - Course-scoped element metrics (EO-001 to EO-003)
  * - Learning element overview metrics (EO-001 to EO-006)
  *
  * Each test validates:

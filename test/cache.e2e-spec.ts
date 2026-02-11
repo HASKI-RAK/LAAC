@@ -78,7 +78,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
       const key = generateCacheKey({
         metricId: 'test-delete',
         instanceId: TEST_INSTANCE_ID,
-        scope: 'topic',
+        scope: 'element',
       });
 
       // Store value
@@ -150,7 +150,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
         generateCacheKey({
           metricId: 'test-other',
           instanceId: TEST_INSTANCE_ID,
-          scope: 'topic',
+          scope: 'element',
           filters: { id: '3' },
         }),
       ];
@@ -206,7 +206,7 @@ describe('REQ-FN-006: Cache Service (e2e)', () => {
         generateCacheKey({
           metricId: 'test-all-2',
           instanceId: TEST_INSTANCE_ID,
-          scope: 'topic',
+          scope: 'element',
         }),
         { test: '2' },
       );

@@ -3,14 +3,12 @@
 
 /**
  * Dashboard Level Type
- * Represents the three levels of the dashboard hierarchy where metrics are displayed
+ * Represents the levels of the dashboard hierarchy where metrics are displayed
  *
  * @remarks
  * - 'course': Top-level metrics aggregated across the entire course
- * - 'topic': Mid-level metrics for specific topics/modules within a course
- * - 'element': Fine-grained metrics for individual learning elements
+ * - 'element': Fine-grained metrics for individual learning elements within a course
  *
- * These levels correspond to the HASKI dashboard hierarchy and determine
- * the scope of data aggregation for each metric.
+ * Topic-level removed in v4 — topic IDs are not present in Moodle xAPI statements.
  */
-export type DashboardLevel = 'course' | 'topic' | 'element';
+export type DashboardLevel = 'course' | 'element';

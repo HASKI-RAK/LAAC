@@ -15,7 +15,6 @@
  * ```typescript
  * const params: MetricParams = {
  *   courseId: 'course-123',
- *   topicId: 'topic-456',
  *   since: '2024-01-01T00:00:00Z',
  *   until: '2024-12-31T23:59:59Z',
  * };
@@ -27,12 +26,6 @@ export interface MetricParams {
    * @example 'course-123'
    */
   courseId?: string;
-
-  /**
-   * Topic/module identifier for topic-level metrics
-   * @example 'topic-456'
-   */
-  topicId?: string;
 
   /**
    * Element identifier for element-level metrics

@@ -1,5 +1,5 @@
-// Implements REQ-FN-032: CSV v3 metric topic-elements-time-spent
-// Calculates, for each element in a topic, the total time spent across all attempts
+// Implements REQ-FN-032: CSV v4 metric course-elements-time-spent
+// Calculates, for each element in a course, the total time spent across all attempts
 
 import { Injectable } from '@nestjs/common';
 import { IMetricComputation } from '../interfaces/metric.interface';
@@ -9,26 +9,26 @@ import { xAPIStatement } from '../../data-access';
 import { parseDuration } from '../utils/duration-helpers';
 
 /**
- * Topic Elements Time Spent Provider
- * Implements CSV v3 metric: topic-elements-time-spent — Calculates, for each learning
- * element within a specified topic, the total time spent by the user across all attempts.
+ * Course Elements Time Spent Provider
+ * Implements CSV v4 metric: course-elements-time-spent — Calculates, for each learning
+ * element within a specified course, the total time spent by the user across all attempts.
  *
  * @implements IMetricComputation
  */
 @Injectable()
-export class TopicElementsTimeSpentProvider implements IMetricComputation {
-  readonly id = 'topic-elements-time-spent';
+export class CourseElementsTimeSpentProvider implements IMetricComputation {
+  readonly id = 'course-elements-time-spent';
   readonly dashboardLevel = 'element';
-  readonly title = 'Topic Elements Time Spent';
+  readonly title = 'Course Elements Time Spent';
   readonly description =
-    'Calculates, for each learning element within a specified topic, the total time spent by the user across all attempts, optionally limited to a specified time range.';
-  readonly version = '3.0.0';
-  readonly requiredParams: Array<keyof MetricParams> = ['userId', 'topicId'];
+    'Calculates, for each learning element within a specified course, the total time spent by the user across all attempts, optionally limited to a specified time range.';
+  readonly version = '4.0.0';
+  readonly requiredParams: Array<keyof MetricParams> = ['userId', 'courseId'];
   readonly optionalParams: Array<keyof MetricParams> = ['since', 'until'];
   readonly outputType = 'array' as const;
 
   readonly example = {
-    params: { userId: 'user-123', topicId: 'topic-1' },
+    params: { userId: 'user-123', courseId: 'course-1' },
     result: {
       value: [
         { elementId: 'element-1', timeSpent: 1200 },
@@ -45,8 +45,6 @@ export class TopicElementsTimeSpentProvider implements IMetricComputation {
     const elements = new Map<string, number>();
 
     lrsData.forEach((statement) => {
-      if (!this.belongsToTopic(statement, params.topicId!)) return;
-
       const elementId = statement.object?.id;
       if (!elementId) return;
 
@@ -74,7 +72,7 @@ export class TopicElementsTimeSpentProvider implements IMetricComputation {
       metadata: {
         elementCount: values.length,
         userId: params.userId,
-        topicId: params.topicId,
+        courseId: params.courseId,
         unit: 'seconds',
         timeRange: params.since
           ? { since: params.since, until: params.until }
@@ -86,12 +84,12 @@ export class TopicElementsTimeSpentProvider implements IMetricComputation {
   validateParams(params: MetricParams): void {
     if (!params.userId) {
       throw new Error(
-        'userId is required for topic-elements-time-spent metric',
+        'userId is required for course-elements-time-spent metric',
       );
     }
-    if (!params.topicId) {
+    if (!params.courseId) {
       throw new Error(
-        'topicId is required for topic-elements-time-spent metric',
+        'courseId is required for course-elements-time-spent metric',
       );
     }
 
@@ -103,22 +101,5 @@ export class TopicElementsTimeSpentProvider implements IMetricComputation {
         throw new Error('since timestamp must be before until timestamp');
       }
     }
-  }
-
-  private belongsToTopic(statement: xAPIStatement, topicId: string): boolean {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return false;
-
-    const parents = contextActivities.parent ?? [];
-
-    return parents.some((activity) => {
-      const id = activity.id;
-      if (!id) return false;
-      return (
-        id === topicId ||
-        id.includes(`/topic/${topicId}`) ||
-        id.includes(`/topics/${topicId}`)
-      );
-    });
   }
 }

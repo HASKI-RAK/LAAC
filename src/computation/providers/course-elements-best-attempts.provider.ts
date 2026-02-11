@@ -1,5 +1,5 @@
-// Implements REQ-FN-032: CSV v3 metric topic-elements-best-attempts
-// For each element in a topic, returns best attempt score, completion status, and timestamp
+// Implements REQ-FN-032: CSV v4 metric course-elements-best-attempts
+// For each element in a course, returns best attempt score, completion status, and timestamp
 
 import { Injectable } from '@nestjs/common';
 import { IMetricComputation } from '../interfaces/metric.interface';
@@ -13,27 +13,27 @@ import {
 } from '../utils/attempt-helpers';
 
 /**
- * Topic Elements Best Attempts Provider
- * Implements CSV v3 metric: topic-elements-best-attempts — For each learning element
- * within a specified topic, selects the user's highest-scoring attempt and returns
+ * Course Elements Best Attempts Provider
+ * Implements CSV v4 metric: course-elements-best-attempts — For each learning element
+ * within a specified course, selects the user's highest-scoring attempt and returns
  * its score, completion status, and completion timestamp.
  *
  * @implements IMetricComputation
  */
 @Injectable()
-export class TopicElementsBestAttemptsProvider implements IMetricComputation {
-  readonly id = 'topic-elements-best-attempts';
+export class CourseElementsBestAttemptsProvider implements IMetricComputation {
+  readonly id = 'course-elements-best-attempts';
   readonly dashboardLevel = 'element';
-  readonly title = 'Topic Elements Best Attempts';
+  readonly title = 'Course Elements Best Attempts';
   readonly description =
-    "For each learning element within a specified topic, selects the user's highest-scoring attempt and returns its score, completion status, and completion timestamp.";
-  readonly version = '3.0.0';
-  readonly requiredParams: Array<keyof MetricParams> = ['userId', 'topicId'];
+    "For each learning element within a specified course, selects the user's highest-scoring attempt and returns its score, completion status, and completion timestamp.";
+  readonly version = '4.0.0';
+  readonly requiredParams: Array<keyof MetricParams> = ['userId', 'courseId'];
   readonly optionalParams: Array<keyof MetricParams> = [];
   readonly outputType = 'array' as const;
 
   readonly example = {
-    params: { userId: 'user-123', topicId: 'topic-1' },
+    params: { userId: 'user-123', courseId: 'course-1' },
     result: {
       value: [
         {
@@ -62,12 +62,10 @@ export class TopicElementsBestAttemptsProvider implements IMetricComputation {
     params: MetricParams,
     lrsData: xAPIStatement[],
   ): Promise<MetricResult> {
-    // Group statements by element within the topic
+    // Group statements by element
     const elements = new Map<string, xAPIStatement[]>();
 
     lrsData.forEach((statement) => {
-      if (!this.belongsToTopic(statement, params.topicId!)) return;
-
       const elementId = statement.object?.id;
       if (!elementId) return;
 
@@ -111,7 +109,7 @@ export class TopicElementsBestAttemptsProvider implements IMetricComputation {
       metadata: {
         elementCount: values.length,
         userId: params.userId,
-        topicId: params.topicId,
+        courseId: params.courseId,
       },
     });
   }
@@ -119,30 +117,13 @@ export class TopicElementsBestAttemptsProvider implements IMetricComputation {
   validateParams(params: MetricParams): void {
     if (!params.userId) {
       throw new Error(
-        'userId is required for topic-elements-best-attempts metric',
+        'userId is required for course-elements-best-attempts metric',
       );
     }
-    if (!params.topicId) {
+    if (!params.courseId) {
       throw new Error(
-        'topicId is required for topic-elements-best-attempts metric',
+        'courseId is required for course-elements-best-attempts metric',
       );
     }
-  }
-
-  private belongsToTopic(statement: xAPIStatement, topicId: string): boolean {
-    const contextActivities = statement.context?.contextActivities;
-    if (!contextActivities) return false;
-
-    const parents = contextActivities.parent ?? [];
-
-    return parents.some((activity) => {
-      const id = activity.id;
-      if (!id) return false;
-      return (
-        id === topicId ||
-        id.includes(`/topic/${topicId}`) ||
-        id.includes(`/topics/${topicId}`)
-      );
-    });
   }
 }

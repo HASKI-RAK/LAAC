@@ -35,11 +35,6 @@
           {
             "id": "course-math-101"
           }
-        ],
-        "grouping": [
-          {
-            "id": "topic-algebra"
-          }
         ]
       }
     },
@@ -79,11 +74,6 @@
         "parent": [
           {
             "id": "course-math-101"
-          }
-        ],
-        "grouping": [
-          {
-            "id": "topic-algebra"
           }
         ]
       }
@@ -125,11 +115,6 @@
           {
             "id": "course-math-101"
           }
-        ],
-        "grouping": [
-          {
-            "id": "topic-algebra"
-          }
         ]
       }
     },
@@ -169,11 +154,6 @@
         "parent": [
           {
             "id": "course-math-101"
-          }
-        ],
-        "grouping": [
-          {
-            "id": "topic-algebra"
           }
         ]
       }

@@ -45,12 +45,11 @@ describe('REQ-FN-024: MetricQueryDto Validation', () => {
     it('should validate with all filters', async () => {
       const dto = plainToInstance(MetricQueryDto, {
         courseId: 'course-123',
-        topicId: 'topic-456',
         elementId: 'element-789',
         userId: 'user-001',
         start: '2025-01-01T00:00:00.000Z',
         end: '2025-12-31T23:59:59.999Z',
-        level: DashboardLevel.TOPIC,
+        level: DashboardLevel.COURSE,
       });
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
@@ -107,15 +106,6 @@ describe('REQ-FN-024: MetricQueryDto Validation', () => {
       expect(errors[0].constraints).toHaveProperty('isEnum');
     });
 
-    it('should reject non-string topicId', async () => {
-      const dto = plainToInstance(MetricQueryDto, {
-        topicId: 456,
-      });
-      const errors = await validate(dto);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].property).toBe('topicId');
-    });
-
     it('should reject non-string elementId', async () => {
       const dto = plainToInstance(MetricQueryDto, {
         elementId: 789,
@@ -148,14 +138,6 @@ describe('REQ-FN-024: MetricQueryDto Validation', () => {
     it('should accept "course" level', async () => {
       const dto = plainToInstance(MetricQueryDto, {
         level: 'course',
-      });
-      const errors = await validate(dto);
-      expect(errors).toHaveLength(0);
-    });
-
-    it('should accept "topic" level', async () => {
-      const dto = plainToInstance(MetricQueryDto, {
-        level: 'topic',
       });
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);

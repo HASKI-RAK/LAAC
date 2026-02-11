@@ -40,24 +40,21 @@ const ENGAGEMENT_VERBS = [
  */
 export const METRIC_VERB_MAP: Record<string, string[]> = {
   // Scoring / mastery metrics
-  'topic-mastery': SCORE_VERBS,
-  'topic-total-score': SCORE_VERBS,
-  'topic-max-score': SCORE_VERBS,
   'course-total-score': SCORE_VERBS,
   'courses-total-scores': SCORE_VERBS,
   'course-max-score': SCORE_VERBS,
   'element-best-attempt-score': SCORE_VERBS,
   'element-best-attempt-date': SCORE_VERBS,
+  'course-elements-best-attempts': SCORE_VERBS,
+  'course-elements-max-scores': SCORE_VERBS,
 
   // Completion-oriented metrics
   'course-completion': COMPLETION_VERBS,
   'course-completion-dates': COMPLETION_VERBS,
-  'topic-completion-dates': COMPLETION_VERBS,
   'element-completion-dates': COMPLETION_VERBS,
   'element-completion-status': COMPLETION_VERBS,
   'element-last-completed': COMPLETION_VERBS,
   'course-last-elements': COMPLETION_VERBS,
-  'topic-last-elements': COMPLETION_VERBS,
 
   // Engagement metrics
   'learning-engagement': ENGAGEMENT_VERBS,
