@@ -6,6 +6,7 @@ import { IMetricComputation } from '../interfaces/metric.interface';
 import { MetricParams } from '../interfaces/metric-params.interface';
 import { MetricResult } from '../interfaces/metric-result.interface';
 import { xAPIStatement } from '../../data-access';
+import { METRIC_VERB_MAP } from '../../metrics/constants/metric-verbs';
 
 /**
  * Course Last Elements Provider
@@ -75,11 +76,7 @@ export class CourseLastElementsProvider implements IMetricComputation {
     lrsData: xAPIStatement[],
   ): Promise<MetricResult> {
     // Define completion verbs (HASKI custom + standard ADL)
-    const completionVerbs = [
-      'https://wiki.haski.app/variables/xapi.completed',
-      'http://adlnet.gov/expapi/verbs/completed',
-      'http://adlnet.gov/expapi/verbs/passed',
-    ];
+    const completionVerbs = METRIC_VERB_MAP['course-last-elements'] ?? [];
 
     // Filter completion statements and extract element data
     const completions = lrsData
