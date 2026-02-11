@@ -1,20 +1,19 @@
 // Central verb mapping per metric
 // Ensures LRS queries request the verbs that are relevant for each metric
 
-const COMPLETION_VERBS = [
-  'http://adlnet.gov/expapi/verbs/completed',
-  'https://wiki.haski.app/variables/xapi.completed',
-  'https://wiki.haski.app/variables/services.completed',
-];
-
 const ANSWER_VERBS = [
   'http://adlnet.gov/expapi/verbs/answered',
   'https://wiki.haski.app/variables/xapi.answered',
   'https://wiki.haski.app/variables/services.answered',
 ];
+const COMPLETION_VERBS = [
+  ...ANSWER_VERBS,
+  'http://adlnet.gov/expapi/verbs/completed',
+  'https://wiki.haski.app/variables/xapi.completed',
+  'https://wiki.haski.app/variables/services.completed',
+];
 
 const SCORE_VERBS = [
-  ...ANSWER_VERBS,
   ...COMPLETION_VERBS,
   'http://adlnet.gov/expapi/verbs/passed',
   'http://adlnet.gov/expapi/verbs/failed',
@@ -54,7 +53,7 @@ export const METRIC_VERB_MAP: Record<string, string[]> = {
   'element-completion-dates': COMPLETION_VERBS,
   'element-completion-status': COMPLETION_VERBS,
   'element-last-completed': COMPLETION_VERBS,
-  'course-last-elements': SCORE_VERBS, // Accept any verb that indicates completion for this metric
+  'course-last-elements': COMPLETION_VERBS,
 
   // Engagement metrics
   'learning-engagement': ENGAGEMENT_VERBS,
