@@ -54,7 +54,7 @@ export const METRIC_VERB_MAP: Record<string, string[]> = {
   'element-completion-dates': COMPLETION_VERBS,
   'element-completion-status': COMPLETION_VERBS,
   'element-last-completed': COMPLETION_VERBS,
-  'course-last-elements': COMPLETION_VERBS,
+  'course-last-elements': SCORE_VERBS, // Accept any verb that indicates completion for this metric
 
   // Engagement metrics
   'learning-engagement': ENGAGEMENT_VERBS,
