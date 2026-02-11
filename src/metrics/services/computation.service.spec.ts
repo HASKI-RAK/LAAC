@@ -430,34 +430,6 @@ describe('REQ-FN-005: ComputationService', () => {
       );
     });
 
-    it('should prefer topicId over courseId for activity filters', async () => {
-      const params: MetricParams = {
-        courseId: 'https://example.com/courses/course-678',
-        topicId: 'https://example.com/topics/topic-555',
-      };
-      const statements: xAPIStatement[] = [];
-      const computedResult: MetricResult = {
-        metricId: 'test-metric',
-        value: 0,
-        computed: '2025-11-13T10:30:00Z',
-      };
-
-      cacheService.get.mockResolvedValue(null);
-      moduleRef.get.mockReturnValue(mockProvider);
-      (mockProvider.compute as jest.Mock).mockResolvedValue(computedResult);
-      lrsClient.queryStatements.mockResolvedValue(statements);
-      cacheService.set.mockResolvedValue(true);
-
-      await service.computeMetric('test-metric', params);
-
-      expect(lrsClient.queryStatements).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activity: 'https://example.com/topics/topic-555',
-          related_activities: true,
-        }),
-      );
-    });
-
     it('should prefer elementId when provided', async () => {
       const params: MetricParams = {
         courseId: 'https://example.com/courses/course-678',
@@ -610,33 +582,6 @@ describe('REQ-FN-005: ComputationService', () => {
       // REQ-FN-017: Expected cache key format with instanceId
       expect(cacheService.get).toHaveBeenCalledWith(
         'cache:test-metric:default:course:courseId=https%3A%2F%2Fexample.com%2Fcourses%2Fcourse-123:v1',
-      );
-    });
-
-    it('should generate cache key with topicId', async () => {
-      const params: MetricParams = {
-        topicId: 'https://example.com/topics/topic-456',
-      };
-      const nonValidatingProvider = {
-        ...mockProvider,
-        validateParams: jest.fn(), // No validation
-        compute: jest.fn().mockResolvedValue({
-          metricId: 'test-metric',
-          value: 0,
-          computed: '2025-11-13T10:30:00Z',
-        }),
-      };
-
-      cacheService.get.mockResolvedValue(null);
-      moduleRef.get.mockReturnValue(nonValidatingProvider);
-      lrsClient.queryStatements.mockResolvedValue([]);
-      cacheService.set.mockResolvedValue(true);
-
-      await service.computeMetric('test-metric', params);
-
-      // REQ-FN-017: Expected cache key format with instanceId
-      expect(cacheService.get).toHaveBeenCalledWith(
-        'cache:test-metric:default:topic:topicId=https%3A%2F%2Fexample.com%2Ftopics%2Ftopic-456:v1',
       );
     });
 

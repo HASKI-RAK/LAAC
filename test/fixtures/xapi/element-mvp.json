@@ -35,7 +35,7 @@
     },
     "context": {
       "contextActivities": {
-        "parent": [{ "id": "topic-algebra" }, { "id": "course-math-101" }]
+        "parent": [{ "id": "course-math-101" }]
       },
       "registration": "8c9b33fb-0a00-4f0a-aa20-1c2d53aca111"
     },
@@ -79,7 +79,7 @@
     },
     "context": {
       "contextActivities": {
-        "parent": [{ "id": "topic-algebra" }, { "id": "course-math-101" }]
+        "parent": [{ "id": "course-math-101" }]
       },
       "registration": "2f7bb9d9-2a52-47ae-8d08-9d2a7c8ee221"
     },

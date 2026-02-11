@@ -35,7 +35,7 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     it('should compile with optional version property', () => {
       const metric: IMetricComputation = {
         id: 'test-metric',
-        dashboardLevel: 'topic',
+        dashboardLevel: 'element',
         description: 'Test metric',
         version: '1.0.0',
         compute: (): Promise<MetricResult> => {
@@ -77,7 +77,7 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     });
 
     it('should accept all valid dashboard levels', () => {
-      const levels: DashboardLevel[] = ['course', 'topic', 'element'];
+      const levels: DashboardLevel[] = ['course', 'element'];
 
       levels.forEach((level) => {
         const metric: IMetricComputation = {
@@ -217,7 +217,6 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     it('should accept all optional fields', () => {
       const params: MetricParams = {
         courseId: 'course-123',
-        topicId: 'topic-456',
         elementId: 'element-789',
         userId: 'user-abc',
         groupId: 'group-xyz',
@@ -227,7 +226,6 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
       };
 
       expect(params.courseId).toBe('course-123');
-      expect(params.topicId).toBe('topic-456');
       expect(params.elementId).toBe('element-789');
       expect(params.userId).toBe('user-abc');
       expect(params.groupId).toBe('group-xyz');
@@ -315,11 +313,6 @@ describe('REQ-FN-010: Metric Computation Interface', () => {
     it('should accept course level', () => {
       const level: DashboardLevel = 'course';
       expect(level).toBe('course');
-    });
-
-    it('should accept topic level', () => {
-      const level: DashboardLevel = 'topic';
-      expect(level).toBe('topic');
     });
 
     it('should accept element level', () => {

@@ -1,28 +1,23 @@
-// Unit tests for CSV v3 metric providers (REQ-FN-032)
+// Unit tests for CSV v4 metric providers (REQ-FN-032)
+// Topic-related providers removed in v4 — replaced by course-elements-* providers
 
 import { CoursesScoresProvider } from './courses-scores.provider';
 import { CoursesMaxScoresProvider } from './courses-max-scores.provider';
 import { CoursesTimeSpentProvider } from './courses-time-spent.provider';
 import { UserLastElementsProvider } from './user-last-elements.provider';
-import { CourseTopicsScoresProvider } from './course-topics-scores.provider';
-import { CourseTopicsMaxScoresProvider } from './course-topics-max-scores.provider';
-import { CourseTopicsTimeSpentProvider } from './course-topics-time-spent.provider';
-import { TopicElementsBestAttemptsProvider } from './topic-elements-best-attempts.provider';
-import { TopicElementsMaxScoresProvider } from './topic-elements-max-scores.provider';
-import { TopicElementsTimeSpentProvider } from './topic-elements-time-spent.provider';
+import { CourseElementsBestAttemptsProvider } from './course-elements-best-attempts.provider';
+import { CourseElementsMaxScoresProvider } from './course-elements-max-scores.provider';
+import { CourseElementsTimeSpentProvider } from './course-elements-time-spent.provider';
 import { xAPIStatement } from '../../data-access';
 
 // Helper functions for creating test statements
 const courseIri = (courseId: string) =>
   `https://lms.example.com/course/${courseId}`;
-const topicIri = (topicId: string) =>
-  `https://lms.example.com/topic/${topicId}`;
 
 const createStatement = (
   elementId: string,
   options: {
     courseId?: string;
-    topicId?: string;
     score?: number;
     maxScore?: number;
     duration?: string;
@@ -36,9 +31,6 @@ const createStatement = (
   if (options.courseId) {
     groupings.push({ id: courseIri(options.courseId) });
     parents.push({ id: courseIri(options.courseId) });
-  }
-  if (options.topicId) {
-    parents.push({ id: topicIri(options.topicId) });
   }
 
   return {
@@ -75,7 +67,7 @@ const createStatement = (
 };
 
 // ============ CoursesScoresProvider Tests ============
-describe('CoursesScoresProvider (REQ-FN-032, CSV v3)', () => {
+describe('CoursesScoresProvider (REQ-FN-032, CSV v4)', () => {
   let provider: CoursesScoresProvider;
 
   beforeEach(() => {
@@ -83,7 +75,7 @@ describe('CoursesScoresProvider (REQ-FN-032, CSV v3)', () => {
   });
 
   describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
+    it('should expose CSV v4 metadata', () => {
       expect(provider.id).toBe('courses-scores');
       expect(provider.dashboardLevel).toBe('course');
       expect(provider.version).toBe('3.0.0');
@@ -142,7 +134,7 @@ describe('CoursesScoresProvider (REQ-FN-032, CSV v3)', () => {
 });
 
 // ============ CoursesMaxScoresProvider Tests ============
-describe('CoursesMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
+describe('CoursesMaxScoresProvider (REQ-FN-032, CSV v4)', () => {
   let provider: CoursesMaxScoresProvider;
 
   beforeEach(() => {
@@ -150,7 +142,7 @@ describe('CoursesMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
   });
 
   describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
+    it('should expose CSV v4 metadata', () => {
       expect(provider.id).toBe('courses-max-scores');
       expect(provider.version).toBe('3.0.0');
       expect(provider.requiredParams).toEqual(['userId']);
@@ -177,7 +169,7 @@ describe('CoursesMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
 });
 
 // ============ CoursesTimeSpentProvider Tests ============
-describe('CoursesTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
+describe('CoursesTimeSpentProvider (REQ-FN-032, CSV v4)', () => {
   let provider: CoursesTimeSpentProvider;
 
   beforeEach(() => {
@@ -185,7 +177,7 @@ describe('CoursesTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
   });
 
   describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
+    it('should expose CSV v4 metadata', () => {
       expect(provider.id).toBe('courses-time-spent');
       expect(provider.version).toBe('3.0.0');
     });
@@ -221,7 +213,7 @@ describe('CoursesTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
 });
 
 // ============ UserLastElementsProvider Tests ============
-describe('UserLastElementsProvider (REQ-FN-032, CSV v3)', () => {
+describe('UserLastElementsProvider (REQ-FN-032, CSV v4)', () => {
   let provider: UserLastElementsProvider;
 
   beforeEach(() => {
@@ -229,7 +221,7 @@ describe('UserLastElementsProvider (REQ-FN-032, CSV v3)', () => {
   });
 
   describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
+    it('should expose CSV v4 metadata', () => {
       expect(provider.id).toBe('user-last-elements');
       expect(provider.version).toBe('3.0.0');
     });
@@ -290,219 +282,40 @@ describe('UserLastElementsProvider (REQ-FN-032, CSV v3)', () => {
   });
 });
 
-// ============ CourseTopicsScoresProvider Tests ============
-describe('CourseTopicsScoresProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: CourseTopicsScoresProvider;
+// ============ CourseElementsBestAttemptsProvider Tests ============
+describe('CourseElementsBestAttemptsProvider (REQ-FN-032, CSV v4)', () => {
+  let provider: CourseElementsBestAttemptsProvider;
 
   beforeEach(() => {
-    provider = new CourseTopicsScoresProvider();
+    provider = new CourseElementsBestAttemptsProvider();
   });
 
   describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
-      expect(provider.id).toBe('course-topics-scores');
-      expect(provider.dashboardLevel).toBe('topic');
-      expect(provider.version).toBe('3.0.0');
-      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
-    });
-  });
-
-  describe('compute', () => {
-    it('should sum best-attempt scores per topic within the course', async () => {
-      const statements: xAPIStatement[] = [
-        createStatement('element-A', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          score: 20,
-        }),
-        createStatement('element-A', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          score: 30,
-          timestamp: '2026-02-02T10:00:00Z',
-        }), // best
-        createStatement('element-B', {
-          courseId: 'course-1',
-          topicId: 'topic-2',
-          score: 50,
-        }),
-      ];
-
-      const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-1' },
-        statements,
-      );
-
-      expect(result.metricId).toBe('course-topics-scores');
-      expect(result.value).toEqual([
-        { topicId: topicIri('topic-1'), score: 30 },
-        { topicId: topicIri('topic-2'), score: 50 },
-      ]);
-    });
-  });
-
-  describe('validateParams', () => {
-    it('should throw if courseId is missing', () => {
-      expect(() => provider.validateParams({ userId: 'user-1' })).toThrow(
-        'courseId is required for course-topics-scores metric',
-      );
-    });
-  });
-});
-
-// ============ CourseTopicsMaxScoresProvider Tests ============
-describe('CourseTopicsMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: CourseTopicsMaxScoresProvider;
-
-  beforeEach(() => {
-    provider = new CourseTopicsMaxScoresProvider();
-  });
-
-  describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
-      expect(provider.id).toBe('course-topics-max-scores');
-      expect(provider.dashboardLevel).toBe('topic');
-      expect(provider.version).toBe('3.0.0');
-      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
-    });
-  });
-
-  describe('compute', () => {
-    it('should sum max scores per topic within the course', async () => {
-      const statements: xAPIStatement[] = [
-        createStatement('element-A', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          maxScore: 100,
-        }),
-        createStatement('element-B', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          maxScore: 50,
-        }),
-        createStatement('element-C', {
-          courseId: 'course-1',
-          topicId: 'topic-2',
-          maxScore: 75,
-        }),
-      ];
-
-      const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-1' },
-        statements,
-      );
-
-      expect(result.metricId).toBe('course-topics-max-scores');
-      expect(result.value).toEqual([
-        { topicId: topicIri('topic-1'), maxScore: 150 },
-        { topicId: topicIri('topic-2'), maxScore: 75 },
-      ]);
-    });
-  });
-
-  describe('validateParams', () => {
-    it('should throw if courseId is missing', () => {
-      expect(() => provider.validateParams({ userId: 'user-1' })).toThrow(
-        'courseId is required for course-topics-max-scores metric',
-      );
-    });
-  });
-});
-
-// ============ CourseTopicsTimeSpentProvider Tests ============
-describe('CourseTopicsTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: CourseTopicsTimeSpentProvider;
-
-  beforeEach(() => {
-    provider = new CourseTopicsTimeSpentProvider();
-  });
-
-  describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
-      expect(provider.id).toBe('course-topics-time-spent');
-      expect(provider.dashboardLevel).toBe('topic');
-      expect(provider.version).toBe('3.0.0');
-      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
-    });
-  });
-
-  describe('compute', () => {
-    it('should sum time per topic within the course', async () => {
-      const statements: xAPIStatement[] = [
-        createStatement('element-A', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          duration: 'PT15M',
-        }),
-        createStatement('element-B', {
-          courseId: 'course-1',
-          topicId: 'topic-1',
-          duration: 'PT10M',
-        }),
-        createStatement('element-C', {
-          courseId: 'course-1',
-          topicId: 'topic-2',
-          duration: 'PT30M',
-        }),
-      ];
-
-      const result = await provider.compute(
-        { userId: 'user-1', courseId: 'course-1' },
-        statements,
-      );
-
-      expect(result.metricId).toBe('course-topics-time-spent');
-      expect(result.value).toEqual([
-        { topicId: topicIri('topic-1'), timeSpent: 1500 }, // 25 min
-        { topicId: topicIri('topic-2'), timeSpent: 1800 }, // 30 min
-      ]);
-      expect(result.metadata).toMatchObject({ unit: 'seconds' });
-    });
-  });
-
-  describe('validateParams', () => {
-    it('should throw if courseId is missing', () => {
-      expect(() => provider.validateParams({ userId: 'user-1' })).toThrow(
-        'courseId is required for course-topics-time-spent metric',
-      );
-    });
-  });
-});
-
-// ============ TopicElementsBestAttemptsProvider Tests ============
-describe('TopicElementsBestAttemptsProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: TopicElementsBestAttemptsProvider;
-
-  beforeEach(() => {
-    provider = new TopicElementsBestAttemptsProvider();
-  });
-
-  describe('metadata', () => {
-    it('should expose CSV v3 metadata', () => {
-      expect(provider.id).toBe('topic-elements-best-attempts');
+    it('should expose CSV v4 metadata', () => {
+      expect(provider.id).toBe('course-elements-best-attempts');
       expect(provider.dashboardLevel).toBe('element');
-      expect(provider.version).toBe('3.0.0');
-      expect(provider.requiredParams).toEqual(['userId', 'topicId']);
+      expect(provider.version).toBe('4.0.0');
+      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
     });
   });
 
   describe('compute', () => {
-    it('should return best attempt info for each element in topic', async () => {
+    it('should return best attempt info for each element in course', async () => {
       const statements: xAPIStatement[] = [
         createStatement('element-A', {
-          topicId: 'topic-1',
+          courseId: 'course-1',
           score: 70,
           completed: false,
           timestamp: '2026-02-01T10:00:00Z',
         }),
         createStatement('element-A', {
-          topicId: 'topic-1',
+          courseId: 'course-1',
           score: 85,
           completed: true,
           timestamp: '2026-02-02T10:00:00Z',
         }),
         createStatement('element-B', {
-          topicId: 'topic-1',
+          courseId: 'course-1',
           score: 60,
           completed: true,
           timestamp: '2026-02-01T11:00:00Z',
@@ -510,11 +323,11 @@ describe('TopicElementsBestAttemptsProvider (REQ-FN-032, CSV v3)', () => {
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', topicId: 'topic-1' },
+        { userId: 'user-1', courseId: 'course-1' },
         statements,
       );
 
-      expect(result.metricId).toBe('topic-elements-best-attempts');
+      expect(result.metricId).toBe('course-elements-best-attempts');
       expect(result.value).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -533,60 +346,101 @@ describe('TopicElementsBestAttemptsProvider (REQ-FN-032, CSV v3)', () => {
   });
 
   describe('validateParams', () => {
-    it('should throw if topicId is missing', () => {
-      expect(() => provider.validateParams({ userId: 'user-1' })).toThrow(
-        'topicId is required for topic-elements-best-attempts metric',
+    it('should throw if userId is missing', () => {
+      expect(() => provider.validateParams({ courseId: 'c1' })).toThrow(
+        'userId is required for course-elements-best-attempts metric',
+      );
+    });
+
+    it('should throw if courseId is missing', () => {
+      expect(() => provider.validateParams({ userId: 'u1' })).toThrow(
+        'courseId is required for course-elements-best-attempts metric',
       );
     });
   });
 });
 
-// ============ TopicElementsMaxScoresProvider Tests ============
-describe('TopicElementsMaxScoresProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: TopicElementsMaxScoresProvider;
+// ============ CourseElementsMaxScoresProvider Tests ============
+describe('CourseElementsMaxScoresProvider (REQ-FN-032, CSV v4)', () => {
+  let provider: CourseElementsMaxScoresProvider;
 
   beforeEach(() => {
-    provider = new TopicElementsMaxScoresProvider();
+    provider = new CourseElementsMaxScoresProvider();
+  });
+
+  describe('metadata', () => {
+    it('should expose CSV v4 metadata', () => {
+      expect(provider.id).toBe('course-elements-max-scores');
+      expect(provider.dashboardLevel).toBe('element');
+      expect(provider.version).toBe('4.0.0');
+      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
+    });
   });
 
   describe('compute', () => {
-    it('should return max score for each element in topic', async () => {
+    it('should return max score for each element in course', async () => {
       const statements: xAPIStatement[] = [
-        createStatement('element-A', { topicId: 'topic-1', maxScore: 100 }),
-        createStatement('element-B', { topicId: 'topic-1', maxScore: 50 }),
+        createStatement('element-A', { courseId: 'course-1', maxScore: 100 }),
+        createStatement('element-B', { courseId: 'course-1', maxScore: 50 }),
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', topicId: 'topic-1' },
+        { userId: 'user-1', courseId: 'course-1' },
         statements,
       );
 
       expect(result.value).toEqual([
-        { elementId: 'element-A', score: 100 },
-        { elementId: 'element-B', score: 50 },
+        { elementId: 'element-A', maxScore: 100 },
+        { elementId: 'element-B', maxScore: 50 },
       ]);
+    });
+  });
+
+  describe('validateParams', () => {
+    it('should throw if courseId is missing', () => {
+      expect(() => provider.validateParams({ userId: 'u1' })).toThrow(
+        'courseId is required for course-elements-max-scores metric',
+      );
     });
   });
 });
 
-// ============ TopicElementsTimeSpentProvider Tests ============
-describe('TopicElementsTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
-  let provider: TopicElementsTimeSpentProvider;
+// ============ CourseElementsTimeSpentProvider Tests ============
+describe('CourseElementsTimeSpentProvider (REQ-FN-032, CSV v4)', () => {
+  let provider: CourseElementsTimeSpentProvider;
 
   beforeEach(() => {
-    provider = new TopicElementsTimeSpentProvider();
+    provider = new CourseElementsTimeSpentProvider();
+  });
+
+  describe('metadata', () => {
+    it('should expose CSV v4 metadata', () => {
+      expect(provider.id).toBe('course-elements-time-spent');
+      expect(provider.dashboardLevel).toBe('element');
+      expect(provider.version).toBe('4.0.0');
+      expect(provider.requiredParams).toEqual(['userId', 'courseId']);
+    });
   });
 
   describe('compute', () => {
-    it('should sum time per element in topic', async () => {
+    it('should sum time per element in course', async () => {
       const statements: xAPIStatement[] = [
-        createStatement('element-A', { topicId: 'topic-1', duration: 'PT10M' }),
-        createStatement('element-A', { topicId: 'topic-1', duration: 'PT5M' }),
-        createStatement('element-B', { topicId: 'topic-1', duration: 'PT20M' }),
+        createStatement('element-A', {
+          courseId: 'course-1',
+          duration: 'PT10M',
+        }),
+        createStatement('element-A', {
+          courseId: 'course-1',
+          duration: 'PT5M',
+        }),
+        createStatement('element-B', {
+          courseId: 'course-1',
+          duration: 'PT20M',
+        }),
       ];
 
       const result = await provider.compute(
-        { userId: 'user-1', topicId: 'topic-1' },
+        { userId: 'user-1', courseId: 'course-1' },
         statements,
       );
 
@@ -594,6 +448,25 @@ describe('TopicElementsTimeSpentProvider (REQ-FN-032, CSV v3)', () => {
         { elementId: 'element-A', timeSpent: 900 }, // 15 min
         { elementId: 'element-B', timeSpent: 1200 }, // 20 min
       ]);
+    });
+  });
+
+  describe('validateParams', () => {
+    it('should throw if courseId is missing', () => {
+      expect(() => provider.validateParams({ userId: 'u1' })).toThrow(
+        'courseId is required for course-elements-time-spent metric',
+      );
+    });
+
+    it('should throw if since is after until', () => {
+      expect(() =>
+        provider.validateParams({
+          userId: 'u1',
+          courseId: 'c1',
+          since: '2026-02-10T00:00:00Z',
+          until: '2026-02-01T00:00:00Z',
+        }),
+      ).toThrow('since timestamp must be before until timestamp');
     });
   });
 });

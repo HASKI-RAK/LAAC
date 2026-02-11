@@ -1,57 +1,44 @@
-// Implements REQ-FN-032: Metric Provider Exports (CSV v3)
+// Implements REQ-FN-032: Metric Provider Exports (CSV v4)
 // Central export point for all metric providers
-// Legacy v1/v2 providers removed per migration decision (2026-02-04)
+// Topic-related providers removed in v4 — topic IDs not present in Moodle xAPI data
 
-// CSV v3 metric providers (REQ-FN-032) — Authoritative catalog
+// CSV v4 metric providers (REQ-FN-032) — Authoritative catalog
 import { CoursesScoresProvider } from './courses-scores.provider';
 import { CoursesMaxScoresProvider } from './courses-max-scores.provider';
 import { CoursesTimeSpentProvider } from './courses-time-spent.provider';
 import { UserLastElementsProvider } from './user-last-elements.provider';
-import { CourseTopicsScoresProvider } from './course-topics-scores.provider';
-import { CourseTopicsMaxScoresProvider } from './course-topics-max-scores.provider';
-import { CourseTopicsTimeSpentProvider } from './course-topics-time-spent.provider';
 import { CourseLastElementsProvider } from './course-last-elements.provider';
-import { TopicElementsBestAttemptsProvider } from './topic-elements-best-attempts.provider';
-import { TopicElementsMaxScoresProvider } from './topic-elements-max-scores.provider';
-import { TopicElementsTimeSpentProvider } from './topic-elements-time-spent.provider';
-import { TopicLastElementsProvider } from './topic-last-elements.provider';
+import { CourseElementsBestAttemptsProvider } from './course-elements-best-attempts.provider';
+import { CourseElementsMaxScoresProvider } from './course-elements-max-scores.provider';
+import { CourseElementsTimeSpentProvider } from './course-elements-time-spent.provider';
 
 export {
-  // CSV v3 providers (REQ-FN-032)
+  // CSV v4 providers (REQ-FN-032)
   CoursesScoresProvider,
   CoursesMaxScoresProvider,
   CoursesTimeSpentProvider,
   UserLastElementsProvider,
-  CourseTopicsScoresProvider,
-  CourseTopicsMaxScoresProvider,
-  CourseTopicsTimeSpentProvider,
   CourseLastElementsProvider,
-  TopicElementsBestAttemptsProvider,
-  TopicElementsMaxScoresProvider,
-  TopicElementsTimeSpentProvider,
-  TopicLastElementsProvider,
+  CourseElementsBestAttemptsProvider,
+  CourseElementsMaxScoresProvider,
+  CourseElementsTimeSpentProvider,
 };
 
 /**
  * All metric provider classes for dependency injection
- * Contains only CSV v3 metrics per REQ-FN-032 (authoritative catalog)
+ * Contains only CSV v4 metrics per REQ-FN-032 (authoritative catalog)
  * Available via GET /api/v1/metrics endpoint
  */
 export const METRIC_PROVIDER_CLASSES = [
-  // Course-level metrics (v3)
+  // Course-level aggregate metrics
   CoursesScoresProvider,
   CoursesMaxScoresProvider,
   CoursesTimeSpentProvider,
-  // User-level metrics (v3)
+  // User-level metrics
   UserLastElementsProvider,
-  // Course-topic metrics (v3)
-  CourseTopicsScoresProvider,
-  CourseTopicsMaxScoresProvider,
-  CourseTopicsTimeSpentProvider,
+  // Course-scoped element metrics
   CourseLastElementsProvider,
-  // Topic-element metrics (v3)
-  TopicElementsBestAttemptsProvider,
-  TopicElementsMaxScoresProvider,
-  TopicElementsTimeSpentProvider,
-  TopicLastElementsProvider,
+  CourseElementsBestAttemptsProvider,
+  CourseElementsMaxScoresProvider,
+  CourseElementsTimeSpentProvider,
 ] as const;

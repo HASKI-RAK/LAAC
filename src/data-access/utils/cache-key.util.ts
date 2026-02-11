@@ -19,7 +19,7 @@ export interface CacheKeyParams {
   metricId: string;
   /** Instance identifier (e.g., 'hs-ke', 'hs-rv') - REQ-FN-017 */
   instanceId: string;
-  /** Scope level (course, topic, element) */
+  /** Scope level (course, element) */
   scope: string;
   /** Filter parameters as key-value pairs */
   filters?: Record<string, string | number | boolean>;

@@ -27,15 +27,6 @@ export class MetricResultsQueryDto {
 
   @ApiProperty({
     required: false,
-    description: 'Topic identifier for topic-level metrics',
-    example: 'topic-456',
-  })
-  @IsOptional()
-  @IsString()
-  topicId?: string;
-
-  @ApiProperty({
-    required: false,
     description: 'Element identifier for element-level metrics',
     example: 'element-789',
   })

@@ -136,7 +136,7 @@ export class MetricsController {
    * Implements REQ-FN-005: GET /api/v1/metrics/:id/results endpoint
    *
    * @param id - Metric identifier
-   * @param query - Query parameters (courseId, topicId, since, until, etc.)
+   * @param query - Query parameters (courseId, userId, since, until, etc.)
    * @returns Computed metric result with value, timestamp, and metadata
    */
   @Get(':id/results')
@@ -152,7 +152,7 @@ export class MetricsController {
     description:
       'Computes a metric using the cache-aside pattern: checks cache first, ' +
       'computes if cache miss, stores result, and returns. ' +
-      'Query parameters vary by metric (courseId, topicId, since, until). ' +
+      'Query parameters vary by metric (courseId, userId, since, until). ' +
       'Returns 404 if metric not found, 400 if parameters invalid, ' +
       '503 if LRS unavailable, 500 if computation fails. ' +
       'Requires analytics:read scope. ' +
@@ -194,7 +194,6 @@ export class MetricsController {
     // Map DTO to MetricParams - REQ-FN-017: include instanceId
     const params: MetricParams = {
       courseId: query.courseId,
-      topicId: query.topicId,
       elementId: query.elementId,
       userId: query.userId,
       groupId: query.groupId,

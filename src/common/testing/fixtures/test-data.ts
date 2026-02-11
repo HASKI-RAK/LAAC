@@ -55,12 +55,12 @@ export const TEST_METRICS = {
     description: 'Percentage of students who completed the course',
     version: '1.0.0',
   },
-  TOPIC_ENGAGEMENT: {
-    id: 'topic-engagement',
-    dashboardLevel: 'topic' as const,
-    name: 'Topic Engagement Score',
-    description: 'Student engagement level for a specific topic',
-    version: '1.0.0',
+  COURSE_ELEMENTS_TIME: {
+    id: 'course-elements-time-spent',
+    dashboardLevel: 'element' as const,
+    name: 'Course Elements Time Spent',
+    description: 'Time spent on each learning element in a course',
+    version: '4.0.0',
   },
   ELEMENT_VIEWS: {
     id: 'element-views',

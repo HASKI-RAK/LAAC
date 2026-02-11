@@ -200,12 +200,11 @@ describe('REQ-FN-024: Input Validation Pipeline (e2e)', () => {
     it('should accept all valid filters', () => {
       const params = new URLSearchParams({
         courseId: 'course-123',
-        topicId: 'topic-456',
         elementId: 'element-789',
         userId: 'user-001',
         start: '2025-01-01T00:00:00.000Z',
         end: '2025-12-31T23:59:59.999Z',
-        level: 'topic',
+        level: 'element',
       });
 
       return request(app.getHttpServer())
@@ -214,8 +213,7 @@ describe('REQ-FN-024: Input Validation Pipeline (e2e)', () => {
         .expect((res) => {
           expect(res.body.success).toBe(true);
           expect(res.body.data.courseId).toBe('course-123');
-          expect(res.body.data.topicId).toBe('topic-456');
-          expect(res.body.data.level).toBe('topic');
+          expect(res.body.data.level).toBe('element');
         });
     });
   });

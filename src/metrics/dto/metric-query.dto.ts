@@ -10,7 +10,6 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export enum DashboardLevel {
   COURSE = 'course',
-  TOPIC = 'topic',
   ELEMENT = 'element',
 }
 
@@ -27,15 +26,6 @@ export class MetricQueryDto {
   @IsOptional()
   @IsString()
   courseId?: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'Topic ID filter (for topic-level metrics)',
-    example: 'topic-456',
-  })
-  @IsOptional()
-  @IsString()
-  topicId?: string;
 
   @ApiProperty({
     required: false,

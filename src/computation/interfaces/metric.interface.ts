@@ -55,14 +55,14 @@ export interface IMetricComputation {
    * Unique metric identifier
    * Used for catalog registration, API routing, and cache key generation
    * Must be kebab-case and globally unique within the system
-   * @example 'course-completion', 'topic-engagement', 'element-time-spent'
+   * @example 'course-completion', 'courses-scores', 'course-elements-time-spent'
    */
   readonly id: string;
 
   /**
    * Dashboard hierarchy level where this metric is displayed
    * Determines the scope of data aggregation and API endpoint structure
-   * @example 'course', 'topic', 'element'
+   * @example 'course', 'element'
    */
   readonly dashboardLevel: DashboardLevel;
 
@@ -87,7 +87,7 @@ export interface IMetricComputation {
   readonly title?: string;
 
   /**
-   * Required query parameters for the metric (e.g., courseId, topicId)
+   * Required query parameters for the metric (e.g., courseId, userId)
    * Used by catalog metadata and request validation guidance
    */
   readonly requiredParams?: (keyof MetricParams)[];
@@ -111,7 +111,7 @@ export interface IMetricComputation {
    * Compute the metric value from xAPI statements
    * Implements REQ-FN-004: Must be a stateless, pure function
    *
-   * @param params - Contextual parameters for the computation (courseId, topicId, etc.)
+   * @param params - Contextual parameters for the computation (courseId, userId, etc.)
    * @param lrsData - xAPI statements retrieved from the LRS
    * @returns Computed metric result with value, timestamp, and metadata
    *

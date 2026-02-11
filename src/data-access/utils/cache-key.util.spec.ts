@@ -45,13 +45,13 @@ describe('REQ-FN-006 + REQ-FN-017: Cache Key Utilities', () => {
       const params: CacheKeyParams = {
         metricId: 'engagement-score',
         instanceId: 'hs-rv',
-        scope: 'topic',
+        scope: 'element',
         version: 'v2',
       };
 
       const key = generateCacheKey(params);
 
-      expect(key).toBe('cache:engagement-score:hs-rv:topic:v2');
+      expect(key).toBe('cache:engagement-score:hs-rv:element:v2');
     });
 
     it('should generate deterministic keys with sorted filters', () => {

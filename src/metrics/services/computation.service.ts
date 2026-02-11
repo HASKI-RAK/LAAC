@@ -97,7 +97,7 @@ export class ComputationService {
    * Implements REQ-FN-005: Full metric computation pipeline
    *
    * @param metricId - Unique identifier of the metric to compute
-   * @param params - Parameters for metric computation (courseId, topicId, since, until, etc.)
+   * @param params - Parameters for metric computation (courseId, userId, since, until, etc.)
    * @returns Metric result with value, timestamp, computation time, and cache status
    *
    * @throws NotFoundException if metric provider not found (404)
@@ -511,14 +511,10 @@ export class ComputationService {
   private resolveActivityFilter(params: MetricParams): {
     id: string;
     related?: boolean;
-    source: 'courseId' | 'topicId' | 'elementId';
+    source: 'courseId' | 'elementId';
   } | null {
     if (params.elementId) {
       return { id: params.elementId, related: false, source: 'elementId' };
-    }
-
-    if (params.topicId) {
-      return { id: params.topicId, related: true, source: 'topicId' };
     }
 
     if (params.courseId) {
@@ -637,8 +633,6 @@ export class ComputationService {
     let scope = 'global';
     if (params.courseId) {
       scope = 'course';
-    } else if (params.topicId) {
-      scope = 'topic';
     } else if (params.elementId) {
       scope = 'element';
     }
@@ -647,7 +641,6 @@ export class ComputationService {
     const filters: Record<string, string | number | boolean> = {};
 
     if (params.courseId) filters.courseId = params.courseId;
-    if (params.topicId) filters.topicId = params.topicId;
     if (params.elementId) filters.elementId = params.elementId;
     if (params.userId) filters.userId = params.userId;
     if (params.groupId) filters.groupId = params.groupId;
@@ -680,7 +673,6 @@ export class ComputationService {
   ): Record<string, unknown> {
     return {
       courseId: params.courseId,
-      topicId: params.topicId,
       elementId: params.elementId,
       since: params.since,
       until: params.until,
